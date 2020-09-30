@@ -1623,6 +1623,120 @@ const
   {   NULL             NULL }
   SQLITE_SAVEPOINT                                                  = 33;
 
+  { These constants identify classes of events that can be monitored using the 
+    sqlite3_trace_v2() tracing logic. The M argument to 
+    sqlite3_trace_v2(D,M,X,P) is an OR-ed combination of one or more of the 
+    following constants. The first argument to the trace callback is one of the 
+    following constants.
+
+    New tracing constants may be added in future releases.
+
+    A trace callback has four arguments: xCallback(T,C,P,X). The T argument is 
+    one of the integer type codes above. The C argument is a copy of the context 
+    pointer passed in as the fourth argument to sqlite3_trace_v2(). The P and X 
+    arguments are pointers whose meanings depend on T. }
+  
+  { An SQLITE_TRACE_STMT callback is invoked when a prepared statement first 
+    begins running and possibly at other times during the execution of the 
+    prepared statement, such as at the start of each trigger subprogram. The P 
+    argument is a pointer to the prepared statement. The X argument is a pointer 
+    to a string which is the unexpanded SQL text of the prepared statement or an 
+    SQL comment that indicates the invocation of a trigger. The callback can 
+    compute the same text that would have been returned by the legacy 
+    sqlite3_trace() interface by using the X argument when X begins with "--" 
+    and invoking sqlite3_expanded_sql(P) otherwise. }
+  SQLITE_TRACE_STMT                                                 = $01;
+
+  { An SQLITE_TRACE_PROFILE callback provides approximately the same information 
+    as is provided by the sqlite3_profile() callback. The P argument is a 
+    pointer to the prepared statement and the X argument points to a 64-bit 
+    integer which is the estimated of the number of nanosecond that the prepared 
+    statement took to run. The SQLITE_TRACE_PROFILE callback is invoked when the 
+    statement finishes. }
+  SQLITE_TRACE_PROFILE                                              = $02;
+
+  { An SQLITE_TRACE_ROW callback is invoked whenever a prepared statement 
+    generates a single row of result. The P argument is a pointer to the 
+    prepared statement and the X argument is unused. }
+  SQLITE_TRACE_ROW                                                  = $03;
+
+  { An SQLITE_TRACE_CLOSE callback is invoked when a database connection closes. 
+    The P argument is a pointer to the database connection object and the X 
+    argument is unused. }
+  SQLITE_TRACE_CLOSE                                                = $04;
+
+  { These constants define various performance limits that can be lowered at 
+    run-time using sqlite3_limit(). The synopsis of the meanings of the various 
+    limits is shown below. }
+  
+  { The maximum size of any string or BLOB or table row, in bytes. }
+  SQLITE_LIMIT_LENGTH                                               = 0;
+
+  { The maximum length of an SQL statement, in bytes. }
+  SQLITE_LIMIT_SQL_LENGTH                                           = 1;
+
+  { The maximum number of columns in a table definition or in the result set of 
+    a SELECT or the maximum number of columns in an index or in an ORDER BY or 
+    GROUP BY clause. }
+  SQLITE_LIMIT_COLUMN                                               = 2;
+
+  { The maximum depth of the parse tree on any expression. }
+  SQLITE_LIMIT_EXPR_DEPTH                                           = 3;
+
+  { The maximum number of terms in a compound SELECT statement. }
+  SQLITE_LIMIT_COMPOUND_SELECT                                      = 4;
+
+  { The maximum number of instructions in a virtual machine program used to 
+    implement an SQL statement. If sqlite3_prepare_v2() or the equivalent tries 
+    to allocate space for more than this many opcodes in a single prepared 
+    statement, an SQLITE_NOMEM error is returned. }
+  SQLITE_LIMIT_VDBE_OP                                              = 5;
+
+  { The maximum number of arguments on a function. }
+  SQLITE_LIMIT_FUNCTION_ARG                                         = 6;
+
+  { The maximum number of attached databases. }
+  SQLITE_LIMIT_ATTACHED                                             = 7;
+
+  { The maximum length of the pattern argument to the LIKE or GLOB operators. }
+  SQLITE_LIMIT_LIKE_PATTERN_LENGTH                                  = 8;
+
+  { The maximum index number of any parameter in an SQL statement. }
+  SQLITE_LIMIT_VARIABLE_NUMBER                                      = 9;
+
+  { The maximum depth of recursion for triggers. }
+  SQLITE_LIMIT_TRIGGER_DEPTH                                        = 10;
+
+  { The maximum number of auxiliary worker threads that a single prepared 
+    statement may start. }
+  SQLITE_LIMIT_WORKER_THREADS                                       = 11;
+
+  { These constants define various flags that can be passed into "prepFlags" 
+    parameter of the sqlite3_prepare_v3() and sqlite3_prepare16_v3() 
+    interfaces. }
+  
+  { The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner that the 
+    prepared statement will be retained for a long time and probably reused many 
+    times. Without this flag, sqlite3_prepare_v3() and sqlite3_prepare16_v3() 
+    assume that the prepared statement will be used just once or at most a few 
+    times and then destroyed using sqlite3_finalize() relatively soon. The 
+    current implementation acts on this hint by avoiding the use of lookaside 
+    memory so as not to deplete the limited store of lookaside memory. Future 
+    versions of SQLite may act on this hint differently. }
+  SQLITE_PREPARE_PERSISTENT                                         = $01;
+
+  { The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used to be required 
+    for any prepared statement that wanted to use the sqlite3_normalized_sql() 
+    interface. However, the sqlite3_normalized_sql() interface is now available 
+    to all prepared statements, regardless of whether or not they use this 
+    flag. }
+  SQLITE_PREPARE_NORMALIZE                                          = $02;
+
+  { The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler to return an error 
+    (error code SQLITE_ERROR) if the statement uses any virtual tables. }
+  SQLITE_PREPARE_NO_VTAB                                            = $04;
+
+
 type
   PPPChar = ^PPChar;
   PPChar = ^PChar;
@@ -1644,8 +1758,18 @@ type
   xAuth_callback = function (pAuthArg : Pointer; action_code : Integer; 
     const zArg1 : PChar; const zArg2 : PChar; const zArg3 : PChar; const zArg4 :
     PChar) : Integer of object;
+  xTrace_callback = procedure (statement : Pointer; const text : PChar) of
+    object;
+  xProfile_callback = procedure (statement : Pointer; const text : PChar; 
+    estimate : sqlite3_uint64) of object;
+  xCallback_callback = function (invoked : Cardinal; context : Pointer; depend1
+    : Pointer; depend2 : Pointer) : Integer of object;
+  xProgress_callback = function (pArg : Pointer) : Integer of object;
+  xDel_calback = procedure (pPtr : Pointer) of object;
+  xDestructor_callback = procedure (pPtr : Pointer) of object;
 
   { Strutures forward declarations. }
+  ppsqlite3 = ^psqlite3;
   psqlite3 = ^sqlite3;
   psqlite3_file = ^sqlite3_file;
   psqlite3_io_methods = ^sqlite3_io_methods;
@@ -1653,6 +1777,10 @@ type
   psqlite3_api_routines = ^sqlite3_api_routines;
   psqlite3_vfs = ^sqlite3_vfs;
   psqlite3_mem_methods = ^sqlite3_mem_methods;
+  ppsqlite3_stmt = ^psqlite3_stmt;
+  psqlite3_stmt = ^sqlite3_stmt;
+  psqlite3_value = ^sqlite3_value;
+  psqlite3_context = ^sqlite3_context;
 
   { Each open SQLite database is represented by a pointer to an instance of the 
     opaque structure named "sqlite3". It is useful to think of an sqlite3 
@@ -1915,6 +2043,61 @@ type
     xShutdown : procedure (ptr : Pointer); cdecl;
     { Argument to xInit() and xShutdown() }
     pAppData : Pointer;
+  end;
+
+  { An instance of this object represents a single SQL statement that has been 
+    compiled into binary form and is ready to be evaluated.
+
+    Think of each SQL statement as a separate computer program. The original SQL 
+    text is source code. A prepared statement object is the compiled object 
+    code. All SQL must be converted into a prepared statement before it can be 
+    run. }
+  sqlite3_stmt = record
+
+  end;
+
+  { SQLite uses the sqlite3_value object to represent all values that can be 
+    stored in a database table. SQLite uses dynamic typing for the values it 
+    stores. Values stored in sqlite3_value objects can be integers, floating 
+    point values, strings, BLOBs, or NULL.
+
+    An sqlite3_value object may be either "protected" or "unprotected". Some 
+    interfaces require a protected sqlite3_value. Other interfaces will accept 
+    either a protected or an unprotected sqlite3_value. Every interface that 
+    accepts sqlite3_value arguments specifies whether or not it requires a 
+    protected sqlite3_value. The sqlite3_value_dup() interface can be used to 
+    construct a new protected sqlite3_value from an unprotected sqlite3_value.
+
+    The terms "protected" and "unprotected" refer to whether or not a mutex is 
+    held. An internal mutex is held for a protected sqlite3_value object but no 
+    mutex is held for an unprotected sqlite3_value object. If SQLite is compiled 
+    to be single-threaded (with SQLITE_THREADSAFE=0 and with 
+    sqlite3_threadsafe() returning 0) or if SQLite is run in one of reduced 
+    mutex modes SQLITE_CONFIG_SINGLETHREAD or SQLITE_CONFIG_MULTITHREAD then 
+    there is no distinction between protected and unprotected sqlite3_value 
+    objects and they can be used interchangeably. However, for maximum code 
+    portability it is recommended that applications still make the distinction 
+    between protected and unprotected sqlite3_value objects even when not 
+    strictly required.
+
+    The sqlite3_value objects that are passed as parameters into the 
+    implementation of application-defined SQL functions are protected. The 
+    sqlite3_value object returned by sqlite3_column_value() is unprotected. 
+    Unprotected sqlite3_value objects may only be used as arguments to 
+    sqlite3_result_value(), sqlite3_bind_value(), and sqlite3_value_dup(). }
+  sqlite3_value = record
+
+  end;
+
+  { The context in which an SQL function executes is stored in an 
+    sqlite3_context object. A pointer to an sqlite3_context object is always 
+    first parameter to application-defined SQL functions. The 
+    application-defined SQL function implementation will pass this pointer 
+    through into calls to sqlite3_result(), sqlite3_aggregate_context(), 
+    sqlite3_user_data(), sqlite3_context_db_handle(), sqlite3_get_auxdata(), 
+    and/or sqlite3_set_auxdata(). }
+  sqlite3_context = record
+
   end;
 
 { These interfaces provide the same information as the SQLITE_VERSION, 
@@ -2688,7 +2871,654 @@ procedure sqlite3_randomness(N : Integer; P : Pointer); cdecl;
 function sqlite3_set_authorizer(db : psqlite3; xAuth : xAuth_callback; 
   pUserData : Pointer) : Integer; cdecl; external sqlite3_lib;
 
+{ These routines are deprecated. Use the sqlite3_trace_v2() interface instead of 
+  the routines described here.
 
+  These routines register callback functions that can be used for tracing and 
+  profiling the execution of SQL statements.
+
+  The callback function registered by sqlite3_trace() is invoked at various 
+  times when an SQL statement is being run by sqlite3_step(). The 
+  sqlite3_trace() callback is invoked with a UTF-8 rendering of the SQL 
+  statement text as the statement first begins executing. Additional 
+  sqlite3_trace() callbacks might occur as each triggered subprogram is entered. 
+  The callbacks for triggers contain a UTF-8 SQL comment that identifies the 
+  trigger.
+
+  The SQLITE_TRACE_SIZE_LIMIT compile-time option can be used to limit the 
+  length of bound parameter expansion in the output of sqlite3_trace().
+
+  The callback function registered by sqlite3_profile() is invoked as each SQL 
+  statement finishes. The profile callback contains the original statement text 
+  and an estimate of wall-clock time of how long that statement took to run. The 
+  profile callback time is in units of nanoseconds, however the current 
+  implementation is only capable of millisecond resolution so the six least 
+  significant digits in the time are meaningless. Future versions of SQLite 
+  might provide greater resolution on the profiler callback. Invoking either 
+  sqlite3_trace() or sqlite3_trace_v2() will cancel the profile callback. }
+function sqlite3_trace(db : psqlite3; xTrace : xTrace_callback) : Pointer;
+  cdecl; external sqlite3_lib;
+function sqlite3_profile(db : psqlite3; xProfile : xProfile_callback) : Pointer;
+  cdecl; external sqlite3_lib;
+
+{ The sqlite3_trace_v2(D,M,X,P) interface registers a trace callback function X 
+  against database connection D, using property mask M and context pointer P. If 
+  the X callback is NULL or if the M mask is zero, then tracing is disabled. The 
+  M argument should be the bitwise OR-ed combination of zero or more 
+  SQLITE_TRACE constants.
+
+  Each call to either sqlite3_trace() or sqlite3_trace_v2() overrides (cancels) 
+  any prior calls to sqlite3_trace() or sqlite3_trace_v2().
+
+  The X callback is invoked whenever any of the events identified by mask M 
+  occur. The integer return value from the callback is currently ignored, though 
+  this may change in future releases. Callback implementations should return 
+  zero to ensure future compatibility.
+
+  A trace callback is invoked with four arguments: callback(T,C,P,X). The T 
+  argument is one of the SQLITE_TRACE constants to indicate why the callback was 
+  invoked. The C argument is a copy of the context pointer. The P and X 
+  arguments are pointers whose meanings depend on T.
+
+  The sqlite3_trace_v2() interface is intended to replace the legacy interfaces 
+  sqlite3_trace() and sqlite3_profile(), both of which are deprecated. }
+function sqlite3_trace_v2(db : psqlite3; uMask : Cardinal; xCallback : 
+  xCallback_callback; pCtx : Pointer) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_progress_handler(D,N,X,P) interface causes the callback function X 
+  to be invoked periodically during long running calls to sqlite3_exec(), 
+  sqlite3_step() and sqlite3_get_table() for database connection D. An example 
+  use for this interface is to keep a GUI updated during a large query.
+
+  The parameter P is passed through as the only parameter to the callback 
+  function X. The parameter N is the approximate number of virtual machine 
+  instructions that are evaluated between successive invocations of the callback 
+  X. If N is less than one then the progress handler is disabled.
+
+  Only a single progress handler may be defined at one time per database 
+  connection; setting a new progress handler cancels the old one. Setting 
+  parameter X to NULL disables the progress handler. The progress handler is 
+  also disabled by setting N to a value less than 1.
+
+  If the progress callback returns non-zero, the operation is interrupted. This 
+  feature can be used to implement a "Cancel" button on a GUI progress dialog 
+  box.
+
+  The progress handler callback must not do anything that will modify the 
+  database connection that invoked the progress handler. Note that 
+  sqlite3_prepare_v2() and sqlite3_step() both modify their database connections 
+  for the meaning of "modify" in this paragraph. }
+procedure sqlite3_progress_handler(db : psqlite3; nOps : Integer; xProgress : 
+  xProgress_callback; pArg : Pointer); cdecl; external sqlite3_lib;
+
+{ These routines open an SQLite database file as specified by the filename 
+  argument. The filename argument is interpreted as UTF-8 for sqlite3_open() and 
+  sqlite3_open_v2() and as UTF-16 in the native byte order for sqlite3_open16(). 
+  A database connection handle is usually returned in *ppDb, even if an error 
+  occurs. The only exception is that if SQLite is unable to allocate memory to 
+  hold the sqlite3 object, a NULL will be written into *ppDb instead of a 
+  pointer to the sqlite3 object. If the database is opened (and/or created) 
+  successfully, then SQLITE_OK is returned. Otherwise an error code is returned. 
+  The sqlite3_errmsg() or sqlite3_errmsg16() routines can be used to obtain an 
+  English language description of the error following a failure of any of the 
+  sqlite3_open() routines.
+
+  The default encoding will be UTF-8 for databases created using sqlite3_open() 
+  or sqlite3_open_v2(). The default encoding for databases created using 
+  sqlite3_open16() will be UTF-16 in the native byte order.
+
+  Whether or not an error occurs when it is opened, resources associated with 
+  the database connection handle should be released by passing it to 
+  sqlite3_close() when it is no longer required.
+
+  The sqlite3_open_v2() interface works like sqlite3_open() except that it 
+  accepts two additional parameters for additional control over the new database 
+  connection. }
+function sqlite3_open(const filename : PChar; ppDb : ppsqlite3) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_open16(const filename : Pointer; ppDb : ppsqlite3) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_open_v2(const filename : PChar; ppDb : ppsqlite3; flags : 
+  Integer; const zVfs : PChar) : Integer; cdecl; external sqlite3_lib;
+
+{ These are utility routines, useful to custom VFS implementations, that check 
+  if a database file was a URI that contained a specific query parameter, and if 
+  so obtains the value of that query parameter.
+
+  The first parameter to these interfaces (hereafter referred to as F) must be 
+  one of:
+
+    A database filename pointer created by the SQLite core and passed into the 
+      xOpen() method of a VFS implemention, or
+    A filename obtained from sqlite3_db_filename(), or
+    A new filename constructed using sqlite3_create_filename(). 
+
+  If the F parameter is not one of the above, then the behavior is undefined and 
+  probably undesirable. Older versions of SQLite were more tolerant of invalid F 
+  parameters than newer versions.
+
+  If F is a suitable filename (as described in the previous paragraph) and if P 
+  is the name of the query parameter, then sqlite3_uri_parameter(F,P) returns 
+  the value of the P parameter if it exists or a NULL pointer if P does not 
+  appear as a query parameter on F. If P is a query parameter of F and it has no 
+  explicit value, then sqlite3_uri_parameter(F,P) returns a pointer to an empty 
+  string.
+
+  The sqlite3_uri_boolean(F,P,B) routine assumes that P is a boolean parameter 
+  and returns true (1) or false (0) according to the value of P. The 
+  sqlite3_uri_boolean(F,P,B) routine returns true (1) if the value of query 
+  parameter P is one of "yes", "true", or "on" in any case or if the value 
+  begins with a non-zero number. The sqlite3_uri_boolean(F,P,B) routines returns 
+  false (0) if the value of query parameter P is one of "no", "false", or "off" 
+  in any case or if the value begins with a numeric zero. If P is not a query 
+  parameter on F or if the value of P does not match any of the above, then 
+  sqlite3_uri_boolean(F,P,B) returns (B!=0).
+
+  The sqlite3_uri_int64(F,P,D) routine converts the value of P into a 64-bit 
+  signed integer and returns that integer, or D if P does not exist. If the 
+  value of P is something other than an integer, then zero is returned.
+
+  The sqlite3_uri_key(F,N) returns a pointer to the name (not the value) of the 
+  N-th query parameter for filename F, or a NULL pointer if N is less than zero 
+  or greater than the number of query parameters minus 1. The N value is 
+  zero-based so N should be 0 to obtain the name of the first query parameter, 1 
+  for the second parameter, and so forth.
+
+  If F is a NULL pointer, then sqlite3_uri_parameter(F,P) returns NULL and 
+  sqlite3_uri_boolean(F,P,B) returns B. If F is not a NULL pointer and is not a 
+  database file pathname pointer that the SQLite core passed into the xOpen VFS 
+  method, then the behavior of this routine is undefined and probably 
+  undesirable.
+
+  Beginning with SQLite version 3.31.0 (2020-01-22) the input F parameter can 
+  also be the name of a rollback journal file or WAL file in addition to the 
+  main database file. Prior to version 3.31.0, these routines would only work if 
+  F was the name of the main database file. When the F parameter is the name of 
+  the rollback journal or WAL file, it has access to all the same query 
+  parameters as were found on the main database file.
+
+  See the URI filename documentation for additional information. }
+function sqlite3_uri_parameter(const zFilename : PChar; const zParam : PChar) :
+  PChar; cdecl; external sqlite3_lib;
+function sqlite3_uri_boolean(const zFile : PChar; const zParam : PChar; 
+  bDefault : Integer) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_uri_int64(const zFilename : PChar; const zParam : PChar;
+  bDflt : sqlite3_int64) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_uri_key(const zFilename : PChar; N : Integer) : PChar; cdecl;
+  external sqlite3_lib;
+
+{ These routines are available to custom VFS implementations for translating 
+  filenames between the main database file, the journal file, and the WAL file.
+
+  If F is the name of an sqlite database file, journal file, or WAL file passed 
+  by the SQLite core into the VFS, then sqlite3_filename_database(F) returns the 
+  name of the corresponding database file.
+
+  If F is the name of an sqlite database file, journal file, or WAL file passed
+  by the SQLite core into the VFS, or if F is a database filename obtained from 
+  sqlite3_db_filename(), then sqlite3_filename_journal(F) returns the name of 
+  the corresponding rollback journal file.
+
+  If F is the name of an sqlite database file, journal file, or WAL file that 
+  was passed by the SQLite core into the VFS, or if F is a database filename 
+  obtained from sqlite3_db_filename(), then sqlite3_filename_wal(F) returns the 
+  name of the corresponding WAL file.
+
+  In all of the above, if F is not the name of a database, journal or WAL 
+  filename passed into the VFS from the SQLite core and F is not the return 
+  value from sqlite3_db_filename(), then the result is undefined and is likely a 
+  memory access violation. }
+function sqlite3_filename_database(const zFilename : PChar) : Pchar; cdecl;
+  external sqlite3_lib;
+function sqlite3_filename_journal(const zFilename : PChar) : PChar; cdecl;
+  external sqlite3_lib;
+function sqlite3_filename_wal(const zFilename : PChar) : PChar; cdecl;
+  external sqlite3_lib;
+
+{ If X is the name of a rollback or WAL-mode journal file that is passed into 
+  the xOpen method of sqlite3_vfs, then sqlite3_database_file_object(X) returns 
+  a pointer to the sqlite3_file object that represents the main database file.
+
+  This routine is intended for use in custom VFS implementations only. It is not 
+  a general-purpose interface. The argument sqlite3_file_object(X) must be a 
+  filename pointer that has been passed into sqlite3_vfs.xOpen method where the 
+  flags parameter to xOpen contains one of the bits SQLITE_OPEN_MAIN_JOURNAL or 
+  SQLITE_OPEN_WAL. Any other use of this routine results in undefined and 
+  probably undesirable behavior. }
+function sqlite3_database_file_object(const zName : PChar) : psqlite3_file;
+  cdecl; external sqlite3_lib;
+
+{ These interfces are provided for use by VFS shim implementations and are not 
+  useful outside of that context.
+
+  The sqlite3_create_filename(D,J,W,N,P) allocates memory to hold a version of 
+  database filename D with corresponding journal file J and WAL file W and with 
+  N URI parameters key/values pairs in the array P. The result from 
+  sqlite3_create_filename(D,J,W,N,P) is a pointer to a database filename that is 
+  safe to pass to routines like:
+
+    sqlite3_uri_parameter(),
+    sqlite3_uri_boolean(),
+    sqlite3_uri_int64(),
+    sqlite3_uri_key(),
+    sqlite3_filename_database(),
+    sqlite3_filename_journal(), or
+    sqlite3_filename_wal(). 
+
+  If a memory allocation error occurs, sqlite3_create_filename() might return a 
+  NULL pointer. The memory obtained from sqlite3_create_filename(X) must be 
+  released by a corresponding call to sqlite3_free_filename(Y).
+
+  The P parameter in sqlite3_create_filename(D,J,W,N,P) should be an array of 
+  2*N pointers to strings. Each pair of pointers in this array corresponds to a 
+  key and value for a query parameter. The P parameter may be a NULL pointer if
+  N is zero. None of the 2*N pointers in the P array may be NULL pointers and 
+  key pointers should not be empty strings. None of the D, J, or W parameters to 
+  sqlite3_create_filename(D,J,W,N,P) may be NULL pointers, though they can be 
+  empty strings.
+
+  The sqlite3_free_filename(Y) routine releases a memory allocation previously 
+  obtained from sqlite3_create_filename(). Invoking sqlite3_free_filename(Y) 
+  where Y is a NULL pointer is a harmless no-op.
+
+  If the Y parameter to sqlite3_free_filename(Y) is anything other than a NULL 
+  pointer or a pointer previously acquired from sqlite3_create_filename(), then 
+  bad things such as heap corruption or segfaults may occur. The value Y should 
+  be used again after sqlite3_free_filename(Y) has been called. This means that 
+  if the sqlite3_vfs.xOpen() method of a VFS has been called using Y, then the 
+  corresponding [sqlite3_module.xClose() method should also be invoked prior to 
+  calling sqlite3_free_filename(Y). }
+function sqlite3_create_filename(const zDatabase : PChar; const zJournal : 
+  PChar; const zWal : PChar; nParam : Integer; const azParam : PPChar) : PChar;
+  cdecl; external sqlite3_lib;
+procedure sqlite3_free_filename(databaseName : PChar); cdecl; 
+  external sqlite3_lib;
+
+{ If the most recent sqlite3_* API call associated with database connection D 
+  failed, then the sqlite3_errcode(D) interface returns the numeric result code 
+  or extended result code for that API call. The sqlite3_extended_errcode() 
+  interface is the same except that it always returns the extended result code 
+  even when extended result codes are disabled.
+
+  The values returned by sqlite3_errcode() and/or sqlite3_extended_errcode() 
+  might change with each API call. Except, there are some interfaces that are
+  guaranteed to never change the value of the error code. The error-code 
+  preserving interfaces are:
+
+    sqlite3_errcode()
+    sqlite3_extended_errcode()
+    sqlite3_errmsg()
+    sqlite3_errmsg16() 
+
+  The sqlite3_errmsg() and sqlite3_errmsg16() return English-language text that 
+  describes the error, as either UTF-8 or UTF-16 respectively. Memory to hold 
+  the error message string is managed internally. The application does not need 
+  to worry about freeing the result. However, the error string might be 
+  overwritten or deallocated by subsequent calls to other SQLite interface 
+  functions.
+
+  The sqlite3_errstr() interface returns the English-language text that 
+  describes the result code, as UTF-8. Memory to hold the error message string 
+  is managed internally and must not be freed by the application.
+
+  When the serialized threading mode is in use, it might be the case that a 
+  second error occurs on a separate thread in between the time of the first 
+  error and the call to these interfaces. When that happens, the second error 
+  will be reported since these interfaces always report the most recent result.
+  To avoid this, each thread can obtain exclusive use of the database connection 
+  D by invoking sqlite3_mutex_enter(sqlite3_db_mutex(D)) before beginning to use 
+  D and invoking sqlite3_mutex_leave(sqlite3_db_mutex(D)) after all calls to the 
+  interfaces listed here are completed.
+
+  If an interface fails with SQLITE_MISUSE, that means the interface was invoked 
+  incorrectly by the application. In that case, the error code and message may 
+  or may not be set. }
+function sqlite3_errcode(db : psqlite3) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_extended_errcode(db : psqlite3) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_errmsg(db : psqlite3) : PChar; cdecl; external sqlite3_lib;
+function sqlite3_errmsg16(db : psqlite3) : Pointer; cdecl; external sqlite3_lib;
+function sqlite3_errstr(rc : Integer) : PChar; cdecl; external sqlite3_lib;
+
+{ This interface allows the size of various constructs to be limited on a 
+  connection by connection basis. The first parameter is the database connection 
+  whose limit is to be set or queried. The second parameter is one of the limit 
+  categories that define a class of constructs to be size limited. The third 
+  parameter is the new limit for that construct.
+
+  If the new limit is a negative number, the limit is unchanged. For each limit 
+  category SQLITE_LIMIT_NAME there is a hard upper bound set at compile-time by 
+  a C preprocessor macro called SQLITE_MAX_NAME. (The "_LIMIT_" in the name is 
+  changed to "_MAX_".) Attempts to increase a limit above its hard upper bound 
+  are silently truncated to the hard upper bound.
+
+  Regardless of whether or not the limit was changed, the sqlite3_limit() 
+  interface returns the prior value of the limit. Hence, to find the current 
+  value of a limit without changing it, simply invoke this interface with the 
+  third parameter set to -1.
+
+  Run-time limits are intended for use in applications that manage both their 
+  own internal database and also databases that are controlled by untrusted 
+  external sources. An example application might be a web browser that has its 
+  own databases for storing history and separate databases controlled by 
+  JavaScript applications downloaded off the Internet. The internal databases 
+  can be given the large, default limits. Databases managed by external sources 
+  can be given much smaller limits designed to prevent a denial of service 
+  attack. Developers might also want to use the sqlite3_set_authorizer() 
+  interface to further control untrusted SQL. The size of the database created 
+  by an untrusted script can be contained using the max_page_count PRAGMA.
+
+  New run-time limit categories may be added in future releases. }
+function sqlite3_limit(db : psqlite3; id : Integer; newVal : Integer) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ To execute an SQL statement, it must first be compiled into a byte-code 
+  program using one of these routines. Or, in other words, these routines are 
+  constructors for the prepared statement object.
+
+  The preferred routine to use is sqlite3_prepare_v2(). The sqlite3_prepare() 
+  interface is legacy and should be avoided. sqlite3_prepare_v3() has an extra 
+  "prepFlags" option that is used for special purposes.
+
+  The use of the UTF-8 interfaces is preferred, as SQLite currently does all 
+  parsing using UTF-8. The UTF-16 interfaces are provided as a convenience. The 
+  UTF-16 interfaces work by converting the input text into UTF-8, then invoking 
+  the corresponding UTF-8 interface.
+
+  The first argument, "db", is a database connection obtained from a prior 
+  successful call to sqlite3_open(), sqlite3_open_v2() or sqlite3_open16(). The 
+  database connection must not have been closed.
+
+  The second argument, "zSql", is the statement to be compiled, encoded as 
+  either UTF-8 or UTF-16. The sqlite3_prepare(), sqlite3_prepare_v2(), and 
+  sqlite3_prepare_v3() interfaces use UTF-8, and sqlite3_prepare16(), 
+  sqlite3_prepare16_v2(), and sqlite3_prepare16_v3() use UTF-16.
+
+  If the nByte argument is negative, then zSql is read up to the first zero 
+  terminator. If nByte is positive, then it is the number of bytes read from 
+  zSql. If nByte is zero, then no prepared statement is generated. If the caller 
+  knows that the supplied string is nul-terminated, then there is a small 
+  performance advantage to passing an nByte parameter that is the number of 
+  bytes in the input string including the nul-terminator.
+
+  If pzTail is not NULL then *pzTail is made to point to the first byte past the 
+  end of the first SQL statement in zSql. These routines only compile the first 
+  statement in zSql, so *pzTail is left pointing to what remains uncompiled.
+
+  *ppStmt is left pointing to a compiled prepared statement that can be executed 
+  using sqlite3_step(). If there is an error, *ppStmt is set to NULL. If the 
+  input text contains no SQL (if the input is an empty string or a comment) then 
+  *ppStmt is set to NULL. The calling procedure is responsible for deleting the 
+  compiled SQL statement using sqlite3_finalize() after it has finished with it. 
+  ppStmt may not be NULL.
+
+  On success, the sqlite3_prepare() family of routines return SQLITE_OK; 
+  otherwise an error code is returned.
+
+  The sqlite3_prepare_v2(), sqlite3_prepare_v3(), sqlite3_prepare16_v2(), and 
+  sqlite3_prepare16_v3() interfaces are recommended for all new programs. The 
+  older interfaces (sqlite3_prepare() and sqlite3_prepare16()) are retained for 
+  backwards compatibility, but their use is discouraged. In the "vX" interfaces, 
+  the prepared statement that is returned (the sqlite3_stmt object) contains a 
+  copy of the original SQL text. This causes the sqlite3_step() interface to 
+  behave differently in three ways:
+
+    If the database schema changes, instead of returning SQLITE_SCHEMA as it 
+    always used to do, sqlite3_step() will automatically recompile the SQL 
+    statement and try to run it again. As many as SQLITE_MAX_SCHEMA_RETRY 
+    retries will occur before sqlite3_step() gives up and returns an error.
+
+    When an error occurs, sqlite3_step() will return one of the detailed error 
+    codes or extended error codes. The legacy behavior was that sqlite3_step() 
+    would only return a generic SQLITE_ERROR result code and the application
+    would have to make a second call to sqlite3_reset() in order to find the 
+    underlying cause of the problem. With the "v2" prepare interfaces, the 
+    underlying reason for the error is returned immediately.
+
+    If the specific value bound to a host parameter in the WHERE clause might 
+    influence the choice of query plan for a statement, then the statement will 
+    be automatically recompiled, as if there had been a schema change, on the 
+    first sqlite3_step() call following any change to the bindings of that 
+    parameter. The specific value of a WHERE-clause parameter might influence 
+    the choice of query plan if the parameter is the left-hand side of a LIKE or 
+    GLOB operator or if the parameter is compared to an indexed column and the 
+    SQLITE_ENABLE_STAT4 compile-time option is enabled.
+
+  sqlite3_prepare_v3() differs from sqlite3_prepare_v2() only in having the 
+  extra prepFlags parameter, which is a bit array consisting of zero or more of 
+  the SQLITE_PREPARE_* flags. The sqlite3_prepare_v2() interface works exactly 
+  the same as sqlite3_prepare_v3() with a zero prepFlags parameter. }
+function sqlite3_prepare(db : psqlite3; const zSql : PChar; nByte : Integer;
+  ppStmt : ppsqlite3_stmt; const pzTail : PPChar) : Integer; cdecl; 
+  external sqlite3_lib;
+function sqlite3_prepare_v2(db : psqlite3; const zSql : PChar; nByte : Integer;
+  ppStmt : ppsqlite3_stmt; const pzTail : PPChar) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_prepare_v3(db : psqlite3; const zSql : PChar; nByte : Integer;
+  prepFlags : Cardinal; ppStmt : ppsqlite3_stmt; const pzTail : PChar) : 
+  Integer; cdecl; external sqlite3_lib;
+function sqlite3_prepare16(db : psqlite3; const zSql : Pointer; nBytes : 
+  Integer; ppStmt : ppsqlite3_stmt; const pzTail : PPointer) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_prepare16_v2(db : psqlite3; const zSql : Pointer; nByte : 
+  Integer; ppStmt : ppsqlite3_stmt; const pzTail : PPointer) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_prepare16_v3(db : psqlite3; const zSql : Pointer; nByte :
+  Integer; prepFlags : Cardinal; ppStmt : ppsqlite3_stmt; const pzTail :
+  PPointer) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_sql(P) interface returns a pointer to a copy of the UTF-8 SQL text 
+  used to create prepared statement P if P was created by sqlite3_prepare_v2(), 
+  sqlite3_prepare_v3(), sqlite3_prepare16_v2(), or sqlite3_prepare16_v3(). The 
+  sqlite3_expanded_sql(P) interface returns a pointer to a UTF-8 string 
+  containing the SQL text of prepared statement P with bound parameters 
+  expanded. The sqlite3_normalized_sql(P) interface returns a pointer to a UTF-8 
+  string containing the normalized SQL text of prepared statement P. The 
+  semantics used to normalize a SQL statement are unspecified and subject to 
+  change. At a minimum, literal values will be replaced with suitable 
+  placeholders.
+
+  For example, if a prepared statement is created using the SQL text "SELECT 
+  $abc,:xyz" and if parameter $abc is bound to integer 2345 and parameter :xyz 
+  is unbound, then sqlite3_sql() will return the original string, 
+  "SELECT $abc,:xyz" but sqlite3_expanded_sql() will return "SELECT 2345,NULL".
+
+  The sqlite3_expanded_sql() interface returns NULL if insufficient memory is 
+  available to hold the result, or if the result would exceed the the maximum 
+  string length determined by the SQLITE_LIMIT_LENGTH.
+
+  The SQLITE_TRACE_SIZE_LIMIT compile-time option limits the size of bound 
+  parameter expansions. The SQLITE_OMIT_TRACE compile-time option causes 
+  sqlite3_expanded_sql() to always return NULL.
+
+  The strings returned by sqlite3_sql(P) and sqlite3_normalized_sql(P) are 
+  managed by SQLite and are automatically freed when the prepared statement is 
+  finalized. The string returned by sqlite3_expanded_sql(P), on the other hand, 
+  is obtained from sqlite3_malloc() and must be free by the application by 
+  passing it to sqlite3_free(). }
+function sqlite3_sql(pStmt : psqlite3_stmt) : PChar; cdecl; 
+  external sqlite3_lib;
+function sqlite3_expanded_sql(pStmt : psqlite3_stmt) : PChar; cdecl;
+  external sqlite3_lib;
+function sqlite3_normalized_sql(pStmt : psqlite3_stmt) : PChar; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_stmt_readonly(X) interface returns true (non-zero) if and only if 
+  the prepared statement X makes no direct changes to the content of the 
+  database file. 
+  
+  Transaction control statements such as BEGIN, COMMIT, ROLLBACK, SAVEPOINT, and 
+  RELEASE cause sqlite3_stmt_readonly() to return true, since the statements 
+  themselves do not actually modify the database but rather they control the 
+  timing of when other statements modify the database. The ATTACH and DETACH 
+  statements also cause sqlite3_stmt_readonly() to return true since, while 
+  those statements change the configuration of a database connection, they do 
+  not make changes to the content of the database files on disk. The 
+  sqlite3_stmt_readonly() interface returns true for BEGIN since BEGIN merely 
+  sets internal flags, but the BEGIN IMMEDIATE and BEGIN EXCLUSIVE commands do 
+  touch the database and so sqlite3_stmt_readonly() returns false for those 
+  commands. }
+function sqlite3_stmt_readonly(pStmt : psqlite3_stmt) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_stmt_isexplain(S) interface returns 1 if the prepared statement S 
+  is an EXPLAIN statement, or 2 if the statement S is an EXPLAIN QUERY PLAN. The 
+  sqlite3_stmt_isexplain(S) interface returns 0 if S is an ordinary statement or 
+  a NULL pointer. }
+function sqlite3_stmt_isexplain(pStmt : psqlite3_stmt) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_stmt_busy(S) interface returns true (non-zero) if the prepared 
+  statement S has been stepped at least once using sqlite3_step(S) but has 
+  neither run to completion (returned SQLITE_DONE from sqlite3_step(S)) nor been 
+  reset using sqlite3_reset(S). The sqlite3_stmt_busy(S) interface returns false 
+  if S is a NULL pointer. If S is not a NULL pointer and is not a pointer to a 
+  valid prepared statement object, then the behavior is undefined and probably 
+  undesirable.
+
+  This interface can be used in combination sqlite3_next_stmt() to locate all 
+  prepared statements associated with a database connection that are in need of 
+  being reset. This can be used, for example, in diagnostic routines to search 
+  for prepared statements that are holding a transaction open. }
+function sqlite3_stmt_busy(pStmt : psqlite3_stmt) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ In the SQL statement text input to sqlite3_prepare_v2() and its variants, 
+  literals may be replaced by a parameter that matches one of following 
+  templates:
+
+    ?
+    ?NNN
+    :VVV
+    @VVV
+    $VVV 
+
+  In the templates above, NNN represents an integer literal, and VVV represents 
+  an alphanumeric identifier. The values of these parameters (also called "host 
+  parameter names" or "SQL parameters") can be set using the sqlite3_bind_*() 
+  routines defined here.
+
+  The first argument to the sqlite3_bind_*() routines is always a pointer to the 
+  sqlite3_stmt object returned from sqlite3_prepare_v2() or its variants.
+
+  The second argument is the index of the SQL parameter to be set. The leftmost 
+  SQL parameter has an index of 1. When the same named SQL parameter is used 
+  more than once, second and subsequent occurrences have the same index as the 
+  first occurrence. The index for named parameters can be looked up using the 
+  sqlite3_bind_parameter_index() API if desired. The index for "?NNN" parameters 
+  is the value of NNN. The NNN value must be between 1 and the sqlite3_limit() 
+  parameter SQLITE_LIMIT_VARIABLE_NUMBER (default value: 32766).
+
+  The third argument is the value to bind to the parameter. If the third 
+  parameter to sqlite3_bind_text() or sqlite3_bind_text16() or 
+  sqlite3_bind_blob() is a NULL pointer then the fourth parameter is ignored and 
+  the end result is the same as sqlite3_bind_null(). If the third parameter to 
+  sqlite3_bind_text() is not NULL, then it should be a pointer to well-formed 
+  UTF8 text. If the third parameter to sqlite3_bind_text16() is not NULL, then 
+  it should be a pointer to well-formed UTF16 text. If the third parameter to 
+  sqlite3_bind_text64() is not NULL, then it should be a pointer to a 
+  well-formed unicode string that is either UTF8 if the sixth parameter is 
+  SQLITE_UTF8, or UTF16 otherwise.
+
+  The byte-order of UTF16 input text is determined by the byte-order mark (BOM, 
+  U+FEFF) found in first character, which is removed, or in the absence of a BOM 
+  the byte order is the native byte order of the host machine for 
+  sqlite3_bind_text16() or the byte order specified in the 6th parameter for 
+  sqlite3_bind_text64(). If UTF16 input text contains invalid unicode 
+  characters, then SQLite might change those invalid characters into the unicode 
+  replacement character: U+FFFD.
+
+  In those routines that have a fourth argument, its value is the number of 
+  bytes in the parameter. To be clear: the value is the number of bytes in the 
+  value, not the number of characters. If the fourth parameter to 
+  sqlite3_bind_text() or sqlite3_bind_text16() is negative, then the length of 
+  the string is the number of bytes up to the first zero terminator. If the 
+  fourth parameter to sqlite3_bind_blob() is negative, then the behavior is 
+  undefined. If a non-negative fourth parameter is provided to 
+  sqlite3_bind_text() or sqlite3_bind_text16() or sqlite3_bind_text64() then 
+  that parameter must be the byte offset where the NUL terminator would occur 
+  assuming the string were NUL terminated. If any NUL characters occurs at byte 
+  offsets less than the value of the fourth parameter then the resulting string 
+  value will contain embedded NULs. The result of expressions involving strings 
+  with embedded NULs is undefined.
+
+  The fifth argument to the BLOB and string binding interfaces is a destructor 
+  used to dispose of the BLOB or string after SQLite has finished with it. The 
+  destructor is called to dispose of the BLOB or string even if the call to the 
+  bind API fails, except the destructor is not called if the third parameter is 
+  a NULL pointer or the fourth parameter is negative. If the fifth argument is 
+  the special value SQLITE_STATIC, then SQLite assumes that the information is 
+  in static, unmanaged space and does not need to be freed. If the fifth 
+  argument has the value SQLITE_TRANSIENT, then SQLite makes its own private 
+  copy of the data immediately, before the sqlite3_bind_*() routine returns.
+
+  The sixth argument to sqlite3_bind_text64() must be one of SQLITE_UTF8, 
+  SQLITE_UTF16, SQLITE_UTF16BE, or SQLITE_UTF16LE to specify the encoding of the 
+  text in the third parameter. If the sixth argument to sqlite3_bind_text64() is 
+  not one of the allowed values shown above, or if the text encoding is 
+  different from the encoding specified by the sixth parameter, then the 
+  behavior is undefined.
+
+  The sqlite3_bind_zeroblob() routine binds a BLOB of length N that is filled 
+  with zeroes. A zeroblob uses a fixed amount of memory (just an integer to hold 
+  its size) while it is being processed. Zeroblobs are intended to serve as 
+  placeholders for BLOBs whose content is later written using incremental BLOB 
+  I/O routines. A negative value for the zeroblob results in a zero-length BLOB.
+
+  The sqlite3_bind_pointer(S,I,P,T,D) routine causes the I-th parameter in 
+  prepared statement S to have an SQL value of NULL, but to also be associated 
+  with the pointer P of type T. D is either a NULL pointer or a pointer to a 
+  destructor function for P. SQLite will invoke the destructor D with a single 
+  argument of P when it is finished using P. The T parameter should be a static 
+  string, preferably a string literal. The sqlite3_bind_pointer() routine is 
+  part of the pointer passing interface added for SQLite 3.20.0.
+
+  If any of the sqlite3_bind_*() routines are called with a NULL pointer for the 
+  prepared statement or with a prepared statement for which sqlite3_step() has 
+  been called more recently than sqlite3_reset(), then the call will return 
+  SQLITE_MISUSE. If any sqlite3_bind_() routine is passed a prepared statement 
+  that has been finalized, the result is undefined and probably harmful.
+
+  Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters 
+  are interpreted as NULL.
+
+  The sqlite3_bind_* routines return SQLITE_OK on success or an error code if 
+  anything goes wrong. SQLITE_TOOBIG might be returned if the size of a string 
+  or BLOB exceeds limits imposed by sqlite3_limit(SQLITE_LIMIT_LENGTH) or 
+  SQLITE_MAX_LENGTH. SQLITE_RANGE is returned if the parameter index is out of 
+  range. SQLITE_NOMEM is returned if malloc() fails. }
+function sqlite3_bind_blob(pStmt : psqlite3_stmt; i : Integer; const zData :
+  Pointer; nData : Integer; xDel : xDel_calback) : Integer; cdecl; 
+  external sqlite3_lib;
+function sqlite3_bind_blob64(pStmt : psqlite3_stmt; i : Integer; const zData :
+  Pointer; nData : sqlite3_uint64; xDel : xDel_calback) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_bind_double(pStmt : psqlite3_stmt; i : Integer; rValue :
+  Double) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_bind_int(pStmt : psqlite3_stmt; i : Integer; iValue : Integer)
+  : Integer; cdecl; external sqlite3_lib;
+function sqlite3_bind_int64(pStmt : psqlite3_stmt; i : Integer; iValue : 
+  sqlite3_int64) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_bind_null(pStmt : psqlite3_stmt; i : Integer) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_bind_text(pStmt : psqlite3_stmt; i : Integer; const zData :
+  PChar; nData : Integer; xDel : xDel_calback) : Integer; cdecl; 
+  external sqlite3_lib;
+function sqlite3_bind_text16(pStmt : psqlite3_stmt; i : Integer; const zData :
+  Pointer; nData : Integer; xDel : xDel_calback) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_bind_text64(pStmt : psqlite3_stmt; i : Integer; const zData :
+  PChar; nData : sqlite3_uint64; xDel : xDel_calback; encoding : Byte) : 
+  Integer; cdecl; external sqlite3_lib;
+function sqlite3_bind_value(pStmt : psqlite3_stmt; i : Integer; const pValue :
+  psqlite3_value) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_bind_pointer(pStmt : psqlite3_stmt; i : Integer; pPtr : 
+  Pointer; const zPTtype : PChar; xDestructor : xDestructor_callback) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_bind_zeroblob(pStmt : psqlite3_stmt; i : Integer; n : Integer) 
+  : Integer; cdecl; external sqlite3_lib;
+function sqlite3_bind_zeroblob64(pStmt : psqlite3_stmt; i : Integer; n :
+  sqlite3_uint64) : Integer; cdecl; external sqlite3_lib;
 
 implementation
 
