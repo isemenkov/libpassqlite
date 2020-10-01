@@ -2105,6 +2105,167 @@ const
     SQLITE_STMTSTATUS_MEMUSED. }
   SQLITE_STMTSTATUS_MEMUSED                                             = 99;
 
+  { These constants define all valid values for the "checkpoint mode" passed as 
+    the third parameter to the sqlite3_wal_checkpoint_v2() interface. See the 
+    sqlite3_wal_checkpoint_v2() documentation for details on the meaning of each 
+    of these checkpoint modes. }
+  
+  { Checkpoint as many frames as possible without waiting for any database 
+    readers or writers to finish, then sync the database file if all frames in 
+    the log were checkpointed. The busy-handler callback is never invoked in the 
+    SQLITE_CHECKPOINT_PASSIVE mode. On the other hand, passive mode might leave 
+    the checkpoint unfinished if there are concurrent readers or writers. }
+  SQLITE_CHECKPOINT_PASSIVE                                             = 0;
+
+  { This mode blocks (it invokes the busy-handler callback) until there is no 
+    database writer and all readers are reading from the most recent database 
+    snapshot. It then checkpoints all frames in the log file and syncs the 
+    database file. This mode blocks new database writers while it is pending, 
+    but new database readers are allowed to continue unimpeded. }
+  SQLITE_CHECKPOINT_FULL                                                = 1;
+
+  { This mode works the same way as SQLITE_CHECKPOINT_FULL with the addition 
+    that after checkpointing the log file it blocks (calls the busy-handler 
+    callback) until all readers are reading from the database file only. This 
+    ensures that the next writer will restart the log file from the beginning. 
+    Like SQLITE_CHECKPOINT_FULL, this mode blocks new database writer attempts 
+    while it is pending, but does not impede readers. }
+  SQLITE_CHECKPOINT_RESTART                                             = 2;
+
+  { This mode works the same way as SQLITE_CHECKPOINT_RESTART with the addition 
+    that it also truncates the log file to zero bytes just prior to a successful 
+    return. }
+  SQLITE_CHECKPOINT_TRUNCATE                                            = 3;
+
+  { These macros define the various options to the sqlite3_vtab_config() 
+    interface that virtual table implementations can use to customize and 
+    optimize their behavior. }
+
+  { Calls of the form sqlite3_vtab_config(db,SQLITE_VTAB_CONSTRAINT_SUPPORT,X) 
+    are supported, where X is an integer. If X is zero, then the virtual table 
+    whose xCreate or xConnect method invoked sqlite3_vtab_config() does not 
+    support constraints. In this configuration (which is the default) if a call 
+    to the xUpdate method returns SQLITE_CONSTRAINT, then the entire statement 
+    is rolled back as if OR ABORT had been specified as part of the users SQL 
+    statement, regardless of the actual ON CONFLICT mode specified.
+
+    If X is non-zero, then the virtual table implementation guarantees that if 
+    xUpdate returns SQLITE_CONSTRAINT, it will do so before any modifications to 
+    internal or persistent data structures have been made. If the ON CONFLICT 
+    mode is ABORT, FAIL, IGNORE or ROLLBACK, SQLite is able to roll back a 
+    statement or database transaction, and abandon or continue processing the 
+    current SQL statement as appropriate. If the ON CONFLICT mode is REPLACE and 
+    the xUpdate method returns SQLITE_CONSTRAINT, SQLite handles this as if the 
+    ON CONFLICT mode had been ABORT.
+
+    Virtual table implementations that are required to handle OR REPLACE must do 
+    so within the xUpdate method. If a call to the sqlite3_vtab_on_conflict() 
+    function indicates that the current ON CONFLICT policy is REPLACE, the 
+    virtual table implementation should silently replace the appropriate rows 
+    within the xUpdate callback and return SQLITE_OK. Or, if this is not 
+    possible, it may return SQLITE_CONSTRAINT, in which case SQLite falls back 
+    to OR ABORT constraint handling. }
+  SQLITE_VTAB_CONSTRAINT_SUPPORT                                        = 1;
+
+  { Calls of the form sqlite3_vtab_config(db,SQLITE_VTAB_INNOCUOUS) from within 
+    the the xConnect or xCreate methods of a virtual table implmentation 
+    identify that virtual table as being safe to use from within triggers and 
+    views. Conceptually, the SQLITE_VTAB_INNOCUOUS tag means that the virtual 
+    table can do no serious harm even if it is controlled by a malicious hacker. 
+    Developers should avoid setting the SQLITE_VTAB_INNOCUOUS flag unless 
+    absolutely necessary. }
+  SQLITE_VTAB_INNOCUOUS                                                 = 2;
+
+  { Calls of the form sqlite3_vtab_config(db,SQLITE_VTAB_DIRECTONLY) from within 
+    the the xConnect or xCreate methods of a virtual table implmentation 
+    prohibits that virtual table from being used from within triggers and 
+    views. }
+  SQLITE_VTAB_DIRECTONLY                                                = 3;
+
+  { These constants are returned by sqlite3_vtab_on_conflict() to inform a 
+    virtual table implementation what the ON CONFLICT mode is for the SQL 
+    statement being evaluated.
+
+    Note that the SQLITE_IGNORE constant is also used as a potential return 
+    value from the sqlite3_set_authorizer() callback and that SQLITE_ABORT is 
+    also a result code. }
+  SQLITE_ROLLBACK                                                       = 1;
+  SQLITE_FAIL                                                           = 3;
+  SQLITE_REPLACE                                                        = 5;
+
+  { The following constants can be used for the T parameter to the 
+    sqlite3_stmt_scanstatus(S,X,T,V) interface. Each constant designates a 
+    different metric for sqlite3_stmt_scanstatus() to return.
+
+    When the value returned to V is a string, space to hold that string is 
+    managed by the prepared statement S and will be automatically freed when S 
+    is finalized. }
+  
+  { The sqlite3_int64 variable pointed to by the V parameter will be set to the 
+    total number of times that the X-th loop has run. }
+  SQLITE_SCANSTAT_NLOOP                                                 = 0;
+
+  { The sqlite3_int64 variable pointed to by the V parameter will be set to the 
+    total number of rows examined by all iterations of the X-th loop. }
+  SQLITE_SCANSTAT_NVISIT                                                = 1;
+
+  { The "double" variable pointed to by the V parameter will be set to the query 
+    planner's estimate for the average number of rows output from each iteration 
+    of the X-th loop. If the query planner's estimates was accurate, then this 
+    value will approximate the quotient NVISIT/NLOOP and the product of this 
+    value for all prior loops with the same SELECTID will be the NLOOP value for 
+    the current loop. }
+  SQLITE_SCANSTAT_EST                                                   = 2;
+
+  { The "const char *" variable pointed to by the V parameter will be set to a 
+    zero-terminated UTF-8 string containing the name of the index or table used 
+    for the X-th loop. }
+  SQLITE_SCANSTAT_NAME                                                  = 3;
+
+  { The "const char *" variable pointed to by the V parameter will be set to a 
+    zero-terminated UTF-8 string containing the EXPLAIN QUERY PLAN description 
+    for the X-th loop. }
+  SQLITE_SCANSTAT_EXPLAIN                                               = 4;
+
+  { The "int" variable pointed to by the V parameter will be set to the 
+    "select-id" for the X-th loop. The select-id identifies which query or 
+    subquery the loop is part of. The main query has a select-id of zero. The 
+    select-id is the same value as is output in the first column of an EXPLAIN 
+    QUERY PLAN query. }
+  SQLITE_SCANSTAT_SELECTID                                              = 5;
+
+  { Zero or more of the following constants can be OR-ed together for the F 
+    argument to sqlite3_serialize(D,S,P,F). }
+
+  { SQLITE_SERIALIZE_NOCOPY means that sqlite3_serialize() will return a pointer 
+    to contiguous in-memory database that it is currently using, without making 
+    a copy of the database. If SQLite is not currently using a contiguous 
+    in-memory database, then this option causes sqlite3_serialize() to return a 
+    NULL pointer. SQLite will only be using a contiguous in-memory database if 
+    it has been initialized by a prior call to sqlite3_deserialize(). }
+  SQLITE_SERIALIZE_NOCOPY                                               = $001;
+
+  { The following are allowed values for 6th argument (the F argument) to the 
+    sqlite3_deserialize(D,S,P,N,M,F) interface. }
+
+  { The SQLITE_DESERIALIZE_FREEONCLOSE means that the database serialization in 
+    the P argument is held in memory obtained from sqlite3_malloc64() and that 
+    SQLite should take ownership of this memory and automatically free it when 
+    it has finished using it. Without this flag, the caller is responsible for 
+    freeing any dynamically allocated memory. }
+  SQLITE_DESERIALIZE_FREEONCLOSE                                        = 1;
+
+  { The SQLITE_DESERIALIZE_RESIZEABLE flag means that SQLite is allowed to grow 
+    the size of the database using calls to sqlite3_realloc64(). This flag 
+    should only be used if SQLITE_DESERIALIZE_FREEONCLOSE is also used. Without 
+    this flag, the deserialized database cannot increase in size beyond the 
+    number of bytes specified by the M parameter. }
+  SQLITE_DESERIALIZE_RESIZEABLE                                         = 2;
+
+  { The SQLITE_DESERIALIZE_READONLY flag means that the deserialized database 
+    should be treated as read-only. }
+  SQLITE_DESERIALIZE_READONLY                                           = 4;
+
 type
   PPPChar = ^PPChar;
   PPChar = ^PChar;
@@ -2112,6 +2273,8 @@ type
   
   psqlite3_int64 = ^sqlite3_int64;
   sqlite3_int64 = type Int64;
+  psqlite3_rtree_dbl = ^sqlite3_rtree_dbl;
+  sqlite3_rtree_dbl = type Double;
 
   psqlite3_uint64 = ^sqlite3_uint64;
   sqlite3_uint64 = type QWord;
@@ -2144,6 +2307,10 @@ type
   psqlite3_pcache_methods2 = ^sqlite3_pcache_methods2;
   psqlite3_pcache_methods = ^sqlite3_pcache_methods;
   psqlite3_backup = ^sqlite3_backup;
+  ppsqlite3_snapshot = ^psqlite3_snapshot;
+  psqlite3_snapshot = ^sqlite3_snapshot;
+  psqlite3_rtree_geometry = ^sqlite3_rtree_geometry;
+  psqlite3_rtree_query_info = ^sqlite3_rtree_query_info;
 
   { Callbacks. }
   sqlite3_callback = function(pArg : Pointer; nCol : Integer; azVals : PPChar;
@@ -2190,7 +2357,14 @@ type
     const pThunk : psqlite3_api_routines) : Integer of object;
   xFunc_callback = procedure (context : psqlite3_context; argc : Integer; argv :
     ppsqlite3_value) of object;
-
+  xNotify_callback = procedure (apArg : PPointer; nArg : Integer) of object;
+  xWalCallback_callback = function (pWalArg : Pointer; db : psqlite3; 
+    const zDbName : PChar; nEntry : Integer) : Integer of object;
+  xPreUpdate_callback = procedure (pCtx : Pointer; db : psqlite3; op : Integer;
+    const zDb : PChar; const zName : PChar; iKey1 : sqlite3_int64; iKey2 :
+    sqlite3_int64) of object;
+  xGeom_callback = function (pInfo : psqlite3_rtree_geometry; nCoord : Integer;
+    aCoord : psqlite3_rtree_dbl; eWithin : PInteger) of object;
 
   { Each open SQLite database is represented by a pointer to an instance of the 
     opaque structure named "sqlite3". It is useful to think of an sqlite3 
@@ -2677,6 +2851,25 @@ type
     pVtab : psqlite3_vtab;            { Virtual table of this cursor }
   end;
 
+  { An instance of the snapshot object records the state of a WAL mode database 
+    for some specific point in history.
+
+    In WAL mode, multiple database connections that are open on the same 
+    database file can each be reading a different historical version of the 
+    database file. When a database connection begins a read transaction, that 
+    connection sees an unchanging copy of the database as it existed for the 
+    point in time when the transaction first started. Subsequent changes to the 
+    database from other connections are not seen by the reader until a new read 
+    transaction is started.
+
+    The sqlite3_snapshot object records state information about an historical
+    version of the database file so that it is possible to later open a new read
+    transaction that sees that historical version of the database rather than
+    the most recent version. }
+  sqlite3_snapshot = record
+    hidden : array [0 .. 48] of Byte; 
+  end;  
+
   { This structure, sometimes called a "virtual table module", defines the 
     implementation of a virtual table. This structure consists mostly of methods 
     for the module.
@@ -3015,6 +3208,21 @@ type
     sqlite3_backup_init() and is destroyed by a call to 
     sqlite3_backup_finish(). }
   sqlite3_backup = record
+
+  end;
+
+  { A pointer to a structure of the following type is passed as the first 
+    argument to callbacks registered using rtree_geometry_callback(). }
+  sqlite3_rtree_geometry = record
+    pContext : Pointer;          { Copy of pContext passed to s_r_g_c() }
+    nParam : Integer;            { Size of array aParam[] }
+    aParam : psqlite3_rtree_dbl; { Parameters passed to SQL geom function }
+    pUser : Pointer;             { Callback implementation user data }
+    { Called by SQLite to clean up pUser }
+    xDelUser : procedure (ptr : Pointer); cdecl; 
+  end;
+
+  sqlite3_rtree_query_info = record
 
   end;
 
@@ -6698,6 +6906,684 @@ function sqlite3_backup_finish(p : psqlite3_backup) : Integer; cdecl;
 function sqlite3_backup_remaining(p : psqlite3_backup) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_backup_pagecount(p : psqlite3_backup) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ When running in shared-cache mode, a database operation may fail with an 
+  SQLITE_LOCKED error if the required locks on the shared-cache or individual 
+  tables within the shared-cache cannot be obtained. See SQLite Shared-Cache 
+  Mode for a description of shared-cache locking. This API may be used to 
+  register a callback that SQLite will invoke when the connection currently 
+  holding the required lock relinquishes it. This API is only available if the 
+  library was compiled with the SQLITE_ENABLE_UNLOCK_NOTIFY C-preprocessor 
+  symbol defined.
+
+  Shared-cache locks are released when a database connection concludes its 
+  current transaction, either by committing it or rolling it back.
+
+  When a connection (known as the blocked connection) fails to obtain a 
+  shared-cache lock and SQLITE_LOCKED is returned to the caller, the identity of 
+  the database connection (the blocking connection) that has locked the required 
+  resource is stored internally. After an application receives an SQLITE_LOCKED 
+  error, it may call the sqlite3_unlock_notify() method with the blocked 
+  connection handle as the first argument to register for a callback that will 
+  be invoked when the blocking connections current transaction is concluded. The 
+  callback is invoked from within the sqlite3_step or sqlite3_close call that 
+  concludes the blocking connection's transaction.
+
+  If sqlite3_unlock_notify() is called in a multi-threaded application, there is 
+  a chance that the blocking connection will have already concluded its 
+  transaction by the time sqlite3_unlock_notify() is invoked. If this happens, 
+  then the specified callback is invoked immediately, from within the call to 
+  sqlite3_unlock_notify().
+
+  If the blocked connection is attempting to obtain a write-lock on a 
+  shared-cache table, and more than one other connection currently holds a 
+  read-lock on the same table, then SQLite arbitrarily selects one of the other 
+  connections to use as the blocking connection.
+
+  There may be at most one unlock-notify callback registered by a blocked 
+  connection. If sqlite3_unlock_notify() is called when the blocked connection 
+  already has a registered unlock-notify callback, then the new callback 
+  replaces the old. If sqlite3_unlock_notify() is called with a NULL pointer as 
+  its second argument, then any existing unlock-notify callback is canceled. The 
+  blocked connections unlock-notify callback may also be canceled by closing the 
+  blocked connection using sqlite3_close().
+
+  The unlock-notify callback is not reentrant. If an application invokes any 
+  sqlite3_xxx API functions from within an unlock-notify callback, a crash or 
+  deadlock may be the result.
+
+  Unless deadlock is detected (see below), sqlite3_unlock_notify() always 
+  returns SQLITE_OK.
+
+  Callback Invocation Details
+
+  When an unlock-notify callback is registered, the application provides a 
+  single void* pointer that is passed to the callback when it is invoked. 
+  However, the signature of the callback function allows SQLite to pass it an 
+  array of void* context pointers. The first argument passed to an unlock-notify 
+  callback is a pointer to an array of void* pointers, and the second is the 
+  number of entries in the array.
+
+  When a blocking connection's transaction is concluded, there may be more than 
+  one blocked connection that has registered for an unlock-notify callback. If 
+  two or more such blocked connections have specified the same callback 
+  function, then instead of invoking the callback function multiple times, it is 
+  invoked once with the set of void* context pointers specified by the blocked 
+  connections bundled together into an array. This gives the application an 
+  opportunity to prioritize any actions related to the set of unblocked database 
+  connections.
+
+  Deadlock Detection
+
+  Assuming that after registering for an unlock-notify callback a database waits 
+  for the callback to be issued before taking any further action (a reasonable 
+  assumption), then using this API may cause the application to deadlock. For 
+  example, if connection X is waiting for connection Y's transaction to be 
+  concluded, and similarly connection Y is waiting on connection X's 
+  transaction, then neither connection will proceed and the system may remain 
+  deadlocked indefinitely.
+
+  To avoid this scenario, the sqlite3_unlock_notify() performs deadlock 
+  detection. If a given call to sqlite3_unlock_notify() would put the system in 
+  a deadlocked state, then SQLITE_LOCKED is returned and no unlock-notify 
+  callback is registered. The system is said to be in a deadlocked state if 
+  connection A has registered for an unlock-notify callback on the conclusion of 
+  connection B's transaction, and connection B has itself registered for an 
+  unlock-notify callback when connection A's transaction is concluded. Indirect 
+  deadlock is also detected, so the system is also considered to be deadlocked 
+  if connection B has registered for an unlock-notify callback on the conclusion 
+  of connection C's transaction, where connection C is waiting on connection A. 
+  Any number of levels of indirection are allowed.
+
+  The "DROP TABLE" Exception
+
+  When a call to sqlite3_step() returns SQLITE_LOCKED, it is almost always 
+  appropriate to call sqlite3_unlock_notify(). There is however, one exception. 
+  When executing a "DROP TABLE" or "DROP INDEX" statement, SQLite checks if 
+  there are any currently executing SELECT statements that belong to the same 
+  connection. If there are, SQLITE_LOCKED is returned. In this case there is no 
+  "blocking connection", so invoking sqlite3_unlock_notify() results in the 
+  unlock-notify callback being invoked immediately. If the application then 
+  re-attempts the "DROP TABLE" or "DROP INDEX" query, an infinite loop might be 
+  the result.
+
+  One way around this problem is to check the extended error code returned by an 
+  sqlite3_step() call. If there is a blocking connection, then the extended 
+  error code is set to SQLITE_LOCKED_SHAREDCACHE. Otherwise, in the special 
+  "DROP TABLE/INDEX" case, the extended error code is just SQLITE_LOCKED. }
+function sqlite3_unlock_notify(pBlocked : psqlite3; xNotify : xNotify_callback;
+  pNotifyArg : Pointer) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_stricmp() and sqlite3_strnicmp() APIs allow applications and 
+  extensions to compare the contents of two buffers containing UTF-8 strings in 
+  a case-independent fashion, using the same definition of "case independence" 
+  that SQLite uses internally when comparing identifiers. }
+function sqlite3_stricmp(const zLeft : PChar; const zRight : PChar) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_strnicmp(const zLeft : Pchar; const zRight : PChar; N : 
+  Integer) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_strglob(P,X) interface returns zero if and only if string X 
+  matches the GLOB pattern P. The definition of GLOB pattern matching used in 
+  sqlite3_strglob(P,X) is the same as for the "X GLOB P" operator in the SQL 
+  dialect understood by SQLite. The sqlite3_strglob(P,X) function is case 
+  sensitive.
+
+  Note that this routine returns zero on a match and non-zero if the strings do 
+  not match, the same as sqlite3_stricmp() and sqlite3_strnicmp(). }
+function sqlite3_strglob(const zGlob : PChar; const zStr : PChar) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ The sqlite3_strlike(P,X,E) interface returns zero if and only if string X 
+  matches the LIKE pattern P with escape character E. The definition of LIKE 
+  pattern matching used in sqlite3_strlike(P,X,E) is the same as for the "X LIKE 
+  P ESCAPE E" operator in the SQL dialect understood by SQLite. For "X LIKE P" 
+  without the ESCAPE clause, set the E parameter of sqlite3_strlike(P,X,E) to 0. 
+  As with the LIKE operator, the sqlite3_strlike(P,X,E) function is case 
+  insensitive - equivalent upper and lower case ASCII characters match one 
+  another.
+
+  The sqlite3_strlike(P,X,E) function matches Unicode characters, though only 
+  ASCII characters are case folded.
+
+  Note that this routine returns zero on a match and non-zero if the strings do 
+  not match, the same as sqlite3_stricmp() and sqlite3_strnicmp(). }
+function sqlite3_strlike(const zGlob : PChar; const zStr : PChar; cEsc : 
+  Cardinal) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_log() interface writes a message into the error log established by 
+  the SQLITE_CONFIG_LOG option to sqlite3_config(). If logging is enabled, the 
+  zFormat string and subsequent arguments are used with sqlite3_snprintf() to 
+  generate the final output string.
+
+  The sqlite3_log() interface is intended for use by extensions such as virtual 
+  tables, collating functions, and SQL functions. While there is nothing to 
+  prevent an application from calling sqlite3_log(), doing so is considered bad 
+  form.
+
+  The zFormat string must not be NULL.
+
+  To avoid deadlocks and other threading problems, the sqlite3_log() routine 
+  will not use dynamically allocated memory. The log message is stored in a 
+  fixed-length buffer on the stack. If the log message is longer than a few 
+  hundred characters, it will be truncated to the length of the buffer. }
+procedure sqlite3_log(iErrCode : Integer; const zFormat : PChar); cdecl; 
+  varargs; external sqlite3_lib;
+
+{ The sqlite3_wal_hook() function is used to register a callback that is invoked 
+  each time data is committed to a database in wal mode.
+
+  The callback is invoked by SQLite after the commit has taken place and the 
+  associated write-lock on the database released, so the implementation may 
+  read, write or checkpoint the database as required.
+
+  The first parameter passed to the callback function when it is invoked is a 
+  copy of the third parameter passed to sqlite3_wal_hook() when registering the 
+  callback. The second is a copy of the database handle. The third parameter is 
+  the name of the database that was written to - either "main" or the name of an 
+  ATTACH-ed database. The fourth parameter is the number of pages currently in 
+  the write-ahead log file, including those that were just committed.
+
+  The callback function should normally return SQLITE_OK. If an error code is 
+  returned, that error will propagate back up through the SQLite code base to 
+  cause the statement that provoked the callback to report an error, though the 
+  commit will have still occurred. If the callback returns SQLITE_ROW or 
+  SQLITE_DONE, or if it returns a value that does not correspond to any valid 
+  SQLite error code, the results are undefined.
+
+  A single database handle may have at most a single write-ahead log callback 
+  registered at one time. Calling sqlite3_wal_hook() replaces any previously 
+  registered write-ahead log callback. Note that the 
+  sqlite3_wal_autocheckpoint() interface and the wal_autocheckpoint pragma both 
+  invoke sqlite3_wal_hook() and will overwrite any prior sqlite3_wal_hook() 
+  settings. }
+function sqlite3_wal_hook(db : psqlite3; xWalCallback : xWalCallback_callback;
+  pArg : Pointer) : Pointer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_wal_autocheckpoint(D,N) is a wrapper around sqlite3_wal_hook() 
+  that causes any database on database connection D to automatically checkpoint 
+  after committing a transaction if there are N or more frames in the 
+  write-ahead log file. Passing zero or a negative value as the nFrame parameter 
+  disables automatic checkpoints entirely.
+
+  The callback registered by this function replaces any existing callback 
+  registered using sqlite3_wal_hook(). Likewise, registering a callback using 
+  sqlite3_wal_hook() disables the automatic checkpoint mechanism configured by
+  this function.
+
+  The wal_autocheckpoint pragma can be used to invoke this interface from SQL.
+
+  Checkpoints initiated by this mechanism are PASSIVE.
+
+  Every new database connection defaults to having the auto-checkpoint enabled 
+  with a threshold of 1000 or SQLITE_DEFAULT_WAL_AUTOCHECKPOINT pages. The use 
+  of this interface is only necessary if the default setting is found to be 
+  suboptimal for a particular application. }
+function sqlite3_wal_autocheckpoint(db : psqlite3; N : Integer) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ The sqlite3_wal_checkpoint(D,X) is equivalent to 
+  sqlite3_wal_checkpoint_v2(D,X,SQLITE_CHECKPOINT_PASSIVE,0,0).
+
+  In brief, sqlite3_wal_checkpoint(D,X) causes the content in the write-ahead 
+  log for database X on database connection D to be transferred into the 
+  database file and for the write-ahead log to be reset. See the checkpointing 
+  documentation for addition information.
+
+  This interface used to be the only way to cause a checkpoint to occur. But 
+  then the newer and more powerful sqlite3_wal_checkpoint_v2() interface was 
+  added. This interface is retained for backwards compatibility and as a 
+  convenience for applications that need to manually start a callback but which 
+  do not need the full power (and corresponding complication) of 
+  sqlite3_wal_checkpoint_v2(). }
+function sqlite3_wal_checkpoint(db : psqlite3; const zDb : PChar) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ The sqlite3_wal_checkpoint_v2(D,X,M,L,C) interface runs a checkpoint operation 
+  on database X of database connection D in mode M. Status information is 
+  written back into integers pointed to by L and C. 
+  
+  If pnLog is not NULL, then *pnLog is set to the total number of frames in the 
+  log file or to -1 if the checkpoint could not run because of an error or 
+  because the database is not in WAL mode. If pnCkpt is not NULL,then *pnCkpt is 
+  set to the total number of checkpointed frames in the log file (including any 
+  that were already checkpointed before the function was called) or to -1 if the 
+  checkpoint could not run due to an error or because the database is not in WAL 
+  mode. Note that upon successful completion of an SQLITE_CHECKPOINT_TRUNCATE, 
+  the log file will have been truncated to zero bytes and so both *pnLog and 
+  *pnCkpt will be set to zero.
+
+  All calls obtain an exclusive "checkpoint" lock on the database file. If any 
+  other process is running a checkpoint operation at the same time, the lock 
+  cannot be obtained and SQLITE_BUSY is returned. Even if there is a 
+  busy-handler configured, it will not be invoked in this case.
+
+  The SQLITE_CHECKPOINT_FULL, RESTART and TRUNCATE modes also obtain the 
+  exclusive "writer" lock on the database file. If the writer lock cannot be 
+  obtained immediately, and a busy-handler is configured, it is invoked and the 
+  writer lock retried until either the busy-handler returns 0 or the lock is 
+  successfully obtained. The busy-handler is also invoked while waiting for 
+  database readers as described above. If the busy-handler returns 0 before the 
+  writer lock is obtained or while waiting for database readers, the checkpoint 
+  operation proceeds from that point in the same way as 
+  SQLITE_CHECKPOINT_PASSIVE - checkpointing as many frames as possible without 
+  blocking any further. SQLITE_BUSY is returned in this case.
+
+  If parameter zDb is NULL or points to a zero length string, then the specified 
+  operation is attempted on all WAL databases attached to database connection 
+  db. In this case the values written to output parameters *pnLog and *pnCkpt 
+  are undefined. If an SQLITE_BUSY error is encountered when processing one or 
+  more of the attached WAL databases, the operation is still attempted on any 
+  remaining attached databases and SQLITE_BUSY is returned at the end. If any 
+  other error occurs while processing an attached database, processing is 
+  abandoned and the error code is returned to the caller immediately. If no 
+  error (SQLITE_BUSY or otherwise) is encountered while processing the attached 
+  databases, SQLITE_OK is returned.
+
+  If database zDb is the name of an attached database that is not in WAL mode, 
+  SQLITE_OK is returned and both *pnLog and *pnCkpt set to -1. If zDb is not 
+  NULL (or a zero length string) and is not the name of any attached database, 
+  SQLITE_ERROR is returned to the caller.
+
+  Unless it returns SQLITE_MISUSE, the sqlite3_wal_checkpoint_v2() interface 
+  sets the error information that is queried by sqlite3_errcode() and 
+  sqlite3_errmsg().
+
+  The PRAGMA wal_checkpoint command can be used to invoke this interface from 
+  SQL. }
+function sqlite3_wal_checkpoint_v2(db : psqlite3; const zDb : PChar; eMode :
+  Integer; pnLog : PInteger; pnCkpt : Integer) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ This function may be called by either the xConnect or xCreate method of a 
+  virtual table implementation to configure various facets of the virtual table 
+  interface.
+
+  If this interface is invoked outside the context of an xConnect or xCreate 
+  virtual table method then the behavior is undefined.
+
+  In the call sqlite3_vtab_config(D,C,...) the D parameter is the database 
+  connection in which the virtual table is being created and which is passed in 
+  as the first argument to the xConnect or xCreate method that is invoking 
+  sqlite3_vtab_config(). The C parameter is one of the virtual table 
+  configuration options. The presence and meaning of parameters after C depend 
+  on which virtual table configuration option is used. }
+function sqlite3_vtab_config(db : psqlite3; op : Integer) : Integer; cdecl;
+  varargs; external sqlite3_lib;
+
+{ This function may only be called from within a call to the xUpdate method of a 
+  virtual table implementation for an INSERT or UPDATE operation. The value 
+  returned is one of SQLITE_ROLLBACK, SQLITE_IGNORE, SQLITE_FAIL, SQLITE_ABORT, 
+  or SQLITE_REPLACE, according to the ON CONFLICT mode of the SQL statement that 
+  triggered the call to the xUpdate method of the virtual table. }
+function sqlite3_vtab_on_conflict(db : psqlite3) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ If the sqlite3_vtab_nochange(X) routine is called within the xColumn method of 
+  a virtual table, then it returns true if and only if the column is being 
+  fetched as part of an UPDATE operation during which the column value will not 
+  change. Applications might use this to substitute a return value that is less 
+  expensive to compute and that the corresponding xUpdate method understands as 
+  a "no-change" value.
+
+  If the xColumn method calls sqlite3_vtab_nochange() and finds that the column 
+  is not changed by the UPDATE statement, then the xColumn method can optionally 
+  return without setting a result, without calling any of the 
+  sqlite3_result_xxxxx() interfaces. In that case, sqlite3_value_nochange(X) 
+  will return true for the same column in the xUpdate method. }
+function sqlite3_vtab_nochange(pContext : psqlite3_context) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ This function may only be called from within a call to the xBestIndex method 
+  of a virtual table.
+
+  The first argument must be the sqlite3_index_info object that is the first 
+  parameter to the xBestIndex() method. The second argument must be an index 
+  into the aConstraint[] array belonging to the sqlite3_index_info structure 
+  passed to xBestIndex. This function returns a pointer to a buffer containing 
+  the name of the collation sequence for the corresponding constraint. }
+function sqlite3_vtab_collation(pIdxInfo : psqlite3_index_info; iCons : Integer)
+  : PChar; cdecl; external sqlite3_lib;
+
+{ This interface returns information about the predicted and measured 
+  performance for pStmt. Advanced applications can use this interface to compare 
+  the predicted and the measured performance and issue warnings and/or rerun 
+  ANALYZE if discrepancies are found.
+
+  Since this interface is expected to be rarely used, it is only available if 
+  SQLite is compiled using the SQLITE_ENABLE_STMT_SCANSTATUS compile-time 
+  option.
+
+  The "iScanStatusOp" parameter determines which status information to return. 
+  The "iScanStatusOp" must be one of the scanstatus options or the behavior of 
+  this interface is undefined. The requested measurement is written into a 
+  variable pointed to by the "pOut" parameter. Parameter "idx" identifies the 
+  specific loop to retrieve statistics for. Loops are numbered starting from 
+  zero. If idx is out of range - less than zero or greater than or equal to the 
+  total number of loops used to implement the statement - a non-zero value is 
+  returned and the variable that pOut points to is unchanged.
+
+  Statistics might not be available for all loops in all statements. In cases 
+  where there exist loops with no available statistics, this function behaves as 
+  if the loop did not exist - it returns non-zero and leave the variable that 
+  pOut points to unchanged. }
+function sqlite3_stmt_scanstatus(pStmt : psqlite3_stmt; idx : Integer; 
+  iScanStatusOp : Integer; pOut : Pointer) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ Zero all sqlite3_stmt_scanstatus() related event counters.
+
+  This API is only available if the library is built with pre-processor symbol 
+  SQLITE_ENABLE_STMT_SCANSTATUS defined. }
+procedure sqlite3_stmt_scanstatus_reset(pStmt : psqlite3_stmt); cdecl;
+  external sqlite3_lib;
+
+{ If a write-transaction is open on database connection D when the 
+  sqlite3_db_cacheflush(D) interface invoked, any dirty pages in the pager-cache 
+  that are not currently in use are written out to disk. A dirty page may be in 
+  use if a database cursor created by an active SQL statement is reading from 
+  it, or if it is page 1 of a database file (page 1 is always "in use"). The 
+  sqlite3_db_cacheflush(D) interface flushes caches for all schemas - "main", 
+  "temp", and any attached databases.
+
+  If this function needs to obtain extra database locks before dirty pages can 
+  be flushed to disk, it does so. If those locks cannot be obtained immediately 
+  and there is a busy-handler callback configured, it is invoked in the usual 
+  manner. If the required lock still cannot be obtained, then the database is 
+  skipped and an attempt made to flush any dirty pages belonging to the next (if 
+  any) database. If any databases are skipped because locks cannot be obtained, 
+  but no other error occurs, this function returns SQLITE_BUSY.
+
+  If any other error occurs while flushing dirty pages to disk (for example an 
+  IO error or out-of-memory condition), then processing is abandoned and an 
+  SQLite error code is returned to the caller immediately.
+
+  Otherwise, if no error occurs, sqlite3_db_cacheflush() returns SQLITE_OK.
+
+  This function does not set the database handle error code or message returned 
+  by the sqlite3_errcode() and sqlite3_errmsg() functions. }
+function sqlite3_db_cacheflush(db : psqlite3) : Integer; cdecl; 
+  external sqlite3_lib;
+
+{ These interfaces are only available if SQLite is compiled using the 
+  SQLITE_ENABLE_PREUPDATE_HOOK compile-time option.
+
+  The sqlite3_preupdate_hook() interface registers a callback function that is 
+  invoked prior to each INSERT, UPDATE, and DELETE operation on a database 
+  table. At most one preupdate hook may be registered at a time on a single 
+  database connection; each call to sqlite3_preupdate_hook() overrides the 
+  previous setting. The preupdate hook is disabled by invoking 
+  sqlite3_preupdate_hook() with a NULL pointer as the second parameter. The 
+  third parameter to sqlite3_preupdate_hook() is passed through as the first 
+  parameter to callbacks.
+
+  The preupdate hook only fires for changes to real database tables; the 
+  preupdate hook is not invoked for changes to virtual tables or to system 
+  tables like sqlite_sequence or sqlite_stat1.
+
+  The second parameter to the preupdate callback is a pointer to the database 
+  connection that registered the preupdate hook. The third parameter to the 
+  preupdate callback is one of the constants SQLITE_INSERT, SQLITE_DELETE, or 
+  SQLITE_UPDATE to identify the kind of update operation that is about to occur. 
+  The fourth parameter to the preupdate callback is the name of the database 
+  within the database connection that is being modified. This will be "main" for 
+  the main database or "temp" for TEMP tables or the name given after the AS 
+  keyword in the ATTACH statement for attached databases. The fifth parameter to 
+  the preupdate callback is the name of the table that is being modified.
+
+  For an UPDATE or DELETE operation on a rowid table, the sixth parameter passed 
+  to the preupdate callback is the initial rowid of the row being modified or 
+  deleted. For an INSERT operation on a rowid table, or any operation on a 
+  WITHOUT ROWID table, the value of the sixth parameter is undefined. For an 
+  INSERT or UPDATE on a rowid table the seventh parameter is the final rowid 
+  value of the row being inserted or updated. The value of the seventh parameter 
+  passed to the callback function is not defined for operations on WITHOUT ROWID 
+  tables, or for INSERT operations on rowid tables.
+
+  The sqlite3_preupdate_old(), sqlite3_preupdate_new(), 
+  sqlite3_preupdate_count(), and sqlite3_preupdate_depth() interfaces provide 
+  additional information about a preupdate event. These routines may only be 
+  called from within a preupdate callback. Invoking any of these routines from 
+  outside of a preupdate callback or with a database connection pointer that is 
+  different from the one supplied to the preupdate callback results in undefined 
+  and probably undesirable behavior.
+
+  The sqlite3_preupdate_count(D) interface returns the number of columns in the 
+  row that is being inserted, updated, or deleted.
+
+  The sqlite3_preupdate_old(D,N,P) interface writes into P a pointer to a 
+  protected sqlite3_value that contains the value of the Nth column of the table 
+  row before it is updated. The N parameter must be between 0 and one less than 
+  the number of columns or the behavior will be undefined. This must only be 
+  used within SQLITE_UPDATE and SQLITE_DELETE preupdate callbacks; if it is used 
+  by an SQLITE_INSERT callback then the behavior is undefined. The sqlite3_value 
+  that P points to will be destroyed when the preupdate callback returns.
+
+  The sqlite3_preupdate_new(D,N,P) interface writes into P a pointer to a 
+  protected sqlite3_value that contains the value of the Nth column of the table 
+  row after it is updated. The N parameter must be between 0 and one less than 
+  the number of columns or the behavior will be undefined. This must only be 
+  used within SQLITE_INSERT and SQLITE_UPDATE preupdate callbacks; if it is used 
+  by an SQLITE_DELETE callback then the behavior is undefined. The sqlite3_value 
+  that P points to will be destroyed when the preupdate callback returns.
+
+  The sqlite3_preupdate_depth(D) interface returns 0 if the preupdate callback 
+  was invoked as a result of a direct insert, update, or delete operation; or 1 
+  for inserts, updates, or deletes invoked by top-level triggers; or 2 for 
+  changes resulting from triggers called by top-level triggers; and so forth. }
+function sqlite3_preupdate_hook(db : psqlite3; xPreUpdate : xPreUpdate_callback;
+  pArg : Pointer) : Pointer; cdecl; external sqlite3_lib;
+function sqlite3_preupdate_old(db : psqlite3; iIdx : Integer; ppValue :
+  ppsqlite3_value) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_preupdate_count(db : psqlite3) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_preupdate_depth(db : psqlite3) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_preupdate_new(db : psqlite3; iIdx : Integer; ppValue :
+  ppsqlite3_value) : Integer; cdecl; external sqlite3_lib;
+
+{ Attempt to return the underlying operating system error code or error number 
+  that caused the most recent I/O error or failure to open a file. The return 
+  value is OS-dependent. For example, on unix systems, after sqlite3_open_v2() 
+  returns SQLITE_CANTOPEN, this interface could be called to get back the 
+  underlying "errno" that caused the problem, such as ENOSPC, EAUTH, EISDIR, and 
+  so forth. }
+function sqlite3_system_errno(db : psqlite3) : Integer; cdecl; 
+  external sqlite3_lib;
+
+{ The sqlite3_snapshot_get(D,S,P) interface attempts to make a new 
+  sqlite3_snapshot object that records the current state of schema S in database 
+  connection D. On success, the sqlite3_snapshot_get(D,S,P) interface writes a 
+  pointer to the newly created sqlite3_snapshot object into *P and returns 
+  SQLITE_OK. If there is not already a read-transaction open on schema S when 
+  this function is called, one is opened automatically.
+
+  The following must be true for this function to succeed. If any of the 
+  following statements are false when sqlite3_snapshot_get() is called, 
+  SQLITE_ERROR is returned. The final value of *P is undefined in this case.
+
+    The database handle must not be in autocommit mode.
+
+    Schema S of database connection D must be a WAL mode database.
+
+    There must not be a write transaction open on schema S of database 
+      connection D.
+
+    One or more transactions must have been written to the current wal file 
+      since it was created on disk (by any connection). This means that a 
+      snapshot cannot be taken on a wal mode database with no wal file 
+      immediately after it is first opened. At least one transaction must be 
+      written to it first. 
+
+  This function may also return SQLITE_NOMEM. If it is called with the database 
+  handle in autocommit mode but fails for some other reason, whether or not a 
+  read transaction is opened on schema S is undefined.
+
+  The sqlite3_snapshot object returned from a successful call to 
+  sqlite3_snapshot_get() must be freed using sqlite3_snapshot_free() to avoid a 
+  memory leak.
+
+  The sqlite3_snapshot_get() interface is only available when the 
+  SQLITE_ENABLE_SNAPSHOT compile-time option is used. }
+function sqlite3_snapshot_get(db : psqlite3; const zSchema : PChar; ppSnapshot :
+  ppsqlite3_snapshot) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_snapshot_open(D,S,P) interface either starts a new read 
+  transaction or upgrades an existing one for schema S of database connection D 
+  such that the read transaction refers to historical snapshot P, rather than 
+  the most recent change to the database. The sqlite3_snapshot_open() interface 
+  returns SQLITE_OK on success or an appropriate error code if it fails.
+
+  In order to succeed, the database connection must not be in autocommit mode 
+  when sqlite3_snapshot_open(D,S,P) is called. If there is already a read 
+  transaction open on schema S, then the database handle must have no active 
+  statements (SELECT statements that have been passed to sqlite3_step() but not 
+  sqlite3_reset() or sqlite3_finalize()). SQLITE_ERROR is returned if either of 
+  these conditions is violated, or if schema S does not exist, or if the 
+  snapshot object is invalid.
+
+  A call to sqlite3_snapshot_open() will fail to open if the specified snapshot 
+  has been overwritten by a checkpoint. In this case SQLITE_ERROR_SNAPSHOT is 
+  returned.
+
+  If there is already a read transaction open when this function is invoked, 
+  then the same read transaction remains open (on the same database snapshot) if 
+  SQLITE_ERROR, SQLITE_BUSY or SQLITE_ERROR_SNAPSHOT is returned. If another 
+  error code - for example SQLITE_PROTOCOL or an SQLITE_IOERR error code - is 
+  returned, then the final state of the read transaction is undefined. If 
+  SQLITE_OK is returned, then the read transaction is now open on database 
+  snapshot P.
+
+  A call to sqlite3_snapshot_open(D,S,P) will fail if the database connection D 
+  does not know that the database file for schema S is in WAL mode. A database 
+  connection might not know that the database file is in WAL mode if there has 
+  been no prior I/O on that database connection, or if the database entered WAL 
+  mode after the most recent I/O on the database connection. (Hint: Run "PRAGMA 
+  application_id" against a newly opened database connection in order to make it 
+  ready to use snapshots.)
+
+  The sqlite3_snapshot_open() interface is only available when the 
+  SQLITE_ENABLE_SNAPSHOT compile-time option is used. }
+function sqlite3_snapshot_open(db : psqlite3; const zSchema : Pchar; pSnapshot :
+  psqlite3_shapshot) : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_snapshot_free(P) interface destroys sqlite3_snapshot P. The 
+  application must eventually free every sqlite3_snapshot object using this 
+  routine to avoid a memory leak.
+
+  The sqlite3_snapshot_free() interface is only available when the 
+  SQLITE_ENABLE_SNAPSHOT compile-time option is used. }
+procedure sqlite3_snapshot_free(pSnapshot : psqlite3_snapshot); cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_snapshot_cmp(P1, P2) interface is used to compare the ages of two 
+  valid snapshot handles.
+
+  If the two snapshot handles are not associated with the same database file, 
+  the result of the comparison is undefined.
+
+  Additionally, the result of the comparison is only valid if both of the 
+  snapshot handles were obtained by calling sqlite3_snapshot_get() since the 
+  last time the wal file was deleted. The wal file is deleted when the database 
+  is changed back to rollback mode or when the number of database clients drops 
+  to zero. If either snapshot handle was obtained before the wal file was last 
+  deleted, the value returned by this function is undefined.
+
+  Otherwise, this API returns a negative value if P1 refers to an older snapshot 
+  than P2, zero if the two handles refer to the same database snapshot, and a 
+  positive value if P1 is a newer snapshot than P2.
+
+  This interface is only available if SQLite is compiled with the 
+  SQLITE_ENABLE_SNAPSHOT option. }
+function sqlite3_snapshot_cmp(p1 : psqlite3_snapshot; p2 : psqlite3_snapshot) :
+  Integer; cdecl; external sqlite3_lib;
+
+{ If a WAL file remains on disk after all database connections close (either 
+  through the use of the SQLITE_FCNTL_PERSIST_WAL file control or because the 
+  last process to have the database opened exited without calling 
+  sqlite3_close()) and a new connection is subsequently opened on that database 
+  and WAL file, the sqlite3_snapshot_open() interface will only be able to open 
+  the last transaction added to the WAL file even though the WAL file contains 
+  other valid transactions.
+
+  This function attempts to scan the WAL file associated with database zDb of 
+  database handle db and make all valid snapshots available to 
+  sqlite3_snapshot_open(). It is an error if there is already a read transaction 
+  open on the database, or if the database is not a WAL mode database.
+
+  SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+
+  This interface is only available if SQLite is compiled with the 
+  SQLITE_ENABLE_SNAPSHOT option. }
+function sqlite3_snapshot_recover(db : psqlite3; const zDb : PChar) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ The sqlite3_serialize(D,S,P,F) interface returns a pointer to memory that is a 
+  serialization of the S database on database connection D. If P is not a NULL 
+  pointer, then the size of the database in bytes is written into *P.
+
+  For an ordinary on-disk database file, the serialization is just a copy of the 
+  disk file. For an in-memory database or a "TEMP" database, the serialization 
+  is the same sequence of bytes which would be written to disk if that database 
+  where backed up to disk.
+
+  The usual case is that sqlite3_serialize() copies the serialization of the 
+  database into memory obtained from sqlite3_malloc64() and returns a pointer to 
+  that memory. The caller is responsible for freeing the returned value to avoid 
+  a memory leak. However, if the F argument contains the SQLITE_SERIALIZE_NOCOPY 
+  bit, then no memory allocations are made, and the sqlite3_serialize() function 
+  will return a pointer to the contiguous memory representation of the database 
+  that SQLite is currently using for that database, or NULL if the no such 
+  contiguous memory representation of the database exists. A contiguous memory 
+  representation of the database will usually only exist if there has been a 
+  prior call to sqlite3_deserialize(D,S,...) with the same values of D and S. 
+  The size of the database is written into *P even if the 
+  SQLITE_SERIALIZE_NOCOPY bit is set but no contiguous copy of the database 
+  exists.
+
+  A call to sqlite3_serialize(D,S,P,F) might return NULL even if the 
+  SQLITE_SERIALIZE_NOCOPY bit is omitted from argument F if a memory allocation 
+  error occurs.
+
+  This interface is only available if SQLite is compiled with the 
+  SQLITE_ENABLE_DESERIALIZE option. }
+function sqlite3_serialize(db : psqlite3; const zSchema : PChar; piSize :
+  psqlite3_int64; mFlags : Cardinal) : PByte; cdecl; external sqlite3_lib;
+
+{ The sqlite3_deserialize(D,S,P,N,M,F) interface causes the database connection 
+  D to disconnect from database S and then reopen S as an in-memory database 
+  based on the serialization contained in P. The serialized database P is N 
+  bytes in size. M is the size of the buffer P, which might be larger than N. If 
+  M is larger than N, and the SQLITE_DESERIALIZE_READONLY bit is not set in F, 
+  then SQLite is permitted to add content to the in-memory database as long as 
+  the total size does not exceed M bytes.
+
+  If the SQLITE_DESERIALIZE_FREEONCLOSE bit is set in F, then SQLite will invoke 
+  sqlite3_free() on the serialization buffer when the database connection 
+  closes. If the SQLITE_DESERIALIZE_RESIZEABLE bit is set, then SQLite will try 
+  to increase the buffer size using sqlite3_realloc64() if writes on the 
+  database cause it to grow larger than M bytes.
+
+  The sqlite3_deserialize() interface will fail with SQLITE_BUSY if the database 
+  is currently in a read transaction or is involved in a backup operation.
+
+  If sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the 
+  SQLITE_DESERIALIZE_FREEONCLOSE bit is set in argument F, then sqlite3_free()
+  is invoked on argument P prior to returning.
+
+  This interface is only available if SQLite is compiled with the 
+  SQLITE_ENABLE_DESERIALIZE option. }
+function sqlite3_deserialize(db : psqlite3; const zSchema : PChar; pData :
+  PByte; szDb : sqlite3_int64; szBuf : sqlite3_int64; mFlags : Cardinal) :
+  Integer; cdecl; external sqlite3_lib;
+
+{ Register a geometry callback named zGeom that can be used as part of an R-Tree 
+  geometry query as follows:
+
+  SELECT ... FROM <rtree> WHERE <rtree col> MATCH $zGeom(... params ...) }
+function sqlite3_rtree_geometry_callback(db : psqlite3; const zGeom : PChar;
+  xGeom : xGeom_callback; pContext : Pointer) : Integer; cdecl; 
   external sqlite3_lib;
 
 
