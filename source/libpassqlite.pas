@@ -1825,6 +1825,35 @@ const
   SQLITE_STATIC                                                   = Pointer(0);
   SQLITE_TRANSIENT                                                = Pointer(-1);
 
+  { These macros are only available on Windows. They define the allowed values 
+    for the type argument to the sqlite3_win32_set_directory interface. }
+  SQLITE_WIN32_DATA_DIRECTORY_TYPE                                     = 1;
+  SQLITE_WIN32_TEMP_DIRECTORY_TYPE                                     = 2;
+
+  { Virtual table implementations are allowed to set the 
+    sqlite3_index_info.idxFlags field to some combination of these bits. }
+  SQLITE_INDEX_SCAN_UNIQUE                                              = 1;
+
+  { These macros define the allowed values for the 
+    sqlite3_index_info.aConstraint[].op field. Each value represents an operator 
+    that is part of a constraint term in the wHERE clause of a query that uses a 
+    virtual table. }
+  SQLITE_INDEX_CONSTRAINT_EQ                                            = 2;
+  SQLITE_INDEX_CONSTRAINT_GT                                            = 4;
+  SQLITE_INDEX_CONSTRAINT_LE                                            = 8;
+  SQLITE_INDEX_CONSTRAINT_LT                                            = 16;
+  SQLITE_INDEX_CONSTRAINT_GE                                            = 32;
+  SQLITE_INDEX_CONSTRAINT_MATCH                                         = 64;
+  SQLITE_INDEX_CONSTRAINT_LIKE                                          = 65;
+  SQLITE_INDEX_CONSTRAINT_GLOB                                          = 66;
+  SQLITE_INDEX_CONSTRAINT_REGEXP                                        = 67;
+  SQLITE_INDEX_CONSTRAINT_NE                                            = 68;
+  SQLITE_INDEX_CONSTRAINT_ISNOT                                         = 69;
+  SQLITE_INDEX_CONSTRAINT_ISNOTNULL                                     = 70;
+  SQLITE_INDEX_CONSTRAINT_ISNULL                                        = 71;
+  SQLITE_INDEX_CONSTRAINT_IS                                            = 72;
+  SQLITE_INDEX_CONSTRAINT_FUNCTION                                      = 150;
+
 type
   PPPChar = ^PPChar;
   PPChar = ^PChar;
@@ -1849,6 +1878,14 @@ type
   ppsqlite3_value = ^psqlite3_value;
   psqlite3_value = ^sqlite3_value;
   psqlite3_context = ^sqlite3_context;
+  ppsqlite3_vtab = ^psqlite3_vtab;
+  psqlite3_vtab = ^sqlite3_vtab;
+  psqlite3_index_info = ^sqlite3_index_info;
+  ppsqlite3_vtab_cursor = ^psqlite3_vtab_cursor;
+  psqlite3_vtab_cursor = ^sqlite3_vtab_cursor;
+  psqlite3_module = ^sqlite3_module;
+  ppsqlite3_blob = ^psqlite3_blob;
+  psqlite3_blob = ^sqlite3_blob;
 
   { Callbacks. }
   sqlite3_callback = function(pArg : Pointer; nCol : Integer; azVals : PPChar;
@@ -1881,6 +1918,21 @@ type
   xInverse_callback = procedure (context : psqlite3_context; argc : Integer;
     argv : ppsqlite3_value) of object;
   xDelete_callback = procedure (ptr : Pointer) of object;
+  xCompare_callback = function (pArg : Pointer; nBytes1 : Integer; 
+    const eTextRep1 : Pointer; nBytes2 : Integer; const eTextRep2 : Pointer) :
+    Integer of object;
+  xCollNeeded_callback = procedure (pArg : Pointer; db : psqlite3; eTextRep :
+    Integer; const collation_name : PChar) of object;
+  xCollNeeded16_callback = procedure (pArg : Pointer; db : psqlite3; eTextRep :
+    Integer; const collation_name : Pointer) of object; 
+  xCallback_callback = function (pArg : Pointer) : Integer of object; 
+  xCallbackUpdateHook_callback = procedure (pArg : Pointer; invoked : Integer;
+    database_name : PChar; table_name : PChar; rowid : sqlite3_int64) of object;
+  xEntryPoint_callback = function (db : psqlite3; const pzErrMgs : PPChar; 
+    const pThunk : psqlite3_api_routines) : Integer of object;
+  xFunc_callback = procedure (context : psqlite3_context; argc : Integer; argv :
+    ppsqlite3_value) of object;
+
 
   { Each open SQLite database is represented by a pointer to an instance of the 
     opaque structure named "sqlite3". It is useful to think of an sqlite3 
@@ -2197,6 +2249,241 @@ type
     sqlite3_user_data(), sqlite3_context_db_handle(), sqlite3_get_auxdata(), 
     and/or sqlite3_set_auxdata(). }
   sqlite3_context = record
+
+  end;
+
+  { Every virtual table module implementation uses a subclass of this object to 
+    describe a particular instance of the virtual table. Each subclass will be 
+    tailored to the specific needs of the module implementation. The purpose of 
+    this superclass is to define certain fields that are common to all module 
+    implementations.
+
+    Virtual tables methods can set an error message by assigning a string 
+    obtained from sqlite3_mprintf() to zErrMsg. The method should take care that 
+    any prior string is freed by a call to sqlite3_free() prior to assigning a 
+    new string to zErrMsg. After the error message is delivered up to the client 
+    application, the string will be automatically freed by sqlite3_free() and 
+    the zErrMsg field will be zeroed. }
+  sqlite3_vtab = record
+    pModule : psqlite3_module;    { The module for this virtual table }
+    nRef : Integer;               { Number of open cursors }
+    zErrMsg : PChar;              { Error message from sqlite3_mprintf() }
+  end;
+
+  { The sqlite3_index_info structure and its substructures is used as part of 
+    the virtual table interface to pass information into and receive the reply 
+    from the xBestIndex method of a virtual table module. The fields under 
+    **Inputs** are the inputs to xBestIndex and are read-only. xBestIndex 
+    inserts its results into the **Outputs** fields.
+
+    The aConstraint[] array records WHERE clause constraints of the form:
+
+      column OP expr
+
+    where OP is =, <, <=, >, or >=. The particular operator is stored in 
+    aConstraint[].op using one of the SQLITE_INDEX_CONSTRAINT_ values. The index 
+    of the column is stored in aConstraint[].iColumn. aConstraint[].usable is 
+    TRUE if the expr on the right-hand side can be evaluated (and thus the 
+    constraint is usable) and false if it cannot.
+
+    The optimizer automatically inverts terms of the form "expr OP column" and 
+    makes other simplifications to the WHERE clause in an attempt to get as many 
+    WHERE clause terms into the form shown above as possible. The aConstraint[] 
+    array only reports WHERE clause terms that are relevant to the particular 
+    virtual table being queried.
+
+    Information about the ORDER BY clause is stored in aOrderBy[]. Each term of 
+    aOrderBy records a column of the ORDER BY clause.
+
+    The colUsed field indicates which columns of the virtual table may be 
+    required by the current scan. Virtual table columns are numbered from zero 
+    in the order in which they appear within the CREATE TABLE statement passed 
+    to sqlite3_declare_vtab(). For the first 63 columns (columns 0-62), the 
+    corresponding bit is set within the colUsed mask if the column may be 
+    required by SQLite. If the table has at least 64 columns and any column to 
+    the right of the first 63 is required, then bit 63 of colUsed is also set. 
+    In other words, column iCol may be required if the expression (colUsed & 
+    ((sqlite3_uint64)1 << (iCol>=63 ? 63 : iCol))) evaluates to non-zero.
+
+    The xBestIndex method must fill aConstraintUsage[] with information about 
+    what parameters to pass to xFilter. If argvIndex>0 then the right-hand side 
+    of the corresponding aConstraint[] is evaluated and becomes the argvIndex-th 
+    entry in argv. If aConstraintUsage[].omit is true, then the constraint is 
+    assumed to be fully handled by the virtual table and might not be checked 
+    again by the byte code. The aConstraintUsage[].omit flag is an optimization 
+    hint. When the omit flag is left in its default setting of false, the 
+    constraint will always be checked separately in byte code. If the omit flag 
+    is change to true, then the constraint may or may not be checked in byte 
+    code. In other words, when the omit flag is true there is no guarantee that 
+    the constraint will not be checked again using byte code.
+
+    The idxNum and idxPtr values are recorded and passed into the xFilter 
+    method. sqlite3_free() is used to free idxPtr if and only if 
+    needToFreeIdxPtr is true.
+
+    The orderByConsumed means that output from xFilter/xNext will occur in the 
+    correct order to satisfy the ORDER BY clause so that no separate sorting 
+    step is required.
+
+    The estimatedCost value is an estimate of the cost of a particular strategy. 
+    A cost of N indicates that the cost of the strategy is similar to a linear 
+    scan of an SQLite table with N rows. A cost of log(N) indicates that the 
+    expense of the operation is similar to that of a binary search on a unique 
+    indexed field of an SQLite table with N rows.
+
+    The estimatedRows value is an estimate of the number of rows that will be 
+    returned by the strategy.
+
+    The xBestIndex method may optionally populate the idxFlags field with a mask 
+    of SQLITE_INDEX_SCAN_* flags. Currently there is only one such flag - 
+    SQLITE_INDEX_SCAN_UNIQUE. If the xBestIndex method sets this flag, SQLite 
+    assumes that the strategy may visit at most one row.
+
+    Additionally, if xBestIndex sets the SQLITE_INDEX_SCAN_UNIQUE flag, then 
+    SQLite also assumes that if a call to the xUpdate() method is made as part 
+    of the same statement to delete or update a virtual table row and the 
+    implementation returns SQLITE_CONSTRAINT, then there is no need to rollback 
+    any database changes. In other words, if the xUpdate() returns 
+    SQLITE_CONSTRAINT, the database contents must be exactly as they were before 
+    xUpdate was called. By contrast, if SQLITE_INDEX_SCAN_UNIQUE is not set and 
+    xUpdate returns SQLITE_CONSTRAINT, any database changes made by the xUpdate 
+    method are automatically rolled back by SQLite.
+
+    IMPORTANT: The estimatedRows field was added to the sqlite3_index_info 
+    structure for SQLite version 3.8.2 (2013-12-06). If a virtual table 
+    extension is used with an SQLite version earlier than 3.8.2, the results of 
+    attempting to read or write the estimatedRows field are undefined (but are 
+    likely to include crashing the application). The estimatedRows field should 
+    therefore only be used if sqlite3_libversion_number() returns a value 
+    greater than or equal to 3008002. Similarly, the idxFlags field was added 
+    for version 3.9.0 (2015-10-14). It may therefore only be used if 
+    sqlite3_libversion_number() returns a value greater than or equal to 
+    3009000. }
+
+  psqlite3_index_constraint = ^sqlite3_index_constraint;
+  sqlite3_index_constraint = record
+    iColumn : Integer;                { Column constrained.  -1 for ROWID }
+    op : Byte;                        { Constraint operator }
+    usable : Byte;                    { True if this constraint is usable }
+    iTermOffset : Integer;            { Used internally - xBestIndex should 
+                                        ignore }
+  end;
+
+  psqlite3_index_orderby = ^sqlite3_index_orderby;
+  sqlite3_index_orderby = record
+    iColumn : Integer;                { Column number }
+    desc : Byte;                      { True for DESC.  False for ASC. }
+  end;
+
+  psqlite3_index_constraint_usage = ^sqlite3_index_constraint_usage;
+  sqlite3_index_constraint_usage = record
+    argvIndex : Integer;              { if >0, constraint is part of argv to 
+                                        xFilter }
+    omit : Byte;                      { Do not code a test for this constraint }
+  end;
+
+  sqlite3_index_info = record
+    { Inputs }
+    nConstraint : Integer;            { Number of entries in aConstraint }
+    aConstarint : psqlite3_index_constraint; {Table of WHERE clause constraints}
+    nOrderBy : Integer;               { Number of terms in the ORDER BY clause }
+    aOrderBy : psqlite3_index_orderby;{ The ORDER BY clause }
+
+    { Outputs }
+    aConstraintUsage : psqlite3_index_constraint_usage;
+    idxNum : Integer;                 { Number used to identify the index }
+    idxStr : PChar;                   { String, possibly obtained from 
+                                        sqlite3_malloc }
+    needToFreeIdxStr : Integer;       {Free idxStr using sqlite3_free() if true}
+    orderByConsumed : Integer;        { True if output is already ordered }
+    estimatedCost : Double;           { Estimated cost of using this index }
+    { Fields below are only available in SQLite 3.8.2 and later }
+    estimatedRows : sqlite3_int64;    { Estimated number of rows returned }
+    { Fields below are only available in SQLite 3.9.0 and later }
+    idxFlags : Integer;               { Mask of SQLITE_INDEX_SCAN_* flags }
+    { Fields below are only available in SQLite 3.10.0 and later }
+    colUsed : sqlite3_uint64;         {Input: Mask of columns used by statement}
+  end;
+
+  { Every virtual table module implementation uses a subclass of the following 
+    structure to describe cursors that point into the virtual table and are used 
+    to loop through the virtual table. Cursors are created using the xOpen 
+    method of the module and are destroyed by the xClose method. Cursors are 
+    used by the xFilter, xNext, xEof, xColumn, and xRowid methods of the module. 
+    Each module implementation will define the content of a cursor structure to 
+    suit its own needs.
+
+    This superclass exists in order to define fields of the cursor that are 
+    common to all implementations. }
+  sqlite3_vtab_cursor = record
+    pVtab : psqlite3_vtab;            { Virtual table of this cursor }
+  end;
+
+  { This structure, sometimes called a "virtual table module", defines the 
+    implementation of a virtual table. This structure consists mostly of methods 
+    for the module.
+
+    A virtual table module is created by filling in a persistent instance of 
+    this structure and passing a pointer to that instance to 
+    sqlite3_create_module() or sqlite3_create_module_v2(). The registration 
+    remains valid until it is replaced by a different module or until the 
+    database connection closes. The content of this structure must not change 
+    while it is registered with any database connection. }
+  sqlite3_module = record
+    iVersion : Integer;
+    xCreate : function (db : psqlite3; pAux : Pointer; argc : Integer; 
+      const argv : PChar; ppVtab : ppsqlite3_vtab; pzErr : PPchar) : Integer; 
+      cdecl;
+    xConnect : function (db : psqlite3; pAux : Pointer; argc : Integer; 
+      const argv : PChar; ppVtab : ppsqlite3_vtab; pzErr : PPChar) : Integer;
+      cdecl;
+    xBestIndex : function (pVTab : psqlite3_vtab; index_info : 
+      psqlite3_index_info) : Integer; cdecl;
+    xDisconnect : function (pVTab : psqlite3_vtab) : Integer; cdecl;
+    xDestroy : function (pVTab : psqlite3_vtab) : Integer; cdecl;
+    xOpen : function (pVTab : psqlite3_vtab; ppCursor : ppsqlite3_vtab_cursor) :
+      Integer; cdecl;
+    xClose : function (pCursor : psqlite3_vtab_cursor) : Integer; cdecl;
+    xFilter : function (pCursor : psqlite3_vtab_cursor; idxNum : Integer;
+      const idxStr : PChar; argc : Integer; argv : ppsqlite3_value) : Integer;
+      cdecl;
+    xNext : function (pCursor : psqlite3_vtab_cursor) : Integer; cdecl;
+    xEof : function (pCursor : psqlite3_vtab_cursor) : Integer; cdecl;
+    xColumn : function (pCursor : psqlite3_vtab_cursor; pContext :
+      psqlite3_context; pOp : Integer) : Integer; cdecl;
+    xRowid : function (pCursor : psqlite3_vtab_cursor; pRowid : sqlite3_int64) :
+      Integer; cdecl;
+    xUpdate : function (pVTab : psqlite3_vtab; nArg : Integer; apArg : 
+      ppsqlite3_value; rowid : psqlite3_int64) : Integer; cdecl;
+    xBegin : function (pVTab : psqlite3_vtab) : Integer; cdecl;
+    xSync : function (pVTab : psqlite3_vtab) : Integer; cdecl;
+    xCommit : function (pVTab : psqlite3_vtab) : Integer; cdecl;
+    xRollback : function (pVTab : psqlite3_vtab) : Integer; cdecl;
+    xFindFunction : function (pVTab : psqlite3_vtab; nArg : Integer; 
+      const zName : PChar; pxFunc : xFunc_callback; ppArg : PPointer) : Integer;
+      cdecl;
+    xRename : function (pVTab : psqlite3_vtab; const zName : PChar) : Integer;
+      cdecl;
+    { The methods above are in version 1 of the sqlite_module object. Those
+      below are for version 2 and greater. }
+    xSavepoint : function (pVTab : psqlite3_vtab; iSvpt : Integer) : Integer;
+      cdecl;
+    xRelease : function (pVTab : psqlite3_vtab; iSvpt : Integer) : Integer;
+      cdecl;
+    xRollbackTo : function (pVTab : psqlite3_vtab; iSvpt : Integer) : Integer;
+      cdecl;
+    { The methods above are in versions 1 and 2 of the sqlite_module object.
+      Those below are for version 3 and greater. }
+    xShadowName : function (const zName : PChar) : Integer; cdecl;
+  end;
+
+  { An instance of this object represents an open BLOB on which incremental BLOB 
+    I/O can be performed. Objects of this type are created by 
+    sqlite3_blob_open() and destroyed by sqlite3_blob_close(). 
+    The sqlite3_blob_read() and sqlite3_blob_write() interfaces can be used to 
+    read or write small subsections of the BLOB. The sqlite3_blob_bytes() 
+    interface returns the size of the BLOB in bytes. }
+  sqlite3_blob = record
 
   end;
 
@@ -4547,7 +4834,773 @@ procedure sqlite3_result_zeroblob(pCtx : psqlite3_context; n : Integer); cdecl;
 function sqlite3_result_zeroblob64(pCtx : psqlite3_context; n : sqlite3_uint64)
   : Integer; cdecl; external sqlite3_lib;
 
+{ The sqlite3_result_subtype(C,T) function causes the subtype of the result from 
+  the application-defined SQL function with sqlite3_context C to be the value T. 
+  Only the lower 8 bits of the subtype T are preserved in current versions of 
+  SQLite; higher order bits are discarded. The number of subtype bytes preserved 
+  by SQLite might increase in future releases of SQLite. }
+procedure sqlite3_result_subtype(pCtx : psqlite3_context; eSubtype : Cardinal);
+  cdecl; external sqlite3_lib;
 
+{ These functions add, remove, or modify a collation associated with the 
+  database connection specified as the first argument.
+
+  The name of the collation is a UTF-8 string for sqlite3_create_collation() and 
+  sqlite3_create_collation_v2() and a UTF-16 string in native byte order for 
+  sqlite3_create_collation16(). Collation names that compare equal according to 
+  sqlite3_strnicmp() are considered to be the same name.
+
+  The third argument (eTextRep) must be one of the constants:
+
+    SQLITE_UTF8,
+    SQLITE_UTF16LE,
+    SQLITE_UTF16BE,
+    SQLITE_UTF16, or
+    SQLITE_UTF16_ALIGNED. 
+
+  The eTextRep argument determines the encoding of strings passed to the 
+  collating function callback, xCompare. The SQLITE_UTF16 and 
+  SQLITE_UTF16_ALIGNED values for eTextRep force strings to be UTF16 with native 
+  byte order. The SQLITE_UTF16_ALIGNED value for eTextRep forces strings to 
+  begin on an even byte address.
+
+  The fourth argument, pArg, is an application data pointer that is passed 
+  through as the first argument to the collating function callback.
+
+  The fifth argument, xCompare, is a pointer to the collating function. Multiple 
+  collating functions can be registered using the same name but with different 
+  eTextRep parameters and SQLite will use whichever function requires the least 
+  amount of data transformation. If the xCompare argument is NULL then the 
+  collating function is deleted. When all collating functions having the same 
+  name are deleted, that collation is no longer usable.
+
+  The collating function callback is invoked with a copy of the pArg application 
+  data pointer and with two strings in the encoding specified by the eTextRep 
+  argument. The two integer parameters to the collating function callback are 
+  the length of the two strings, in bytes. The collating function must return an 
+  integer that is negative, zero, or positive if the first string is less than, 
+  equal to, or greater than the second, respectively. A collating function must 
+  always return the same answer given the same inputs. If two or more collating 
+  functions are registered to the same collation name (using different eTextRep 
+  values) then all must give an equivalent answer when invoked with equivalent 
+  strings. The collating function must obey the following properties for all 
+  strings A, B, and C:
+
+    If A==B then B==A.
+    If A==B and B==C then A==C.
+    If A<B THEN B>A.
+    If A<B and B<C then A<C. 
+
+  If a collating function fails any of the above constraints and that collating 
+  function is registered and used, then the behavior of SQLite is undefined.
+
+  The sqlite3_create_collation_v2() works like sqlite3_create_collation() with 
+  the addition that the xDestroy callback is invoked on pArg when the collating 
+  function is deleted. Collating functions are deleted when they are overridden 
+  by later calls to the collation creation functions or when the database 
+  connection is closed using sqlite3_close().
+
+  The xDestroy callback is not called if the sqlite3_create_collation_v2() 
+  function fails. Applications that invoke sqlite3_create_collation_v2() with a 
+  non-NULL xDestroy argument should check the return code and dispose of the 
+  application data pointer themselves rather than expecting SQLite to deal with 
+  it for them. This is different from every other SQLite interface. The 
+  inconsistency is unfortunate but cannot be changed without breaking backwards 
+  compatibility. }
+function sqlite3_create_collation(db : psqlite3; const zName : PChar; eTextRep :
+  Integer; pArg : Pointer; xCompare : xCompare_callback) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_create_collation_v2(db : psqlite3; const zName : PChar;
+  eTextRep : Integer; pArg : Pointer; xCompare : xCompare_callback; xDestroy :
+  xDestroy_callback) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_create_collation16(db : psqlite3; const zName : Pointer;
+  eTextRep : Integer; pArg : Pointer; xCompare : xCompare_callback) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ To avoid having to register all collation sequences before a database can be 
+  used, a single callback function may be registered with the database 
+  connection to be invoked whenever an undefined collation sequence is required.
+
+  If the function is registered using the sqlite3_collation_needed() API, then 
+  it is passed the names of undefined collation sequences as strings encoded in 
+  UTF-8. If sqlite3_collation_needed16() is used, the names are passed as UTF-16 
+  in machine native byte order. A call to either function replaces the existing 
+  collation-needed callback.
+
+  When the callback is invoked, the first argument passed is a copy of the 
+  second argument to sqlite3_collation_needed() or sqlite3_collation_needed16(). 
+  The second argument is the database connection. The third argument is one of 
+  SQLITE_UTF8, SQLITE_UTF16BE, or SQLITE_UTF16LE, indicating the most desirable 
+  form of the collation sequence function required. The fourth parameter is the 
+  name of the required collation sequence.
+
+  The callback function should register the desired collation using 
+  sqlite3_create_collation(), sqlite3_create_collation16(), or 
+  sqlite3_create_collation_v2(). }
+function sqlite3_collation_needed(db : psqlite3; pCollNeededArg : Pointer;
+  xColNeeded : xCollNeeded_callback) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_collation_needed16(db : psqlite3; pColNeededArg : Pointer;
+  xCollNeeded16 : xCollNeeded16_callback) : Integer; cdecl; 
+  external sqlite3_lib;
+
+{ Specify the activation key for a CEROD database. Unless activated, none of the 
+  CEROD routines will work. }
+procedure sqlite3_activate_cerod(const zPassPhrase : PChar); cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_sleep() function causes the current thread to suspend execution 
+  for at least a number of milliseconds specified in its parameter.
+
+  If the operating system does not support sleep requests with millisecond time 
+  resolution, then the time will be rounded up to the nearest second. The number 
+  of milliseconds of sleep actually requested from the operating system is 
+  returned.
+
+  SQLite implements this interface by calling the xSleep() method of the default 
+  sqlite3_vfs object. If the xSleep() method of the default VFS is not 
+  implemented correctly, or not implemented at all, then the behavior of 
+  sqlite3_sleep() may deviate from the description in the previous paragraphs. }
+function sqlite3_sleep(ms : Integer) : Integer; cdecl; external sqlite3_lib;
+
+{ These interfaces are available only on Windows. The 
+  sqlite3_win32_set_directory interface is used to set the value associated with 
+  the sqlite3_temp_directory or sqlite3_data_directory variable, to zValue, 
+  depending on the value of the type parameter. The zValue parameter should be 
+  NULL to cause the previous value to be freed via sqlite3_free; a non-NULL 
+  value will be copied into memory obtained from sqlite3_malloc prior to being 
+  used. The sqlite3_win32_set_directory interface returns SQLITE_OK to indicate 
+  success, SQLITE_ERROR if the type is unsupported, or SQLITE_NOMEM if memory 
+  could not be allocated. The value of the sqlite3_data_directory variable is 
+  intended to act as a replacement for the current directory on the 
+  sub-platforms of Win32 where that concept is not present, e.g. WinRT and UWP. 
+  The sqlite3_win32_set_directory8 and sqlite3_win32_set_directory16 interfaces 
+  behave exactly the same as the sqlite3_win32_set_directory interface except 
+  the string parameter must be UTF-8 or UTF-16, respectively. }
+function sqlite3_win32_set_directory(type_ : LongWord; zValue : Pointer) :
+  Integer; cdecl; external sqlite3_lib;
+function sqlite3_win32_set_directory8(type_ : LongWord; const zValue : PChar) :
+  Integer; cdecl; external sqlite3_lib;
+function sqlite3_win32_set_directory16(type_ : LongWord; const zValue : Pointer)
+  : Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_get_autocommit() interface returns non-zero or zero if the given 
+  database connection is or is not in autocommit mode, respectively. Autocommit 
+  mode is on by default. Autocommit mode is disabled by a BEGIN statement. 
+  Autocommit mode is re-enabled by a COMMIT or ROLLBACK.
+
+  If certain kinds of errors occur on a statement within a multi-statement 
+  transaction (errors including SQLITE_FULL, SQLITE_IOERR, SQLITE_NOMEM, 
+  SQLITE_BUSY, and SQLITE_INTERRUPT) then the transaction might be rolled back 
+  automatically. The only way to find out whether SQLite automatically rolled 
+  back the transaction after an error is to use this function.
+
+  If another thread changes the autocommit status of the database connection 
+  while this routine is running, then the return value is undefined. }
+function sqlite3_get_autocommit(db : psqlite3) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_db_handle interface returns the database connection handle to 
+  which a prepared statement belongs. The database connection returned by 
+  sqlite3_db_handle is the same database connection that was the first argument 
+  to the sqlite3_prepare_v2() call (or its variants) that was used to create the 
+  statement in the first place. }
+function sqlite3_db_handle(pStmt : psqlite3_stmt) : psqlite3; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_db_filename(D,N) interface returns a pointer to the filename 
+  associated with database N of connection D. If there is no attached database N 
+  on the database connection D, or if database N is a temporary or in-memory 
+  database, then this function will return either a NULL pointer or an empty 
+  string.
+
+  The string value returned by this routine is owned and managed by the database 
+  connection. The value will be valid until the database N is DETACH-ed or until 
+  the database connection closes.
+
+  The filename returned by this function is the output of the xFullPathname 
+  method of the VFS. In other words, the filename will be an absolute pathname, 
+  even if the filename used to open the database originally was a URI or 
+  relative pathname.
+
+  If the filename pointer returned by this routine is not NULL, then it can be 
+  used as the filename input parameter to these routines:
+
+    sqlite3_uri_parameter()
+    sqlite3_uri_boolean()
+    sqlite3_uri_int64()
+    sqlite3_filename_database()
+    sqlite3_filename_journal()
+    sqlite3_filename_wal() }
+function sqlite3_db_filename(db : psqlite3; const zDbName : PChar) : PChar;
+  external sqlite3_lib;
+
+{ The sqlite3_db_readonly(D,N) interface returns 1 if the database N of 
+  connection D is read-only, 0 if it is read/write, or -1 if N is not the name 
+  of a database on connection D. }
+function sqlite3_db_readonly(db : psqlite3; const zDbName : PChar) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ This interface returns a pointer to the next prepared statement after pStmt 
+  associated with the database connection pDb. If pStmt is NULL then this 
+  interface returns a pointer to the first prepared statement associated with 
+  the database connection pDb. If no prepared statement satisfies the conditions 
+  of this routine, it returns NULL.
+
+  The database connection pointer D in a call to sqlite3_next_stmt(D,S) must 
+  refer to an open database connection and in particular must not be a NULL 
+  pointer. }
+function sqlite3_next_stmt(pDb : psqlite3; pStmt : psqlite3_stmt) : 
+  psqlite3_stmt; cdecl; external sqlite3_lib;
+
+{ The sqlite3_commit_hook() interface registers a callback function to be 
+  invoked whenever a transaction is committed. Any callback set by a previous 
+  call to sqlite3_commit_hook() for the same database connection is overridden. 
+  The sqlite3_rollback_hook() interface registers a callback function to be 
+  invoked whenever a transaction is rolled back. Any callback set by a previous 
+  call to sqlite3_rollback_hook() for the same database connection is 
+  overridden. The pArg argument is passed through to the callback. If the 
+  callback on a commit hook function returns non-zero, then the commit is 
+  converted into a rollback.
+
+  The sqlite3_commit_hook(D,C,P) and sqlite3_rollback_hook(D,C,P) functions 
+  return the P argument from the previous call of the same function on the same 
+  database connection D, or NULL for the first call for each function on D.
+
+  The commit and rollback hook callbacks are not reentrant. The callback 
+  implementation must not do anything that will modify the database connection 
+  that invoked the callback. Any actions to modify the database connection must 
+  be deferred until after the completion of the sqlite3_step() call that 
+  triggered the commit or rollback hook in the first place. Note that running 
+  any other SQL statements, including SELECT statements, or merely calling 
+  sqlite3_prepare_v2() and sqlite3_step() will modify the database connections 
+  for the meaning of "modify" in this paragraph.
+
+  Registering a NULL function disables the callback.
+
+  When the commit hook callback routine returns zero, the COMMIT operation is 
+  allowed to continue normally. If the commit hook returns non-zero, then the 
+  COMMIT is converted into a ROLLBACK. The rollback hook is invoked on a 
+  rollback that results from a commit hook returning non-zero, just as it would 
+  be with any other rollback.
+
+  For the purposes of this API, a transaction is said to have been rolled back 
+  if an explicit "ROLLBACK" statement is executed, or an error or constraint 
+  causes an implicit rollback to occur. The rollback callback is not invoked if 
+  a transaction is automatically rolled back because the database connection is 
+  closed. }
+function sqlite3_commit_hook(db : psqlite3; xCallback : xCallback_callback; 
+  pArg : Pointer) : Pointer; cdecl; external sqlite3_lib;
+function sqlite3_rollback_hook(db : psqlite3; xCallback : xCallback_callback;
+  pArg : Pointer) : Pointer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_update_hook() interface registers a callback function with the 
+  database connection identified by the first argument to be invoked whenever a 
+  row is updated, inserted or deleted in a rowid table. Any callback set by a 
+  previous call to this function for the same database connection is overridden.
+
+  The second argument is a pointer to the function to invoke when a row is 
+  updated, inserted or deleted in a rowid table. The first argument to the 
+  callback is a copy of the third argument to sqlite3_update_hook(). The second 
+  callback argument is one of SQLITE_INSERT, SQLITE_DELETE, or SQLITE_UPDATE, 
+  depending on the operation that caused the callback to be invoked. The third 
+  and fourth arguments to the callback contain pointers to the database and 
+  table name containing the affected row. The final callback parameter is the 
+  rowid of the row. In the case of an update, this is the rowid after the update 
+  takes place.
+
+  The update hook is not invoked when internal system tables are modified (i.e. 
+  sqlite_sequence). The update hook is not invoked when WITHOUT ROWID tables are 
+  modified.
+
+  In the current implementation, the update hook is not invoked when conflicting 
+  rows are deleted because of an ON CONFLICT REPLACE clause. Nor is the update 
+  hook invoked when rows are deleted using the truncate optimization. The 
+  exceptions defined in this paragraph might change in a future release of 
+  SQLite.
+
+  The update hook implementation must not do anything that will modify the 
+  database connection that invoked the update hook. Any actions to modify the 
+  database connection must be deferred until after the completion of the 
+  sqlite3_step() call that triggered the update hook. Note that 
+  sqlite3_prepare_v2() and sqlite3_step() both modify their database connections 
+  for the meaning of "modify" in this paragraph.
+
+  The sqlite3_update_hook(D,C,P) function returns the P argument from the 
+  previous call on the same database connection D, or NULL for the first call on 
+  D. }
+function sqlite3_update_hook(db : psqlite3; xCallback : 
+  xCallbackUpdateHook_callback; pArg : Pointer) : Pointer; cdecl;
+  external sqlite3_lib;
+
+{ This routine enables or disables the sharing of the database cache and schema 
+  data structures between connections to the same database. Sharing is enabled 
+  if the argument is true and disabled if the argument is false.
+
+  Cache sharing is enabled and disabled for an entire process. This is a change 
+  as of SQLite version 3.5.0 (2007-09-04). In prior versions of SQLite, sharing 
+  was enabled or disabled for each thread separately.
+
+  The cache sharing mode set by this interface effects all subsequent calls to 
+  sqlite3_open(), sqlite3_open_v2(), and sqlite3_open16(). Existing database 
+  connections continue to use the sharing mode that was in effect at the time 
+  they were opened.
+
+  This routine returns SQLITE_OK if shared cache was enabled or disabled 
+  successfully. An error code is returned otherwise.
+
+  Shared cache is disabled by default. It is recommended that it stay that way. 
+  In other words, do not use this routine. This interface continues to be 
+  provided for historical compatibility, but its use is discouraged. Any use of 
+  shared cache is discouraged. If shared cache must be used, it is recommended 
+  that shared cache only be enabled for individual database connections using 
+  the sqlite3_open_v2() interface with the SQLITE_OPEN_SHAREDCACHE flag.
+
+  Note: This method is disabled on MacOS X 10.7 and iOS version 5.0 and will 
+  always return SQLITE_MISUSE. On those systems, shared cache mode should be 
+  enabled per-database connection via sqlite3_open_v2() with 
+  SQLITE_OPEN_SHAREDCACHE.
+
+  This interface is threadsafe on processors where writing a 32-bit integer is 
+  atomic. }
+function sqlite3_enable_shared_cache(enable : Integer) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_release_memory() interface attempts to free N bytes of heap memory 
+  by deallocating non-essential memory allocations held by the database library. 
+  Memory used to cache database pages to improve performance is an example of 
+  non-essential memory. sqlite3_release_memory() returns the number of bytes 
+  actually freed, which might be more or less than the amount requested. The 
+  sqlite3_release_memory() routine is a no-op returning zero if SQLite is not 
+  compiled with SQLITE_ENABLE_MEMORY_MANAGEMENT. }
+function sqlite3_release_memory(n : Integer) : Integer; cdecl; 
+  external sqlite3_lib;
+
+{ The sqlite3_db_release_memory(D) interface attempts to free as much heap
+  memory as possible from database connection D. Unlike the 
+  sqlite3_release_memory() interface, this interface is in effect even when the 
+  SQLITE_ENABLE_MEMORY_MANAGEMENT compile-time option is omitted. }
+function sqlite3_db_release_memory(db : psqlite3) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ These interfaces impose limits on the amount of heap memory that will be by 
+  all database connections within a single process.
+
+  The sqlite3_soft_heap_limit64() interface sets and/or queries the soft limit 
+  on the amount of heap memory that may be allocated by SQLite. SQLite strives 
+  to keep heap memory utilization below the soft heap limit by reducing the 
+  number of pages held in the page cache as heap memory usages approaches the 
+  limit. The soft heap limit is "soft" because even though SQLite strives to 
+  stay below the limit, it will exceed the limit rather than generate an 
+  SQLITE_NOMEM error. In other words, the soft heap limit is advisory only.
+
+  The sqlite3_hard_heap_limit64(N) interface sets a hard upper bound of N bytes 
+  on the amount of memory that will be allocated. The 
+  sqlite3_hard_heap_limit64(N) interface is similar to 
+  sqlite3_soft_heap_limit64(N) except that memory allocations will fail when the 
+  hard heap limit is reached.
+
+  The return value from both sqlite3_soft_heap_limit64() and 
+  sqlite3_hard_heap_limit64() is the size of the heap limit prior to the call, 
+  or negative in the case of an error. If the argument N is negative then no 
+  change is made to the heap limit. Hence, the current size of heap limits can 
+  be determined by invoking sqlite3_soft_heap_limit64(-1) or 
+  sqlite3_hard_heap_limit(-1).
+
+  Setting the heap limits to zero disables the heap limiter mechanism.
+
+  The soft heap limit may not be greater than the hard heap limit. If the hard 
+  heap limit is enabled and if sqlite3_soft_heap_limit(N) is invoked with a 
+  value of N that is greater than the hard heap limit, the the soft heap limit 
+  is set to the value of the hard heap limit. The soft heap limit is 
+  automatically enabled whenever the hard heap limit is enabled. When 
+  sqlite3_hard_heap_limit64(N) is invoked and the soft heap limit is outside the 
+  range of 1..N, then the soft heap limit is set to N. Invoking 
+  sqlite3_soft_heap_limit64(0) when the hard heap limit is enabled makes the 
+  soft heap limit equal to the hard heap limit.
+
+  The memory allocation limits can also be adjusted using PRAGMA soft_heap_limit 
+  and PRAGMA hard_heap_limit.
+
+  The heap limits are not enforced in the current implementation if one or more 
+  of following conditions are true:
+
+    The limit value is set to zero.
+    Memory accounting is disabled using a combination of the 
+      sqlite3_config(SQLITE_CONFIG_MEMSTATUS,...) start-time option and the 
+      SQLITE_DEFAULT_MEMSTATUS compile-time option.
+    An alternative page cache implementation is specified using 
+      sqlite3_config(SQLITE_CONFIG_PCACHE2,...).
+    The page cache allocates from its own memory pool supplied by 
+      sqlite3_config(SQLITE_CONFIG_PAGECACHE,...) rather than from the heap. 
+
+  The circumstances under which SQLite will enforce the heap limits may changes 
+  in future releases of SQLite. }
+function sqlite3_soft_heap_limit64(N : sqlite3_int64) : sqlite3_int64; cdecl;
+  external sqlite3_lib;
+function sqlite3_hard_heap_limit64(N : sqlite3_int64) : sqlite3_int64; cdecl;
+  external sqlite3_lib;
+
+{ The sqlite3_table_column_metadata(X,D,T,C,....) routine returns information 
+  about column C of table T in database D on database connection X. The 
+  sqlite3_table_column_metadata() interface returns SQLITE_OK and fills in the 
+  non-NULL pointers in the final five arguments with appropriate values if the 
+  specified column exists. The sqlite3_table_column_metadata() interface returns 
+  SQLITE_ERROR if the specified column does not exist. If the column-name 
+  parameter to sqlite3_table_column_metadata() is a NULL pointer, then this 
+  routine simply checks for the existence of the table and returns SQLITE_OK if 
+  the table exists and SQLITE_ERROR if it does not. If the table name parameter 
+  T in a call to sqlite3_table_column_metadata(X,D,T,C,...) is NULL then the 
+  result is undefined behavior.
+
+  The column is identified by the second, third and fourth parameters to this 
+  function. The second parameter is either the name of the database (i.e. 
+  "main", "temp", or an attached database) containing the specified table or 
+  NULL. If it is NULL, then all attached databases are searched for the table 
+  using the same algorithm used by the database engine to resolve unqualified 
+  table references.
+
+  The third and fourth parameters to this function are the table and column name 
+  of the desired column, respectively.
+
+  Metadata is returned by writing to the memory locations passed as the 5th and 
+  subsequent parameters to this function. 
+
+  The memory pointed to by the character pointers returned for the declaration 
+  type and collation sequence is valid until the next call to any SQLite API 
+  function.
+
+  If the specified table is actually a view, an error code is returned.
+
+  If the specified column is "rowid", "oid" or "_rowid_" and the table is not a 
+  WITHOUT ROWID table and an INTEGER PRIMARY KEY column has been explicitly 
+  declared, then the output parameters are set for the explicitly declared 
+  column.
+
+  This function causes all database schemas to be read from disk and parsed, if 
+  that has not already been done, and returns an error if any errors are 
+  encountered while loading the schema. }
+function sqlite3_table_column_metadata(db : psqlite3; const zDbName : PChar;
+  const zTableName : PChar; const zColumnName : PChar; pzDataType : PPChar;
+  pzCollSeq : PPChar; pNotNull : PInteger; pPrimaryKey : PInteger; pAutoinc :
+  PInteger) : Integer; cdecl; external sqlite3_lib;
+
+{ This interface loads an SQLite extension library from the named file.
+
+  The sqlite3_load_extension() interface attempts to load an SQLite extension 
+  library contained in the file zFile. If the file cannot be loaded directly, 
+  attempts are made to load with various operating-system specific extensions 
+  added. So for example, if "samplelib" cannot be loaded, then names like 
+  "samplelib.so" or "samplelib.dylib" or "samplelib.dll" might be tried also.
+
+  The entry point is zProc. zProc may be 0, in which case SQLite will try to 
+  come up with an entry point name on its own. It first tries 
+  "sqlite3_extension_init". If that does not work, it constructs a name 
+  "sqlite3_X_init" where the X is consists of the lower-case equivalent of all 
+  ASCII alphabetic characters in the filename from the last "/" to the first 
+  following "." and omitting any initial "lib". The sqlite3_load_extension() 
+  interface returns SQLITE_OK on success and SQLITE_ERROR if something goes 
+  wrong. If an error occurs and pzErrMsg is not 0, then the 
+  sqlite3_load_extension() interface shall attempt to fill *pzErrMsg with error 
+  message text stored in memory obtained from sqlite3_malloc(). The calling 
+  function should free this memory by calling sqlite3_free().
+
+  Extension loading must be enabled using sqlite3_enable_load_extension() or 
+  sqlite3_db_config(db,SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,1,NULL) prior to 
+  calling this API, otherwise an error will be returned.
+
+  Security warning: It is recommended that the 
+  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION method be used to enable only this 
+  interface. The use of the sqlite3_enable_load_extension() interface should be 
+  avoided. This will keep the SQL function load_extension() disabled and prevent 
+  SQL injections from giving attackers access to extension loading 
+  capabilities. }
+function sqlite3_load_extension(db : psqlite3; const zFile : PChar; 
+  const zProc : PChar; pzErrMsg : PPChar) : Integer; cdecl; 
+  external sqlite3_lib;
+
+{ So as not to open security holes in older applications that are unprepared to 
+  deal with extension loading, and as a means of disabling extension loading 
+  while evaluating user-entered SQL, the following API is provided to turn the 
+  sqlite3_load_extension() mechanism on and off.
+
+  Extension loading is off by default. Call the sqlite3_enable_load_extension() 
+  routine with onoff==1 to turn extension loading on and call it with onoff==0 
+  to turn it back off again.
+
+  This interface enables or disables both the C-API sqlite3_load_extension() and 
+  the SQL function load_extension(). Use 
+  sqlite3_db_config(db,SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,..) to enable or 
+  disable only the C-API.
+
+  Security warning: It is recommended that extension loading be enabled using 
+  the SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION method rather than this interface, 
+  so the load_extension() SQL function remains disabled. This will prevent SQL 
+  injections from giving attackers access to extension loading capabilities. }
+function sqlite3_enable_load_extension(db : psqlite3; onoff : Integer) : 
+  Integer; cdecl; external sqlite3_lib;
+
+{ This interface causes the xEntryPoint() function to be invoked for each new 
+  database connection that is created. The idea here is that xEntryPoint() is 
+  the entry point for a statically linked SQLite extension that is to be 
+  automatically loaded into all new database connections.
+
+  Even though the function prototype shows that xEntryPoint() takes no arguments 
+  and returns void, SQLite invokes xEntryPoint() with three arguments and 
+  expects an integer result. 
+  
+  If the xEntryPoint routine encounters an error, it should make *pzErrMsg point 
+  to an appropriate error message (obtained from sqlite3_mprintf()) and return 
+  an appropriate error code. SQLite ensures that *pzErrMsg is NULL before 
+  calling the xEntryPoint(). SQLite will invoke sqlite3_free() on *pzErrMsg 
+  after xEntryPoint() returns. If any xEntryPoint() returns an error, the 
+  sqlite3_open(), sqlite3_open16(), or sqlite3_open_v2() call that provoked the 
+  xEntryPoint() will fail.
+
+  Calling sqlite3_auto_extension(X) with an entry point X that is already on the 
+  list of automatic extensions is a harmless no-op. No entry point will be 
+  called more than once for each database connection that is opened. }
+function sqlite3_auto_extension(xEntryPoint : xEntryPoint_callback) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ The sqlite3_cancel_auto_extension(X) interface unregisters the initialization 
+  routine X that was registered using a prior call to sqlite3_auto_extension(X). 
+  The sqlite3_cancel_auto_extension(X) routine returns 1 if initialization 
+  routine X was successfully unregistered and it returns 0 if X was not on the 
+  list of initialization routines. }
+function sqlite3_cancel_auto_extension(xEntryPoint : xEntryPoint_callback) : 
+  Integer; cdecl; external sqlite3_lib;
+
+{ This interface disables all automatic extensions previously registered using 
+  sqlite3_auto_extension(). }
+procedure sqlite3_reset_auto_extension; cdecl; external sqlite3_lib;
+
+{ These routines are used to register a new virtual table module name. Module 
+  names must be registered before creating a new virtual table using the module 
+  and before using a preexisting virtual table for the module.
+
+  The module name is registered on the database connection specified by the 
+  first parameter. The name of the module is given by the second parameter. The 
+  third parameter is a pointer to the implementation of the virtual table 
+  module. The fourth parameter is an arbitrary client data pointer that is 
+  passed through into the xCreate and xConnect methods of the virtual table 
+  module when a new virtual table is be being created or reinitialized.
+
+  The sqlite3_create_module_v2() interface has a fifth parameter which is a 
+  pointer to a destructor for the pClientData. SQLite will invoke the destructor 
+  function (if it is not NULL) when SQLite no longer needs the pClientData 
+  pointer. The destructor will also be invoked if the call to 
+  sqlite3_create_module_v2() fails. The sqlite3_create_module() interface is 
+  equivalent to sqlite3_create_module_v2() with a NULL destructor.
+
+  If the third parameter (the pointer to the sqlite3_module object) is NULL then 
+  no new module is create and any existing modules with the same name are 
+  dropped. }
+function sqlite3_create_module(db : psqlite3; const zName : PChar; const p :
+  psqlite3_module; pClientData : Pointer) : Integer; cdecl; 
+  external sqlite3_lib;
+function sqlite3_create_module_v2(db : psqlite3; const zName : PChar; const p :
+  psqlite3_module; pClientData : Pointer; xDestroy : xDestroy_callback) : 
+  Integer; cdecl; external sqlite3_lib;
+
+{ The sqlite3_drop_modules(D,L) interface removes all virtual table modules from 
+  database connection D except those named on list L. The L parameter must be 
+  either NULL or a pointer to an array of pointers to strings where the array is 
+  terminated by a single NULL pointer. If the L parameter is NULL, then all 
+  virtual table modules are removed. }
+function sqlite3_drop_modules(db : psqlite3; const azKeep : PPChar) : Integer;
+  cdecl; external sqlite3_lib;
+
+ { The xCreate and xConnect methods of a virtual table module call this 
+  interface to declare the format (the names and datatypes of the columns) of 
+  the virtual tables they implement. }
+function sqlite3_declare_vtab(db : psqlite3; const zSQL : PChar) : Integer;
+  cdecl; external sqlite3_lib;
+
+{ Virtual tables can provide alternative implementations of functions using the 
+  xFindFunction method of the virtual table module. But global versions of those 
+  functions must exist in order to be overloaded.
+
+  This API makes sure a global version of a function with a particular name and 
+  number of parameters exists. If no such function exists before this API is 
+  called, a new function is created. The implementation of the new function 
+  always causes an exception to be thrown. So the new function is not good for 
+  anything by itself. Its only purpose is to be a placeholder function that can 
+  be overloaded by a virtual table. }
+function sqlite3_overload_function(db : psqlite3; const zFuncName : PChar; 
+  nArg : Integer) : Integer; cdecl; external sqlite3_lib;
+
+{ This interfaces opens a handle to the BLOB located in row iRow, column 
+  zColumn, table zTable in database zDb.
+  
+  Parameter zDb is not the filename that contains the database, but rather the 
+  symbolic name of the database. For attached databases, this is the name that 
+  appears after the AS keyword in the ATTACH statement. For the main database 
+  file, the database name is "main". For TEMP tables, the database name is 
+  "temp".
+
+  If the flags parameter is non-zero, then the BLOB is opened for read and write 
+  access. If the flags parameter is zero, the BLOB is opened for read-only 
+  access.
+
+  On success, SQLITE_OK is returned and the new BLOB handle is stored in 
+  *ppBlob. Otherwise an error code is returned and, unless the error code is 
+  SQLITE_MISUSE, *ppBlob is set to NULL. This means that, provided the API is 
+  not misused, it is always safe to call sqlite3_blob_close() on *ppBlob after 
+  this function it returns.
+
+  This function fails with SQLITE_ERROR if any of the following are true:
+
+    Database zDb does not exist,
+    Table zTable does not exist within database zDb,
+    Table zTable is a WITHOUT ROWID table,
+    Column zColumn does not exist,
+    Row iRow is not present in the table,
+    The specified column of row iRow contains a value that is not a TEXT or BLOB 
+      value,
+    Column zColumn is part of an index, PRIMARY KEY or UNIQUE constraint and the 
+      blob is being opened for read/write access,
+    Foreign key constraints are enabled, column zColumn is part of a child key 
+      definition and the blob is being opened for read/write access. 
+
+  Unless it returns SQLITE_MISUSE, this function sets the database connection 
+  error code and message accessible via sqlite3_errcode() and sqlite3_errmsg() 
+  and related functions.
+
+  A BLOB referenced by sqlite3_blob_open() may be read using the 
+  sqlite3_blob_read() interface and modified by using sqlite3_blob_write(). The 
+  BLOB handle can be moved to a different row of the same table using the 
+  sqlite3_blob_reopen() interface. However, the column, table, or database of a 
+  BLOB handle cannot be changed after the BLOB handle is opened.
+
+  If the row that a BLOB handle points to is modified by an UPDATE, DELETE, or 
+  by ON CONFLICT side-effects then the BLOB handle is marked as "expired". This 
+  is true if any column of the row is changed, even a column other than the one 
+  the BLOB handle is open on. Calls to sqlite3_blob_read() and 
+  sqlite3_blob_write() for an expired BLOB handle fail with a return code of 
+  SQLITE_ABORT. Changes written into a BLOB prior to the BLOB expiring are not 
+  rolled back by the expiration of the BLOB. Such changes will eventually commit 
+  if the transaction continues to completion.
+
+  Use the sqlite3_blob_bytes() interface to determine the size of the opened 
+  blob. The size of a blob may not be changed by this interface. Use the UPDATE 
+  SQL command to change the size of a blob.
+
+  The sqlite3_bind_zeroblob() and sqlite3_result_zeroblob() interfaces and the 
+  built-in zeroblob SQL function may be used to create a zero-filled blob to 
+  read or write using the incremental-blob interface.
+
+  To avoid a resource leak, every open BLOB handle should eventually be released 
+  by a call to sqlite3_blob_close(). }
+function sqlite3_blob_open(db : psqlite3; const zDb : PChar; const zTable :
+  PChar; const zColumn : PChar; iRow : sqlite3_int64; flags : Integer; ppBlob :
+    ppsqlite3_blob) : Integer; cdecl; external sqlite3_lib;
+
+{ This function is used to move an existing BLOB handle so that it points to a 
+  different row of the same database table. The new row is identified by the 
+  rowid value passed as the second argument. Only the row can be changed. The 
+  database, table and column on which the blob handle is open remain the same. 
+  Moving an existing BLOB handle to a new row is faster than closing the 
+  existing handle and opening a new one.
+
+  The new row must meet the same criteria as for sqlite3_blob_open() - it must 
+  exist and there must be either a blob or text value stored in the nominated 
+  column. If the new row is not present in the table, or if it does not contain 
+  a blob or text value, or if another error occurs, an SQLite error code is 
+  returned and the blob handle is considered aborted. All subsequent calls to 
+  sqlite3_blob_read(), sqlite3_blob_write() or sqlite3_blob_reopen() on an 
+  aborted blob handle immediately return SQLITE_ABORT. Calling 
+  sqlite3_blob_bytes() on an aborted blob handle always returns zero.
+
+  This function sets the database handle error code and message. }
+function sqlite3_blob_reopen(pBlob : psqlite3_blob; iRow : sqlite3_int64) : 
+  Integer; cdecl; external sqlite3_lib;
+
+{ This function closes an open BLOB handle. The BLOB handle is closed 
+  unconditionally. Even if this routine returns an error code, the handle is 
+  still closed.
+
+  If the blob handle being closed was opened for read-write access, and if the 
+  database is in auto-commit mode and there are no other open read-write blob 
+  handles or active write statements, the current transaction is committed. If 
+  an error occurs while committing the transaction, an error code is returned 
+  and the transaction rolled back.
+
+  Calling this function with an argument that is not a NULL pointer or an open 
+  blob handle results in undefined behaviour. Calling this routine with a null 
+  pointer (such as would be returned by a failed call to sqlite3_blob_open()) is 
+  a harmless no-op. Otherwise, if this function is passed a valid open blob 
+  handle, the values returned by the sqlite3_errcode() and sqlite3_errmsg() 
+  functions are set before returning. }
+function sqlite3_blob_close(pBlob : psqlite3_blob) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ Returns the size in bytes of the BLOB accessible via the successfully opened 
+  BLOB handle in its only argument. The incremental blob I/O routines can only 
+  read or overwriting existing blob content; they cannot change the size of a 
+  blob.
+
+  This routine only works on a BLOB handle which has been created by a prior 
+  successful call to sqlite3_blob_open() and which has not been closed by 
+  sqlite3_blob_close(). Passing any other pointer in to this routine results in 
+  undefined and probably undesirable behavior. }
+function sqlite3_blob_bytes(pBlob : psqlite3_blob) : Integer; cdecl;
+  external sqlite3_lib;
+
+{ This function is used to read data from an open BLOB handle into a 
+  caller-supplied buffer. N bytes of data are copied into buffer Z from the open 
+  BLOB, starting at offset iOffset.
+
+  If offset iOffset is less than N bytes from the end of the BLOB, SQLITE_ERROR 
+  is returned and no data is read. If N or iOffset is less than zero, 
+  SQLITE_ERROR is returned and no data is read. The size of the blob (and hence 
+  the maximum value of N+iOffset) can be determined using the 
+  sqlite3_blob_bytes() interface.
+
+  An attempt to read from an expired BLOB handle fails with an error code of 
+  SQLITE_ABORT.
+
+  On success, sqlite3_blob_read() returns SQLITE_OK. Otherwise, an error code or 
+  an extended error code is returned.
+
+  This routine only works on a BLOB handle which has been created by a prior 
+  successful call to sqlite3_blob_open() and which has not been closed by 
+  sqlite3_blob_close(). Passing any other pointer in to this routine results in 
+  undefined and probably undesirable behavior. }
+function sqlite3_blob_read(pBlob : psqlite3_blob; z : Pointer; N : Integer;
+  iOffset : Integer) : Integer; cdecl; external sqlite3_lib;
+
+{ This function is used to write data into an open BLOB handle from a 
+  caller-supplied buffer. N bytes of data are copied from the buffer Z into the 
+  open BLOB, starting at offset iOffset.
+
+  On success, sqlite3_blob_write() returns SQLITE_OK. Otherwise, an error code 
+  or an extended error code is returned. Unless SQLITE_MISUSE is returned, this 
+  function sets the database connection error code and message accessible via 
+  sqlite3_errcode() and sqlite3_errmsg() and related functions.
+
+  If the BLOB handle passed as the first argument was not opened for writing 
+  (the flags parameter to sqlite3_blob_open() was zero), this function returns 
+  SQLITE_READONLY.
+
+  This function may only modify the contents of the BLOB; it is not possible to 
+  increase the size of a BLOB using this API. If offset iOffset is less than N 
+  bytes from the end of the BLOB, SQLITE_ERROR is returned and no data is
+  written. The size of the BLOB (and hence the maximum value of N+iOffset) can 
+  be determined using the sqlite3_blob_bytes() interface. If N or iOffset are 
+  less than zero SQLITE_ERROR is returned and no data is written.
+
+  An attempt to write to an expired BLOB handle fails with an error code of 
+  SQLITE_ABORT. Writes to the BLOB that occurred before the BLOB handle expired 
+  are not rolled back by the expiration of the handle, though of course those 
+  changes might have been overwritten by the statement that expired the BLOB 
+  handle or by other independent statements.
+
+  This routine only works on a BLOB handle which has been created by a prior 
+  successful call to sqlite3_blob_open() and which has not been closed by 
+  sqlite3_blob_close(). Passing any other pointer in to this routine results in 
+  undefined and probably undesirable behavior. }
+function sqlite3_blob_write(pBlob : psqlite3_blob; const z : Pointer; n : 
+  Integer; iOffset : Integer) : Integer; cdecl; external sqlite3_lib;
 
 
 
