@@ -1,6 +1,6 @@
 (******************************************************************************)
 (*                                libPasSQLite                                *)
-(*               object pascal wrapper around SQLLite library                 *)
+(*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
 (* Copyright (c) 2020                                       Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
