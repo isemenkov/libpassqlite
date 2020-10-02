@@ -1,7 +1,6 @@
 (******************************************************************************)
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLLite library                 *)
-(*                        https://github.com/curl/curl                        *)
 (*                                                                            *)
 (* Copyright (c) 2020                                       Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
@@ -1621,7 +1620,7 @@ const
 
   { * 3rd ************ 4th ********** }
   {   NULL             NULL }
-  SQLITE_SAVEPOINT                                                  = 33;
+  SQLITE_RECURSIVE                                                  = 33;
 
   { These constants identify classes of events that can be monitored using the 
     sqlite3_trace_v2() tracing logic. The M argument to 
@@ -2421,6 +2420,7 @@ type
   psqlite3_api_routines = ^sqlite3_api_routines;
   psqlite3_vfs = ^sqlite3_vfs;
   psqlite3_mem_methods = ^sqlite3_mem_methods;
+  ppsqlite3_stmt = ^psqlite3_stmt;
   psqlite3_stmt = ^sqlite3_stmt;
   ppsqlite3_value = ^psqlite3_value;
   psqlite3_value = ^sqlite3_value;
@@ -2446,7 +2446,7 @@ type
   psqlite3_rtree_query_info = ^sqlite3_rtree_query_info;
   ppsqlite3_session = ^psqlite3_session;
   psqlite3_session = ^sqlite3_session;
-  pppsqlite3_changeset_iter = ^psqlite3_changeset_iter;
+  ppsqlite3_changeset_iter = ^psqlite3_changeset_iter;
   psqlite3_changeset_iter = ^sqlite3_changeset_iter;
   ppsqlite3_changegroup = ^psqlite3_changegroup;
   psqlite3_changegroup = ^sqlite3_changegroup;
@@ -2467,7 +2467,7 @@ type
   sqlite3_destructor_type = procedure (ptr : Pointer) of object;
 
   fts5_extension_function = procedure (const pApi : pFts5ExtensionApi; pFts :
-    Fts5Context; pCtx : psqlite3_context; nVal : Integer; apVal : 
+    pFts5Context; pCtx : psqlite3_context; nVal : Integer; apVal : 
     ppsqlite3_value) of object;
 
   xBusy_callback = function (ptr : Pointer; invoked : Integer) : Integer of 
@@ -2506,8 +2506,6 @@ type
     database_name : PChar; table_name : PChar; rowid : sqlite3_int64) of object;
   xEntryPoint_callback = function (db : psqlite3; const pzErrMgs : PPChar; 
     const pThunk : psqlite3_api_routines) : Integer of object;
-  xFunc_callback = procedure (context : psqlite3_context; argc : Integer; argv :
-    ppsqlite3_value) of object;
   xNotify_callback = procedure (apArg : PPointer; nArg : Integer) of object;
   xWalCallback_callback = function (pWalArg : Pointer; db : psqlite3; 
     const zDbName : PChar; nEntry : Integer) : Integer of object;
@@ -3674,7 +3672,7 @@ type
     
     xInstCount : function (pContext : pFts5Context; pnInst : PInteger) : 
       Integer; cdecl;
-    xInst = function (pContext : pFts5Context; iIdx : Integer; piPhrase : 
+    xInst : function (pContext : pFts5Context; iIdx : Integer; piPhrase :
       PInteger; piCol : PInteger; piOff : PInteger) : Integer; cdecl;
     xRowid : function (pContext : pFts5Context) : sqlite3_int64; cdecl;
     xColumnText : function (pContext : pFts5Context; iCol : Integer; const pz :
@@ -4137,8 +4135,8 @@ function sqlite3_config(op : Integer) : Integer; cdecl; varargs;
 
   Calls to sqlite3_db_config() return SQLITE_OK if and only if the call is 
   considered successful. }
-function sqlite3_db_config(db : psqlite3; op : Integer); cdecl; varargs;
-  external sqlite3_lib;
+function sqlite3_db_config(db : psqlite3; op : Integer) : Integer; cdecl;
+  varargs; external sqlite3_lib;
 
 { The sqlite3_extended_result_codes() routine enables or disables the extended 
   result codes feature of SQLite. The extended result codes are disabled by 
@@ -8127,7 +8125,7 @@ function sqlite3_snapshot_get(db : psqlite3; const zSchema : PChar; ppSnapshot :
   The sqlite3_snapshot_open() interface is only available when the 
   SQLITE_ENABLE_SNAPSHOT compile-time option is used. }
 function sqlite3_snapshot_open(db : psqlite3; const zSchema : Pchar; pSnapshot :
-  psqlite3_shapshot) : Integer; cdecl; external sqlite3_lib;
+  psqlite3_snapshot) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_snapshot_free(P) interface destroys sqlite3_snapshot P. The 
   application must eventually free every sqlite3_snapshot object using this 
@@ -8840,7 +8838,7 @@ function sqlite3changegroup_add(pGroup : psqlite3_changegroup; nData : Integer;
   output variables are set to the size of and a pointer to the output buffer, 
   respectively. In this case it is the responsibility of the caller to 
   eventually free the buffer using a call to sqlite3_free(). }
-function sqlite3changegroup_output(pGroup : psqlite3_chagegroup; pnData :
+function sqlite3changegroup_output(pGroup : psqlite3_changegroup; pnData :
   PInteger; ppData : PPointer) : Integer; cdecl; external sqlite3_lib;
 
 { Delete A Changegroup Object }
@@ -9095,7 +9093,7 @@ function sqlite3changeset_start_v2_strm(pp : ppsqlite3_changeset_iter; xInput :
   external sqlite3_lib;
 function sqlite3session_changeset_strm(pSession : psqlite3_session; xOutput :
   xOutput_callback; pOut : Pointer) : Integer; cdecl; external sqlite3_lib;
-function sqlite3session_patchset_strm(pSession : psqltie3_session; xOutput :
+function sqlite3session_patchset_strm(pSession : psqlite3_session; xOutput :
   xOutput_callback; pOut : Pointer) : Integer; cdecl; external sqlite3_lib;
 function sqlite3changegroup_add_strm(pGroup : psqlite3_changegroup; xInput :
   xInput_callback; pIn : Pointer) : Integer; cdecl; external sqlite3_lib;
