@@ -22,7 +22,7 @@
 (* Floor, Boston, MA 02110-1335, USA.                                         *)
 (*                                                                            *)
 (******************************************************************************)
-unit passqlite;
+unit sqlite3.result; 
 
 {$mode objfpc}{$H+}
 {$IFOPT D+}
@@ -32,14 +32,30 @@ unit passqlite;
 interface
 
 uses
-  SysUtils, libpassqlite;
+  SysUtils, libpassqlite, sqlite3.errors_stack;
 
 type
+  { SQLite3 database query result collection. }
+  TSQLite3Result = class
+  private
+    FStatementHandle : psqlite3_stmt;
 
+  public
+    constructor Create (AStatementHandle : psqlite3_stmt; AResCode : Integer);
+    destructor Destroy; override;
 
-  // sqlite3_extended_result_codes
+    
+  end;
 
 implementation
 
-end.
+{ TSQLite3Result }
 
+constructor TSQLite3Result.Create (AStatementHandle : psqlite3_stmt; AResCode :
+    Integer);
+begin
+  FStatementHandle := AStatementHandle;
+
+end;
+
+end.

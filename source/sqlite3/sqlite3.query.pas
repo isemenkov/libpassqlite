@@ -22,7 +22,7 @@
 (* Floor, Boston, MA 02110-1335, USA.                                         *)
 (*                                                                            *)
 (******************************************************************************)
-unit sqlite3.statement;
+unit sqlite3.query; 
 
 {$mode objfpc}{$H+}
 {$IFOPT D+}
@@ -32,7 +32,7 @@ unit sqlite3.statement;
 interface
 
 uses
-  SysUtils, libpassqlite;
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result;
 
 type
   { Option that is used for special purposes. }
@@ -55,38 +55,56 @@ type
   );
   TPrepareFlags = set of TPrepareFlag;
 
-  { Single SQL statement. }
-  TSQLite3Statement = class
+  { Single SQL query. }
+  TSQLite3Query = class
   private
+    FErrorStack : PSQL3LiteErrorsStack;
     FDBHandle : psqlite3;
     FStatementHandle : psqlite3_stmt;
 
     function PrepareFlags (AFlags : TPrepareFlags) : Integer;
   public
-    constructor Create (ADBHandle : psqlite3; AQuery : String; AFlags : 
-      TPrepareFlags);
+    constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle : 
+      psqlite3; AQuery : String; AFlags : TPrepareFlags);
     destructor Destroy; override;
+
+    { Reset a prepared query. Reset a prepared query object back to its 
+      initial state, ready to be re-executed. }
+    procedure Reset;
+
+    { Binding values to prepared query. }
+    function Bind(AIndex : Integer) : TSQLite3Query; overload;
+    function Bind(AIndex : Integer; AValue : Double)  : TSQLite3Query; overload;
+    function Bind(AIndex : Integer; AValue : Integer) : TSQLite3Query; overload;
+    function Bind(AIndex : Integer; AValue : Int64)   : TSQLite3Query; overload;
+    function Bind(AIndex : Integer; AValue : String)  : TSQLite3Query; overload;
+
+    { Reset all bindings on a prepared query. }
+    procedure ClearBindings;
+
+    { Run the SQL. }
+    function Run : TSQLite3Result;
   end;
 
 implementation
 
-{ TSQLite3Statement }
+{ TSQLite3Query }
 
-constructor TSQLite3Statement.Create (ADBHandle : psqlite3; AQuery : String;
-  AFlags : TPrepareFlags);
+constructor TSQLite3Query.Create (AErrorsStack : PSQL3LiteErrorsStack; 
+  ADBHandle : psqlite3; AQuery : String; AFlags : TPrepareFlags);
 begin
-  sqlite3_prepare_v3(FDBHandle, PChar(AQuery), Length(PChar(AQuery)), 
-    PrepareFlags(AFlags), @FStatementHandle, nil);
+  FErrorStack := AErrorsStack;
+  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle, PChar(AQuery), 
+    Length(PChar(AQuery)), PrepareFlags(AFlags), @FStatementHandle, nil));
 end;
 
-destructor TSQLite3Statement.Destroy;
+destructor TSQLite3Query.Destroy;
 begin
-  sqlite3_finalize(FStatementHandle);
-
+  FErrorStack^.Push(sqlite3_finalize(FStatementHandle));
   inherited Destroy;
 end;
 
-function TSQLite3Statement.PrepareFlags (AFlags : TPrepareFlags) : Integer;
+function TSQLite3Query.PrepareFlags (AFlags : TPrepareFlags) : Integer;
 begin
   Result := 0;
 
@@ -96,6 +114,53 @@ begin
     Result := Result or libpassqlite.SQLITE_PREPARE_NORMALIZE;
   if SQLITE_PREPARE_NO_VTAB in AFlags then
     Result := Result or libpassqlite.SQLITE_PREPARE_NO_VTAB;
+end;
+
+function TSQLite3Query.Bind(AIndex : Integer) : TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_null(FStatementHandle, AIndex));
+  Result := Self;
+end;
+
+function TSQLite3Query.Bind(AIndex : Integer; AValue : Double) : TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_double(FStatementHandle, AIndex, AValue));
+  Result := Self;
+end;
+
+function TSQLite3Query.Bind(AIndex : Integer; AValue : Integer) : TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_int(FStatementHandle, AIndex, AValue));
+  Result := Self;
+end;
+
+function TSQLite3Query.Bind(AIndex : Integer; AValue : Int64) : TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_int64(FStatementHandle, AIndex, AValue));
+  Result := Self;
+end;
+
+function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex, PChar(AValue),
+    Length(PChar(AValue)), SQLITE_STATIC));
+  Result := Self;
+end;
+
+procedure TSQLite3Query.ClearBindings;
+begin
+  FErrorStack^.Push(sqlite3_clear_bindings(FStatementHandle));
+end;
+
+procedure TSQLite3Query.Reset;
+begin
+  FErrorStack^.Push(sqlite3_reset(FStatementHandle));
+end;
+
+function TSQLite3Query.Run : TSQLite3Result;
+begin
+  Result := TSQLite3Result.Create(FStatementHandle, 
+    sqlite3_step(FStatementHandle));
 end;
 
 end.

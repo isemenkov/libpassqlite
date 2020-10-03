@@ -32,7 +32,7 @@ unit sqlite3.connection;
 interface
 
 uses
-  SysUtils, libpassqlite;
+  SysUtils, libpassqlite, sqlite3.errors_stack;
 
 type
   { Additional parameters for additional control over the new database 
@@ -80,11 +80,13 @@ type
   { SQLite3 database connection. }
   TSQLite3DatabaseConnection = class
   private
+    FErrorStack : PSQL3LiteErrorsStack;
     FHandle : psqlite3;
 
     function PrepareFlags (AFlags : TConnectFlags) : Integer;
   public
-    constructor Create (AFilename : String; AFlags : TConnectFlags);
+    constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AFilename : String; 
+      AFlags : TConnectFlags);
     destructor Destroy; override;
   end;
 
@@ -92,16 +94,17 @@ implementation
 
 { TSQLite3DatabaseConnection }
 
-constructor TSQLite3DatabaseConnection.Create (AFilename : String; AFlags : 
-  TConnectFlags);
+constructor TSQLite3DatabaseConnection.Create (AErrorsStack : 
+  PSQL3LiteErrorsStack; AFilename : String; AFlags : TConnectFlags);
 begin
-  sqlite3_open_v2(PChar(AFilename), @FHandle, PrepareFlags(AFlags), nil);
+  FErrorStack := AErrorsStack;
+  FErrorStack^.Push(sqlite3_open_v2(PChar(AFilename), @FHandle, 
+    PrepareFlags(AFlags), nil));
 end;
 
 destructor TSQLite3DatabaseConnection.Destroy;
 begin
-  sqlite3_close_v2(FHandle);
-
+  FErrorStack^.Push(sqlite3_close_v2(FHandle));
   inherited Destroy;
 end;
 
