@@ -76,10 +76,10 @@ type
     destructor Destroy; override;
 
     { Retrive the first row in a result row collection. }
-    function FirstRow : TIterator;
+    function FirstRow : TRowIterator;
 
     { Return enumerator for in operator. }
-    function GetEnumerator : TIterator;
+    function GetEnumerator : TRowIterator;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FStatementHandle : psqlite3_stmt;

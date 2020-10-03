@@ -2462,75 +2462,77 @@ type
 
   { Callbacks. }
   sqlite3_callback = function(pArg : Pointer; nCol : Integer; azVals : PPChar;
-    azCols : PPChar) : Integer of object;
-  sqlite3_syscall_ptr = procedure of object;
-  sqlite3_destructor_type = procedure (ptr : Pointer) of object;
+    azCols : PPChar) : Integer of object; cdecl;
+  sqlite3_syscall_ptr = procedure of object; cdecl;
+  sqlite3_destructor_type = procedure (ptr : Pointer) of object; cdecl;
 
   fts5_extension_function = procedure (const pApi : pFts5ExtensionApi; pFts :
     pFts5Context; pCtx : psqlite3_context; nVal : Integer; apVal : 
-    ppsqlite3_value) of object;
+    ppsqlite3_value) of object; cdecl;
 
   xBusy_callback = function (ptr : Pointer; invoked : Integer) : Integer of 
-    object;
+    object; cdecl;
   xAuth_callback = function (pAuthArg : Pointer; action_code : Integer; 
     const zArg1 : PChar; const zArg2 : PChar; const zArg3 : PChar; const zArg4 :
-    PChar) : Integer of object;
+    PChar) : Integer of object; cdecl;
   xTrace_callback = procedure (statement : Pointer; const text : PChar) of
-    object;
+    object; cdecl;
   xProfile_callback = procedure (statement : Pointer; const text : PChar; 
-    estimate : sqlite3_uint64) of object;
+    estimate : sqlite3_uint64) of object; cdecl;
   xCallback_callback = function (invoked : Cardinal; context : Pointer; depend1
-    : Pointer; depend2 : Pointer) : Integer of object;
-  xProgress_callback = function (pArg : Pointer) : Integer of object;
-  xDel_calback = procedure (pPtr : Pointer) of object;
-  xDestructor_callback = procedure (pPtr : Pointer) of object;
+    : Pointer; depend2 : Pointer) : Integer of object; cdecl;
+  xProgress_callback = function (pArg : Pointer) : Integer of object; cdecl;
+  xDel_callback = procedure (pPtr : Pointer) of object; cdecl;
+  xDestructor_callback = procedure (pPtr : Pointer) of object; cdecl;
   xFunc_callback = procedure (context : psqlite3_context; argc : Integer; argv : 
-    ppsqlite3_value) of object;
+    ppsqlite3_value) of object; cdecl;
   xStep_callback = procedure (context : psqlite3_context; argc : Integer; argv :
-    ppsqlite3_value) of object;
-  xFinal_callback = procedure (context : psqlite3_context) of object;
-  xDestroy_callback = procedure (ptr : Pointer) of object;
-  xValue_callback = procedure (context : psqlite3_context) of object;
+    ppsqlite3_value) of object; cdecl;
+  xFinal_callback = procedure (context : psqlite3_context) of object; cdecl;
+  xDestroy_callback = procedure (ptr : Pointer) of object; cdecl;
+  xValue_callback = procedure (context : psqlite3_context) of object; cdecl;
   xInverse_callback = procedure (context : psqlite3_context; argc : Integer;
-    argv : ppsqlite3_value) of object;
-  xDelete_callback = procedure (ptr : Pointer) of object;
+    argv : ppsqlite3_value) of object; cdecl;
+  xDelete_callback = procedure (ptr : Pointer) of object; cdecl;
   xCompare_callback = function (pArg : Pointer; nBytes1 : Integer; 
     const eTextRep1 : Pointer; nBytes2 : Integer; const eTextRep2 : Pointer) :
-    Integer of object;
+    Integer of object; cdecl;
   xCollNeeded_callback = procedure (pArg : Pointer; db : psqlite3; eTextRep :
-    Integer; const collation_name : PChar) of object;
+    Integer; const collation_name : PChar) of object; cdecl;
   xCollNeeded16_callback = procedure (pArg : Pointer; db : psqlite3; eTextRep :
-    Integer; const collation_name : Pointer) of object; 
-  xCallbackHook_callback = function (pArg : Pointer) : Integer of object; 
+    Integer; const collation_name : Pointer) of object; cdecl;
+  xCallbackHook_callback = function (pArg : Pointer) : Integer of object; cdecl;
   xCallbackUpdateHook_callback = procedure (pArg : Pointer; invoked : Integer;
     database_name : PChar; table_name : PChar; rowid : sqlite3_int64) of object;
+    cdecl;
   xEntryPoint_callback = function (db : psqlite3; const pzErrMgs : PPChar; 
-    const pThunk : psqlite3_api_routines) : Integer of object;
+    const pThunk : psqlite3_api_routines) : Integer of object; cdecl;
   xNotify_callback = procedure (apArg : PPointer; nArg : Integer) of object;
+    cdecl;
   xWalCallback_callback = function (pWalArg : Pointer; db : psqlite3; 
-    const zDbName : PChar; nEntry : Integer) : Integer of object;
+    const zDbName : PChar; nEntry : Integer) : Integer of object; cdecl;
   xPreUpdate_callback = procedure (pCtx : Pointer; db : psqlite3; op : Integer;
     const zDb : PChar; const zName : PChar; iKey1 : sqlite3_int64; iKey2 :
-    sqlite3_int64) of object;
+    sqlite3_int64) of object; cdecl;
   xGeom_callback = function (pInfo : psqlite3_rtree_geometry; nCoord : Integer;
-    aCoord : psqlite3_rtree_dbl; eWithin : PInteger) : Integer of object;
+    aCoord : psqlite3_rtree_dbl; eWithin : PInteger) : Integer of object; cdecl;
   xFilter_callback = function (pCtx : Pointer; const zTab : PChar) : Integer of
-    object;
+    object; cdecl;
   xConflict_callback = function (pCtx : Pointer; eConflict : Integer; p :
-    psqlite3_changeset_iter) : Integer of object;
+    psqlite3_changeset_iter) : Integer of object; cdecl;
   xInput_callback = function (pIn : Pointer; pData : Pointer; pnData : PInteger)
-    : Integer of object;
+    : Integer of object; cdecl;
   xInputA_callback = function (pIn : Pointer; pData : Pointer; pnData : PInteger)
-    : Integer of object;
+    : Integer of object; cdecl;
   xInputB_callback = function (pIn : Pointer; pData : Pointer; pnData : PInteger)
-    : Integer of object;
+    : Integer of object; cdecl;
   xOutput_callback = function (pOut : Pointer; const pData : Pointer; nData :
-    Integer) : Integer of object;
+    Integer) : Integer of object; cdecl;
   xToken_callback = function (pCtx : Pointer; tflags : Integer; const pToken :
     PChar; nToken : Integer; iStart : Integer; iEnd : Integer) : Integer of
-    object;
+    object; cdecl;
   xCallback_fts5extension_callback = function (const pApi : pFts5ExtensionApi;
-    pContext : pFts5Context; ptr : Pointer) : Integer of object;
+    pContext : pFts5Context; ptr : Pointer) : Integer of object; cdecl;
 
   { Each open SQLite database is represented by a pointer to an instance of the 
     opaque structure named "sqlite3". It is useful to think of an sqlite3 
@@ -5272,10 +5274,10 @@ function sqlite3_stmt_busy(pStmt : psqlite3_stmt) : Integer; cdecl;
   SQLITE_MAX_LENGTH. SQLITE_RANGE is returned if the parameter index is out of 
   range. SQLITE_NOMEM is returned if malloc() fails. }
 function sqlite3_bind_blob(pStmt : psqlite3_stmt; i : Integer; const zData :
-  Pointer; nData : Integer; xDel : xDel_calback) : Integer; cdecl; 
+  Pointer; nData : Integer; xDel : xDel_callback) : Integer; cdecl; 
   external sqlite3_lib;
 function sqlite3_bind_blob64(pStmt : psqlite3_stmt; i : Integer; const zData :
-  Pointer; nData : sqlite3_uint64; xDel : xDel_calback) : Integer; cdecl;
+  Pointer; nData : sqlite3_uint64; xDel : xDel_callback) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_bind_double(pStmt : psqlite3_stmt; i : Integer; rValue :
   Double) : Integer; cdecl; external sqlite3_lib;
@@ -5286,13 +5288,13 @@ function sqlite3_bind_int64(pStmt : psqlite3_stmt; i : Integer; iValue :
 function sqlite3_bind_null(pStmt : psqlite3_stmt; i : Integer) : Integer;
   cdecl; external sqlite3_lib;
 function sqlite3_bind_text(pStmt : psqlite3_stmt; i : Integer; const zData :
-  PChar; nData : Integer; xDel : xDel_calback) : Integer; cdecl; 
+  PChar; nData : Integer; xDel : xDel_callback) : Integer; cdecl; 
   external sqlite3_lib;
 function sqlite3_bind_text16(pStmt : psqlite3_stmt; i : Integer; const zData :
-  Pointer; nData : Integer; xDel : xDel_calback) : Integer; cdecl;
+  Pointer; nData : Integer; xDel : xDel_callback) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_bind_text64(pStmt : psqlite3_stmt; i : Integer; const zData :
-  PChar; nData : sqlite3_uint64; xDel : xDel_calback; encoding : Byte) : 
+  PChar; nData : sqlite3_uint64; xDel : xDel_callback; encoding : Byte) : 
   Integer; cdecl; external sqlite3_lib;
 function sqlite3_bind_value(pStmt : psqlite3_stmt; i : Integer; const pValue :
   psqlite3_value) : Integer; cdecl; external sqlite3_lib;
@@ -6189,9 +6191,9 @@ procedure sqlite3_set_auxdata(pCtx : psqlite3_context; N : Integer; pAux :
   containing the application-defined function that received the sqlite3_context 
   pointer, the results are undefined. }
 procedure sqlite3_result_blob(pCtx : psqlite3_context; const z : Pointer;
-  n : Integer; xDel : xDel_calback); cdecl; external sqlite3_lib;
+  n : Integer; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_blob64(pCtx : psqlite3_context; const z : Pointer;
-  n : sqlite3_uint64; xDel : xDel_calback); cdecl; external sqlite3_lib;
+  n : sqlite3_uint64; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_double(pCtx : psqlite3_context; rVal : Double); cdecl;
   external sqlite3_lib;
 procedure sqlite3_result_error(pCtx : psqlite3_context; const z : PChar; n :
@@ -6211,16 +6213,16 @@ procedure sqlite3_result_int64(pCtx : psqlite3_context; iVal : sqlite3_int64);
 procedure sqlite3_result_null(pCtx : psqlite3_context); cdecl; 
   external sqlite3_lib;
 procedure sqlite3_result_text(pCtx : psqlite3_context; const z : PChar; n :
-  Integer; xDel : xDel_calback); cdecl; external sqlite3_lib;
+  Integer; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_text64(pCtx : psqlite3_context; const z : PChar;
-  n : sqlite3_uint64; xDel : xDel_calback; enc : Byte); cdecl;
+  n : sqlite3_uint64; xDel : xDel_callback; enc : Byte); cdecl;
   external sqlite3_lib;
 procedure sqlite3_result_text16(pCtx : psqlite3_context; const z : Pointer;
-  n : Integer; xDel : xDel_calback); cdecl; external sqlite3_lib;
+  n : Integer; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_text16le(pCtx : psqlite3_context; const z : Pointer;
-  n : Integer; xDel : xDel_calback); cdecl; external sqlite3_lib;
+  n : Integer; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_text16be(pCtx : psqlite3_context; const z : Pointer;
-  n : Integer; xDel : xDel_calback); cdecl; external sqlite3_lib;
+  n : Integer; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_value(pCtx : psqlite3_context; pValue : 
   psqlite3_value); cdecl; external sqlite3_lib;
 procedure sqlite3_result_pointer(pCtx : psqlite3_context;  pPtr : Pointer;

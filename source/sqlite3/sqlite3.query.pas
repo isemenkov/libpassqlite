@@ -143,7 +143,7 @@ end;
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
   FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex, PChar(AValue),
-    Length(PChar(AValue)), SQLITE_STATIC));
+    Length(PChar(AValue)), nil));
   Result := Self;
 end;
 
@@ -159,7 +159,7 @@ end;
 
 function TSQLite3Query.Run : TSQLite3Result;
 begin
-  Result := TSQLite3Result.Create(FStatementHandle, 
+  Result := TSQLite3Result.Create(FErrorStack, FStatementHandle,
     sqlite3_step(FStatementHandle));
 end;
 

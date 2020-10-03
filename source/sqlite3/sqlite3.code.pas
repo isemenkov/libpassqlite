@@ -22,7 +22,7 @@
 (* Floor, Boston, MA 02110-1335, USA.                                         *)
 (*                                                                            *)
 (******************************************************************************)
-unit sqlite3.codes;
+unit sqlite3.code;
 
 {$mode objfpc}{$H+}
 {$IFOPT D+}
@@ -35,7 +35,7 @@ uses
   libpassqlite;
 
 type
-  TSQLite3Codes = (
+  TSQLite3Code = (
     { The SQLITE_OK result code means that the operation was successful and that 
       there were no errors. }
     SQLITE_OK = Longint(libpassqlite.SQLITE_OK),

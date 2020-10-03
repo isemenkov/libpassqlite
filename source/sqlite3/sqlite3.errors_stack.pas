@@ -32,7 +32,7 @@ unit sqlite3.errors_stack;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.codes, utils.errorsstack, utils.pair;
+  SysUtils, sqlite3.code, utils.errorsstack;
 
 type
   { TSQLite3 database errors stack. }
@@ -40,29 +40,35 @@ type
   TSQL3LiteErrorsStack = class(specialize TListErrorsStack<String>)
   public
     { Add error to the stack. }
-    procedure Push(AError : TSQLite3Codes); overload;
+    procedure Push (AError : TSQLite3Code); overload;
+    procedure Push (AErrorCode : Integer); overload;
   end;
 
 implementation
 
 { TSQLite3ErrorsStack }
 
-procedure TSQL3LiteErrorsStack.Push (AError : TSQLite3Codes);
+procedure TSQL3LiteErrorsStack.Push (AErrorCode : Integer);
+begin
+  Push(TSQLite3Code(AErrorCode));
+end;
+
+procedure TSQL3LiteErrorsStack.Push (AError : TSQLite3Code);
 begin
   case AError of
     SQLITE_OK : ;
     SQLITE_DONE : ;
     SQLITE_ROW : ;
     
-    SQLITE_ERROR : Push('SQLITE_ERROR: SQLite3 database error.'));
+    SQLITE_ERROR : Push('SQLITE_ERROR: SQLite3 database error.');
     SQLITE_INTERNAL : Push('SQLITE_INTERNAL: SQLite3 database internal '+
-      'error.'));
+      'error.');
     SQLITE_PERM : Push('SQLITE_PERM: The requested access mode for a newly '+
-      'created database could not be provided'));
+      'created database could not be provided');
     SQLITE_ABORT : Push('SQLITE_ABORT: An operation was aborted prior to '+
-      'completion.'));
+      'completion.');
     SQLITE_BUSY : Push('SQLITE_BUSY: The database file could not be written '+
-      '(or in some cases read) because of concurrent activity.'));
+      '(or in some cases read) because of concurrent activity.');
     SQLITE_LOCKED : Push('SQLITE_LOCKED: A write operation could not continue '+
       'because of a conflict within the same database connection.');
     SQLITE_NOMEM : Push('SQLITE_NOMEM: SQLite was unable to allocate all the '+
@@ -139,11 +145,9 @@ begin
     SQLITE_IOERR_SHORT_READ : Push('SQLITE_IOERR_SHORT_READ: A read attempt '+
       'in the VFS layer was unable to obtain as many bytes as was requested.');
     SQLITE_CORRUPT_SEQUENCE : Push('SQLITE_CORRUPT_SEQUENCE: The schema of '+
-      'the sqlite_sequence table is corrupt.');
-  end else
-  begin
-    Push(TErrorsPair.Create(IntToStr(AError), 
-      'Undefined SQLite3 database error code.'));
+      'the sqlite_sequence table is corrupt.')
+  else
+    Push(IntToStr(Integer(AError)) + ': Undefined SQLite3 database error code.');
   end;  
 end;
 
