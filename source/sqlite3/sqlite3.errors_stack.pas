@@ -51,6 +51,9 @@ procedure TSQL3LiteErrorsStack.Push (AError : TSQLite3Codes);
 begin
   case AError of
     SQLITE_OK : ;
+    SQLITE_DONE : ;
+    SQLITE_ROW : ;
+    
     SQLITE_ERROR : Push('SQLITE_ERROR: SQLite3 database error.'));
     SQLITE_INTERNAL : Push('SQLITE_INTERNAL: SQLite3 database internal '+
       'error.'));
@@ -99,8 +102,6 @@ begin
       'place.');
     SQLITE_WARNING : Push('SQLITE_WARNING: An unusual and possibly '+
       'ill-advised operation is taking place.');
-    SQLITE_ROW : Push('SQLITE_ROW: Another row of output is available.');
-    SQLITE_DONE : Push('SQLITE_DONE: SQL statement has run to completion.');
     SQLITE_OK_LOAD_PERMANENTLY : Push('SQLITE_OK_LOAD_PERMANENTLY: Extension '+
       'remains loaded into the process address space after the database '+
       'connection closes.');

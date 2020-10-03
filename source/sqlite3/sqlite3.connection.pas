@@ -79,15 +79,15 @@ type
 
   { SQLite3 database connection. }
   TSQLite3DatabaseConnection = class
+  public
+    constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AFilename : String; 
+      AFlags : TConnectFlags);
+    destructor Destroy; override;
   private
     FErrorStack : PSQL3LiteErrorsStack;
     FHandle : psqlite3;
 
     function PrepareFlags (AFlags : TConnectFlags) : Integer;
-  public
-    constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AFilename : String; 
-      AFlags : TConnectFlags);
-    destructor Destroy; override;
   end;
 
 implementation

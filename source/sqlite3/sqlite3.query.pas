@@ -57,12 +57,6 @@ type
 
   { Single SQL query. }
   TSQLite3Query = class
-  private
-    FErrorStack : PSQL3LiteErrorsStack;
-    FDBHandle : psqlite3;
-    FStatementHandle : psqlite3_stmt;
-
-    function PrepareFlags (AFlags : TPrepareFlags) : Integer;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle : 
       psqlite3; AQuery : String; AFlags : TPrepareFlags);
@@ -84,6 +78,12 @@ type
 
     { Run the SQL. }
     function Run : TSQLite3Result;
+  private
+    FErrorStack : PSQL3LiteErrorsStack;
+    FDBHandle : psqlite3;
+    FStatementHandle : psqlite3_stmt;
+
+    function PrepareFlags (AFlags : TPrepareFlags) : Integer;
   end;
 
 implementation
