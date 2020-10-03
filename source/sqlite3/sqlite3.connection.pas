@@ -80,8 +80,8 @@ type
   { SQLite3 database connection. }
   TSQLite3DatabaseConnection = class
   public
-    constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AFilename : String; 
-      AFlags : TConnectFlags);
+    constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AHandle : psqlite3; 
+      AFilename : String; AFlags : TConnectFlags);
     destructor Destroy; override;
   private
     FErrorStack : PSQL3LiteErrorsStack;
@@ -95,8 +95,10 @@ implementation
 { TSQLite3DatabaseConnection }
 
 constructor TSQLite3DatabaseConnection.Create (AErrorsStack : 
-  PSQL3LiteErrorsStack; AFilename : String; AFlags : TConnectFlags);
+  PSQL3LiteErrorsStack; AHandle : psqlite3; AFilename : String; AFlags : 
+  TConnectFlags);
 begin
+  FHandle := AHandle;
   FErrorStack := AErrorsStack;
   FErrorStack^.Push(sqlite3_open_v2(PChar(AFilename), @FHandle, 
     PrepareFlags(AFlags), nil));

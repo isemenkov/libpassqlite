@@ -22,7 +22,7 @@
 (* Floor, Boston, MA 02110-1335, USA.                                         *)
 (*                                                                            *)
 (******************************************************************************)
-unit passqlite;
+unit sqlite3.database;
 
 {$mode objfpc}{$H+}
 {$IFOPT D+}
@@ -32,14 +32,52 @@ unit passqlite;
 interface
 
 uses
-  SysUtils, libpassqlite;
+  libpassqlite, sqlite3.errors_stack, sqlite3.connection,
+  sqlite3.query;
 
 type
+  { SQLite3 database }
+  TSQLite3Database = class
+  public
+    constructor Create (AFilename : String; AFlags : TConnectFlags = 
+      [SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE]);
+    destructor Destroy; override;
 
+    { Create new SQL query. }
+    function Query (AQuery : String; AFlags : TPrepareFlags = 
+      [SQLITE_PREPARE_NORMALIZE]) : TSQLite3Query;
+  private
+    FErrorsStack : TSQL3LiteErrorsStack;
+    FHandle : psqlite3;
+    FConnection : TSQLite3DatabaseConnection;
+  end;
 
   // sqlite3_extended_result_codes
 
 implementation
+
+{ TSQLite3Database }
+
+constructor TSQLite3Database.Create (AFilename : String; AFlags : 
+  TConnectFlags);
+begin
+  FErrorsStack := TSQL3LiteErrorsStack.Create;
+  FConnection := TSQLite3DatabaseConnection.Create(@FErrorsStack, FHandle, 
+    AFilename, AFlags);
+end;
+
+destructor TSQLite3Database.Destroy;
+begin
+  FreeAndNil(FConnection);
+  FreeAndNil(FErrorsStack);
+  inherited Destroy;
+end;
+
+function TSQLite3Database.Query (AQuery : String; AFlags : TPrepareFlags) :
+  TSQLite3Query;
+begin
+  Result := TSQLite3Query.Create(@FErrorsStack, FHandle, AQuery, AFlags);
+end;
 
 end.
 
