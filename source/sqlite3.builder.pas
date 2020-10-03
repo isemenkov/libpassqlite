@@ -32,18 +32,45 @@ unit sqlite3.builder;
 interface
 
 uses
-  sqlite3.database, sqlite3.query;
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.connection, 
+  sqlite3.table;
 
 type
   TSQLite3Builder = class
   public
+    constructor Create (AFilename : String; AFlags : TConnectFlags = 
+      [SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE]);
+    destructor Destroy; override;
 
+    { Get table interface. }
+    function Table : TSQLite3Table;
   private
-  
+    FErrorsStack : TSQL3LiteErrorsStack;
+    FHandle : psqlite3;
+    FConnection : TSQLite3DatabaseConnection;
   end;
 
 implementation
 
 { TSQLite3Builder }
+
+constructor TSQLite3Builder.Create (AFilename : String; AFlags : TConnectFlags);
+begin
+  FErrorsStack := TSQL3LiteErrorsStack.Create;
+  FConnection := TSQLite3DatabaseConnection.Create(@FErrorsStack, FHandle,
+    AFilename, AFlags);
+end;
+
+destructor TSQLite3Builder.Destroy;
+begin
+  FreeAndNil(FConnection);
+  FreeAndNil(FErrorsStack);
+  inherited Destroy;
+end;
+
+function TSQLite3Builder.Table : TSQLite3Table;
+begin
+  Result := TSQLite3Table.Create(@FErrorsStack, FHandle);
+end;
 
 end.

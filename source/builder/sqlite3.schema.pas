@@ -32,32 +32,135 @@ unit sqlite3.schema;
 interface
 
 uses
-  libpassqlite, sqlite3.errors_stack;
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result_row,
+  container.list, utils.functor;
 
 type
   TSQLite3Schema = class
   public
+    type
+      { Table column item. }
+      TColumnItem = record
+        Column_Name : String;
+        Column_Type : TDataType;
+        
+        Option_AutoIncrement : Boolean;
+        Option_PrimaryKey : Boolean;
+        Option_NotNull : Boolean;
+        Option_Unique : Boolean;
+      end;
+
+      { ColumnItem compare functor. }
+      TColumnItemCompareFunctor = class
+        (specialize TBinaryFunctor<TColumnItem, Integer>)
+      public
+        function Call (AValue1, AValue2 : TColumnItem) : Integer; override;
+      end;
+
+      { Columns list. }  
+      TColumnsList = class
+        (specialize TList<TColumnItem, TColumnItemCompareFunctor>);
+  public
+    constructor Create;
+    destructor Destroy; override;
+
     { Create autoincrement primary key column id. }
     function Id (AColumnName : String = 'id') : TSQLite3Schema;
 
     { Create integer column. }
     function Integer (AColumnName : String) : TSQLite3Schema;
+
+    { Create text column. }
+    function Text (AColumnName : String) : TSQLite3Schema;
+
+    { Clear columns list. }
+    procedure Clear;
   private
-    
+    FColumns : TColumnsList;
+  public
+    { Get schema columns list. }
+    property Columns : TColumnsList read FColumns;
   end;
 
 implementation
 
+{ TSQLite3Schema.TColumnItemCompareFunctor }
+
+function TSQLite3Schema.TColumnItemCompareFunctor.Call (AValue1, AValue2 :
+  TColumnItem) : Integer;
+begin
+  if AValue1.Column_Name < AValue2.Column_Name then
+    Result := -1
+  else if AValue2.Column_Name < AValue1.Column_Name then
+    Result := 1
+  else
+    Result := 0;
+end;
+
 { TSQLite3Schema }
 
-function TSQLite3Schema.Id (AColumnName : String) : TSQLite3Schema;
+constructor TSQLite3Schema.Create;
 begin
+  FColumns := TColumnsList.Create;
+end;
+
+destructor TSQLite3Schema.Destroy;
+begin
+  FreeAndNil(FColumns);
+  inherited Destroy;
+end;
+
+procedure TSQLite3Schema.Clear;
+begin
+  FColumns.Clear;
+end;
+
+function TSQLite3Schema.Id (AColumnName : String) : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  Column.Column_Name := AColumnName;
+  Column.Column_Type := SQLITE_INTEGER;
   
+  Column.Option_AutoIncrement := True;
+  Column.Option_PrimaryKey := True;
+  Column.Option_NotNull := True;
+  Column.Option_Unique := True;
+
+  FColumns.Append(Column);
+  Result := Self;
 end;
 
 function TSQLite3Schema.Integer (AColumnName : String) : TSQLite3Schema;
+var
+  Column : TColumnItem;
 begin
+  Column.Column_Name := AColumnName;
+  Column.Column_Type := SQLITE_INTEGER;
   
+  Column.Option_AutoIncrement := False;
+  Column.Option_PrimaryKey := False;
+  Column.Option_NotNull := False;
+  Column.Option_Unique := False;
+
+  FColumns.Append(Column);
+  Result := Self;
+end;
+
+function TSQLite3Schema.Text (AColumnName : String) : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  Column.Column_Name := AColumnName;
+  Column.Column_Type := SQLITE_TEXT;
+  
+  Column.Option_AutoIncrement := False;
+  Column.Option_PrimaryKey := False;
+  Column.Option_NotNull := False;
+  Column.Option_Unique := False;
+
+  FColumns.Append(Column);
+  Result := Self;
 end;
 
 end.

@@ -32,7 +32,7 @@ unit sqlite3.database;
 interface
 
 uses
-  libpassqlite, sqlite3.errors_stack, sqlite3.connection,
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.connection,
   sqlite3.query;
 
 type

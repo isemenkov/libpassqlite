@@ -32,7 +32,8 @@ unit sqlite3.table;
 interface
 
 uses
-  libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query;
+  libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
+  sqlite3.result_row;
 
 type
   TSQLite3Table = class
@@ -56,9 +57,15 @@ type
     { Rename table. }
     procedure RenameTable (AFromName, AToName : String);
   private
+    { Create SQL query and run it. }
+    procedure CreateAndRunSchemaQuery;
+  private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : psqlite3;
     FQuery : TSQLite3Query;
+
+    FTableName : String;
+    FSchema : TSQLite3Schema;
   end;
 
 implementation
@@ -70,16 +77,85 @@ constructor TSQLite3Table.Create (AErrorsStack : PSQL3LiteErrorsStack;
 begin
   FErrorsStack := AErrorsStack;
   FDBHandle := ADBHandle;
+  FSchema := TSQLite3Schema.Create;
 end;
 
 destructor TSQLite3Table.Destroy;
 begin
+  CreateAndRunSchemaQuery;
   inherited Destroy;
+end;
+
+procedure TSQLite3Table.CreateAndRunSchemaQuery;
+var
+  SQL : String;
+  column : TSQLite3Schema.TColumnItem;
+  i : Integer;
+begin
+  if not FSchema.Columns.FirstEntry.HasValue then
+    Exit;
+
+  SQL := 'CREATE TABLE ? (';
+  for column in FSchema.Columns do
+  begin
+    case column.Column_Type of
+      SQLITE_INTEGER : 
+        begin
+          { If it is a primary key. }
+          if column.Option_PrimaryKey then
+          begin
+            SQL := SQL + '? INTEGER PRIMARY KEY,';
+            continue;
+          end;
+
+          { Ignore all modificators. }
+          SQL := SQL + '? INTEGER,';  
+        end;
+      SQLITE_FLOAT : 
+        begin
+          
+        end;
+      SQLITE_BLOB : 
+        begin
+          
+        end;
+      SQLITE_TEXT : 
+        begin
+          { Add text column. }
+          SQL := SQL + '? TEXT';
+
+          { Add modificators. }
+          if column.Option_NotNull then
+            SQL := SQL + ' NOT NULL';
+
+          if column.Option_Unique then
+            SQL := SQL + ' UNIQUE';
+
+          { Add comma to the end. }
+          SQL := SQL + ',';
+        end;
+    end;
+  end;
+
+  FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL, 
+    [SQLITE_PREPARE_NORMALIZE]);
+  
+  i := 2;
+  FQuery.Bind(1, FTableName);
+  for column in FSchema.Columns do
+  begin
+    FQuery.Bind(i, column.Column_Name);
+    Inc(i);
+  end;
+
+  FQuery.Run;
 end;
 
 function TSQLite3Table.CreateTable (ATableName : String) : TSQLite3Schema;
 begin
-  
+  FTableName := ATableName;
+  FSchema.Clear;
+  Result := FSchema;
 end;
 
 function TSQLite3Table.HasTable (ATableName : String) : Boolean;
