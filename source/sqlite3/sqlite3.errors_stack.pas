@@ -42,11 +42,19 @@ type
     { Add error to the stack. }
     procedure Push (AError : TSQLite3Code); overload;
     procedure Push (AErrorCode : Integer); overload;
+
+    function GetEnumerator : TErrorsEnumerator;
   end;
 
 implementation
 
 { TSQLite3ErrorsStack }
+
+function TSQL3LiteErrorsStack.GetEnumerator :
+  TSQL3LiteErrorsStack.TErrorsEnumerator;
+begin
+  inherited GetEnumerator;
+end;
 
 procedure TSQL3LiteErrorsStack.Push (AErrorCode : Integer);
 begin

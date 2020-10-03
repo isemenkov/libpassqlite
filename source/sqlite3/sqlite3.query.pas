@@ -59,7 +59,7 @@ type
   TSQLite3Query = class
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle : 
-      psqlite3; AQuery : String; AFlags : TPrepareFlags);
+      ppsqlite3; AQuery : String; AFlags : TPrepareFlags);
     destructor Destroy; override;
 
     { Reset a prepared query. Reset a prepared query object back to its 
@@ -80,7 +80,7 @@ type
     function Run : TSQLite3Result;
   private
     FErrorStack : PSQL3LiteErrorsStack;
-    FDBHandle : psqlite3;
+    FDBHandle : ppsqlite3;
     FStatementHandle : psqlite3_stmt;
 
     function PrepareFlags (AFlags : TPrepareFlags) : Integer;
@@ -91,10 +91,11 @@ implementation
 { TSQLite3Query }
 
 constructor TSQLite3Query.Create (AErrorsStack : PSQL3LiteErrorsStack; 
-  ADBHandle : psqlite3; AQuery : String; AFlags : TPrepareFlags);
+  ADBHandle : ppsqlite3; AQuery : String; AFlags : TPrepareFlags);
 begin
   FErrorStack := AErrorsStack;
-  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle, PChar(AQuery), 
+  FDBHandle := ADBHandle;
+  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^, PChar(AQuery),
     Length(PChar(AQuery)), PrepareFlags(AFlags), @FStatementHandle, nil));
 end;
 

@@ -43,11 +43,13 @@ type
     destructor Destroy; override;
 
     { Get table interface. }
-    function Table : TSQLite3Table;
+    function Table (ATableName : String) : TSQLite3Table;
   private
     FErrorsStack : TSQL3LiteErrorsStack;
     FHandle : psqlite3;
     FConnection : TSQLite3DatabaseConnection;
+  public
+    property Erorrs : TSQL3LiteErrorsStack read FErrorsStack;
   end;
 
 implementation
@@ -57,7 +59,7 @@ implementation
 constructor TSQLite3Builder.Create (AFilename : String; AFlags : TConnectFlags);
 begin
   FErrorsStack := TSQL3LiteErrorsStack.Create;
-  FConnection := TSQLite3DatabaseConnection.Create(@FErrorsStack, FHandle,
+  FConnection := TSQLite3DatabaseConnection.Create(@FErrorsStack, @FHandle,
     AFilename, AFlags);
 end;
 
@@ -68,9 +70,9 @@ begin
   inherited Destroy;
 end;
 
-function TSQLite3Builder.Table : TSQLite3Table;
+function TSQLite3Builder.Table (ATableName : String) : TSQLite3Table;
 begin
-  Result := TSQLite3Table.Create(@FErrorsStack, FHandle);
+  Result := TSQLite3Table.Create(@FErrorsStack, @FHandle, ATableName);
 end;
 
 end.

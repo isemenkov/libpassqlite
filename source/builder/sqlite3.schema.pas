@@ -32,8 +32,7 @@ unit sqlite3.schema;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result_row,
-  container.list, utils.functor;
+  SysUtils, sqlite3.result_row, container.list, utils.functor;
 
 type
   TSQLite3Schema = class
@@ -67,11 +66,17 @@ type
     { Create autoincrement primary key column id. }
     function Id (AColumnName : String = 'id') : TSQLite3Schema;
 
+    { Create float column. }
+    function Float (AColumnName : String) : TSQLite3Schema;
+
     { Create integer column. }
     function Integer (AColumnName : String) : TSQLite3Schema;
 
     { Create text column. }
     function Text (AColumnName : String) : TSQLite3Schema;
+
+    { Create blob column. }
+    function Blob (AColumnName : String) : TSQLite3Schema;
 
     { Clear columns list. }
     procedure Clear;
@@ -131,6 +136,22 @@ begin
   Result := Self;
 end;
 
+function TSQLite3Schema.Float (AColumnName : String) : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  Column.Column_Name := AColumnName;
+  Column.Column_Type := SQLITE_FLOAT;
+  
+  Column.Option_AutoIncrement := False;
+  Column.Option_PrimaryKey := False;
+  Column.Option_NotNull := False;
+  Column.Option_Unique := False;
+
+  FColumns.Append(Column);
+  Result := Self;
+end;
+
 function TSQLite3Schema.Integer (AColumnName : String) : TSQLite3Schema;
 var
   Column : TColumnItem;
@@ -148,6 +169,22 @@ begin
 end;
 
 function TSQLite3Schema.Text (AColumnName : String) : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  Column.Column_Name := AColumnName;
+  Column.Column_Type := SQLITE_TEXT;
+  
+  Column.Option_AutoIncrement := False;
+  Column.Option_PrimaryKey := False;
+  Column.Option_NotNull := False;
+  Column.Option_Unique := False;
+
+  FColumns.Append(Column);
+  Result := Self;
+end;
+
+function TSQLite3Schema.Blob (AColumnName : String) : TSQLite3Schema;
 var
   Column : TColumnItem;
 begin

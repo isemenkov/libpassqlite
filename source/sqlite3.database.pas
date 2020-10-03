@@ -50,6 +50,8 @@ type
     FErrorsStack : TSQL3LiteErrorsStack;
     FHandle : psqlite3;
     FConnection : TSQLite3DatabaseConnection;
+  public
+    property Errors : TSQL3LiteErrorsStack read FErrorsStack;
   end;
 
   // sqlite3_extended_result_codes
@@ -62,7 +64,7 @@ constructor TSQLite3Database.Create (AFilename : String; AFlags :
   TConnectFlags);
 begin
   FErrorsStack := TSQL3LiteErrorsStack.Create;
-  FConnection := TSQLite3DatabaseConnection.Create(@FErrorsStack, FHandle, 
+  FConnection := TSQLite3DatabaseConnection.Create(@FErrorsStack, @FHandle,
     AFilename, AFlags);
 end;
 
@@ -76,7 +78,7 @@ end;
 function TSQLite3Database.Query (AQuery : String; AFlags : TPrepareFlags) :
   TSQLite3Query;
 begin
-  Result := TSQLite3Query.Create(@FErrorsStack, FHandle, AQuery, AFlags);
+  Result := TSQLite3Query.Create(@FErrorsStack, @FHandle, AQuery, AFlags);
 end;
 
 end.
