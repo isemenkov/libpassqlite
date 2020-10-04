@@ -33,57 +33,10 @@ interface
 
 uses
   libpassqlite, sqlite3.errors_stack, sqlite3.query, sqlite3.result,
-  container.list, utils.functor;
+  sqlite3.structures;
 
 type
   TSQLite3Select = class
-  public
-    type
-      { Select field item. }  
-      TSelectFieldItem = record
-        Column_Name : String;
-        Column_AliasName : String;    
-      end;
-
-      { Select item compare functior. }
-      TSelectFieldItemCompareFunctor = class
-        (specialize TBinaryFunctor<TSelectFieldItem, Integer>)
-      public
-        function Call (AValue1, AValue2 : TSelectFieldItem) : Integer; override;
-      end;
-
-      { Select fields list. }  
-      TSelectFieldsList = class
-        (specialize TList<TSelectFieldItem, TSelectFieldItemCompareFunctor>);
-
-      { Where clause experssion. }  
-      TWhereExpression = (
-        EXPRESSION_EQUAL,               { =   }
-        EXPRESSION_NOT_EUQAL,           { <>  }
-        EXPRESSION_LESS,                { <   }
-        EXPRESSION_GREATER,             { >   }
-        EXPRESSION_LESS_OR_EQUAL,       { <=  }
-        EXPRESSION_GREATER_OR_EQUAL     { >=  }
-        EXPRESSION_NOT                  { NOT }    
-      );  
-
-      { Where field item. }
-      TWhereFieldItem = record
-        Column_Name : String;
-
-        Expression : TWhereExpression;
-      end;
-
-      { Where item compare functor. }
-      TWhereFieldItemCompareFunction = class
-        (specialize TBinaryFunctor<TWhereFieldItem, Integer>)
-      public
-        function Call (AValue1, AValue2 : TWhereFieldItem) : Integer; override;
-      end;
-
-      { Where filds list. }
-      TWhereFieldsList = class
-        (specialize TList<TWhereFieldItem, TWhereFieldItemCompareFunction>);
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle :
       ppsqlite3; ATableName : String);
@@ -102,37 +55,11 @@ type
     FDBHandle : ppsqlite3;
     FTableName : String;
     FQuery : TSQLite3Query;
-    FSelectFieldsList : TSelectFieldsList;
-    FWhereFieldsList : TWhereFieldsList;
+    FSelectFieldsList : TSQLite3Structures.TSelectFieldsList;
+    FWhereFieldsList : TSQLite3Structures.TWhereFieldsList;
   end;
 
 implementation
-
-{ TSQLite3Select.TSelectFieldItemCompareFunctor }
-
-function TSQLite3Select.TSelectFieldItemCompareFunctor.Call (AValue1, AValue2 :
-  TSelectFieldItem) : Integer;
-begin
-  if AValue1.Column_Name < AValue2.Column_Name then
-    Result := -1
-  else if AValue2.Column_Name < AValue1.Column_Name then
-    Result := 1
-  else
-    Result := 0;
-end;
-
-{ TSQLite3Select.TWhereFieldItemCompareFunction }
-
-function TSQLite3Select.TWhereFieldItemCompareFunction.Call (AValue1, AValue2 :
-  TWhereFieldItem) : Integer;
-begin
-  if AValue1.Column_Name < AValue2.Column_Name then
-    Result := -1
-  else if AValue2.Column_Name < AValue1.Column_Name then
-    Result := 1
-  else
-    Result := 0;
-end;
 
 { TSQLite3Select }
 
@@ -142,8 +69,8 @@ begin
   FErrorsStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FTableName := ATableName;
-  FSelectFieldsList := TSelectFieldsList.Create;
-  FWhereFieldsList := TWhereFieldsList.Create;
+  FSelectFieldsList := TSQLite3Structures.TSelectFieldsList.Create;
+  FWhereFieldsList := TSQLite3Structures.TWhereFieldsList.Create;
 end;
 
 destructor TSQLite3Select.Destroy;

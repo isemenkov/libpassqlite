@@ -32,34 +32,11 @@ unit sqlite3.insert;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.query, container.list,
-  utils.functor, sqlite3.result_row;
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.query,
+  sqlite3.structures, sqlite3.result_row;
 
 type
   TSQLite3Insert = class
-  public
-    type
-      { Insert list value. }
-      TValueItem = record
-        Column_Name : String;
-
-        Value_Type : TDataType;
-        Value_Integer : Integer;
-        Value_Float : Double;
-        Value_Text : String;
-        Value_Blob : PByte;
-      end;
-
-      { Value item compare functor. }
-      TValueItemCompareFunctor = class
-        (specialize TBinaryFunctor<TValueItem, Integer>)
-      public
-        function Call (AValue1, AValue2 : TValueItem) : Integer; override;
-      end;
-
-      { Values list. }
-      TValuesList = class
-        (specialize TList<TValueItem, TValueItemCompareFunctor>);
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle :
       ppsqlite3; ATableName : String);
@@ -80,24 +57,11 @@ type
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
-    FValuesList : TValuesList;
+    FValuesList : TSQLite3Structures.TValuesList;
     FQuery : TSQLite3Query;
   end;
 
 implementation
-
-{ TSQLite3Insert.TValueItemCompareFunctor }
-
-function TSQLite3Insert.TValueItemCompareFunctor.Call (AValue1, AValue2 :
-  TValueItem) : Integer;
-begin
-  if AValue1.Column_Name < AValue2.Column_Name then
-    Result := -1
-  else if AValue2.Column_Name < AValue1.Column_Name then
-    Result := 1
-  else
-    Result := 0;
-end;
 
 { TSQLite3Insert }
 
@@ -107,7 +71,7 @@ begin
   FErrorsStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FTableName := ATableName;
-  FValuesList := TValuesList.Create;
+  FValuesList := TSQLite3Structures.TValuesList.Create;
 end;
 
 destructor TSQLite3Insert.Destroy;
@@ -118,7 +82,7 @@ end;
 
 function TSQLite3Insert.Value (AColumnName : String) : TSQLite3Insert;
 var
-  val : TValueItem;
+  val : TSQLite3Structures.TValueItem;
 begin
   val.Column_Name := AColumnName;
 
@@ -135,7 +99,7 @@ end;
 function TSQLite3Insert.Value (AColumnName : String; AValue : Integer) : 
   TSQLite3Insert;
 var
-  val : TValueItem;
+  val : TSQLite3Structures.TValueItem;
 begin
   val.Column_Name := AColumnName;
 
@@ -152,7 +116,7 @@ end;
 function TSQLite3Insert.Value (AColumnName : String; AValue : Double) : 
   TSQLite3Insert;
 var
-  val : TValueItem;
+  val : TSQLite3Structures.TValueItem;
 begin
   val.Column_Name := AColumnName;
 
@@ -169,7 +133,7 @@ end;
 function TSQLite3Insert.Value (AColumnName : String; AValue : String) : 
   TSQLite3Insert;
 var
-  val : TValueItem;
+  val : TSQLite3Structures.TValueItem;
 begin
   val.Column_Name := AColumnName;
 
@@ -185,7 +149,7 @@ end;
 
 function TSQLite3Insert.Get : Integer;
 var
-  val : TValueItem;
+  val : TSQLite3Structures.TValueItem;
   SQL : String;
   i : Integer;
 begin

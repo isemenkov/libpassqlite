@@ -33,7 +33,7 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.connection, 
-  sqlite3.table;
+  sqlite3.table, sqlite3.query;
 
 type
   TSQLite3Builder = class
@@ -41,6 +41,10 @@ type
     constructor Create (AFilename : String; AFlags : TConnectFlags = 
       [SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE]);
     destructor Destroy; override;
+
+    { Raw query. }
+    function RawQuery (ASQL : String; AFlags : TPrepareFlags =
+      [SQLITE_PREPARE_NORMALIZE]) : TSQLite3Query;
 
     { Get table interface. }
     function Table (ATableName : String) : TSQLite3Table;
@@ -69,6 +73,12 @@ begin
   FreeAndNil(FConnection);
   FreeAndNil(FErrorsStack);
   inherited Destroy;
+end;
+
+function TSQLite3Builder.RawQuery (ASQL : String; AFlags : TPrepareFlags) : 
+  TSQLite3Query;
+begin
+  Result := TSQLite3Query.Create(@FErrorsStack, @FHandle, ASQL, AFlags);
 end;
 
 function TSQLite3Builder.Table (ATableName : String) : TSQLite3Table;
