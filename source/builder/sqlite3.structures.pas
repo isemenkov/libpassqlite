@@ -80,7 +80,7 @@ type
       { Where clause experssion. }  
       TWhereComparisonOperator = (
         COMPARISON_EQUAL,               { =   }
-        COMPARISON_NOT_EUQAL,           { <>  }
+        COMPARISON_NOT_EQUAL,           { <>  }
         COMPARISON_LESS,                { <   }
         COMPARISON_GREATER,             { >   }
         COMPARISON_LESS_OR_EQUAL,       { <=  }
@@ -90,10 +90,9 @@ type
 
       { Where field item. }
       TWhereFieldItem = record
-        Column_Name : String;
-
+        Comparison_ColumnName : String;
         Comparison : TWhereComparisonOperator;
-        
+        Comparison_Value : TValueItem;
       end;
 
       { Where item compare functor. }
@@ -141,9 +140,9 @@ end;
 function TSQLite3Structures.TWhereFieldItemCompareFunction.Call (AValue1, 
   AValue2 : TWhereFieldItem) : Integer;
 begin
-  if AValue1.Column_Name < AValue2.Column_Name then
+  if AValue1.Comparison_ColumnName < AValue2.Comparison_ColumnName then
     Result := -1
-  else if AValue2.Column_Name < AValue1.Column_Name then
+  else if AValue2.Comparison_ColumnName < AValue1.Comparison_ColumnName then
     Result := 1
   else
     Result := 0;

@@ -197,7 +197,8 @@ begin
     Inc(i);
   end;
   FQuery.Run;
-  Result := 0;
+  Result := 0; // TODO
+  FreeAndNil(FQuery);
 end;
 
 end.

@@ -33,7 +33,7 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
-  sqlite3.result_row, sqlite3.insert;
+  sqlite3.result_row, sqlite3.insert, sqlite3.select;
 
 type
   TSQLite3Table = class
@@ -56,6 +56,9 @@ type
 
     { Rename table. }
     procedure Rename (ANewName : String);
+
+    { Get select interface. }
+    function Select : TSQLite3Select;
 
     { Get insert interface. }
     function Insert : TSQLite3Insert;
@@ -178,6 +181,11 @@ begin
   FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
   FreeAndNil(FQuery);
+end;
+
+function TSQLite3Table.Select : TSQLite3Select;
+begin
+  Result := TSQLite3Select.Create(FErrorsStack, FDBHandle, FTableName);
 end;
 
 function TSQLite3Table.Insert : TSQLite3Insert;
