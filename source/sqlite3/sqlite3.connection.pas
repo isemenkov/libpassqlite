@@ -35,50 +35,51 @@ uses
   SysUtils, libpassqlite, sqlite3.errors_stack;
 
 type
-  { Additional parameters for additional control over the new database 
-    connection. }
-  TConnectFlag = (
-    { The database is opened in read-only mode. }
-    SQLITE_OPEN_READONLY,
-
-    { The database is created if it does not already exist. }
-    SQLITE_OPEN_CREATE,
-    
-    { The database is opened for reading and writing if possible, or reading 
-      only if the file is write protected by the operating system. }
-    SQLITE_OPEN_READWRITE,
-
-    { The filename can be interpreted as a URI if this flag is set. }
-    SQLITE_OPEN_URI,
-
-    { The database will be opened as an in-memory database. }
-    SQLITE_OPEN_MEMORY,
-
-    { The new database connection will use the "multi-thread" threading mode. 
-      This means that separate threads are allowed to use SQLite at the same 
-      time, as long as each thread is using a different database connection. }
-    SQLITE_OPEN_NOMUTEX,
-
-    { The new database connection will use the "serialized" threading mode. This 
-      means the multiple threads can safely attempt to use the same database 
-      connection at the same time. (Mutexes will block any actual concurrency, 
-      but in this mode there is no harm in trying.) }
-    SQLITE_OPEN_FULLMUTEX,
-
-    { The database is opened shared cache enabled. }
-    SQLITE_OPEN_SHAREDCACHE,
-
-    { The database is opened shared cache disabled. }
-    SQLITE_OPEN_PRIVATECACHE,
-
-    { The database filename is not allowed to be a symbolic link. }
-    SQLITE_OPEN_NOFOLLOW
-  );
-
-  TConnectFlags = set of TConnectFlag;
-
   { SQLite3 database connection. }
   TSQLite3DatabaseConnection = class
+  public
+    type
+      { Additional parameters for additional control over the new database 
+        connection. }
+      TConnectFlag = (
+        { The database is opened in read-only mode. }
+        SQLITE_OPEN_READONLY,
+
+        { The database is created if it does not already exist. }
+        SQLITE_OPEN_CREATE,
+        
+        { The database is opened for reading and writing if possible, or reading 
+          only if the file is write protected by the operating system. }
+        SQLITE_OPEN_READWRITE,
+
+        { The filename can be interpreted as a URI if this flag is set. }
+        SQLITE_OPEN_URI,
+
+        { The database will be opened as an in-memory database. }
+        SQLITE_OPEN_MEMORY,
+
+        { The new database connection will use the "multi-thread" threading mode. 
+          This means that separate threads are allowed to use SQLite at the same 
+          time, as long as each thread is using a different database connection. }
+        SQLITE_OPEN_NOMUTEX,
+
+        { The new database connection will use the "serialized" threading mode. This 
+          means the multiple threads can safely attempt to use the same database 
+          connection at the same time. (Mutexes will block any actual concurrency, 
+          but in this mode there is no harm in trying.) }
+        SQLITE_OPEN_FULLMUTEX,
+
+        { The database is opened shared cache enabled. }
+        SQLITE_OPEN_SHAREDCACHE,
+
+        { The database is opened shared cache disabled. }
+        SQLITE_OPEN_PRIVATECACHE,
+
+        { The database filename is not allowed to be a symbolic link. }
+        SQLITE_OPEN_NOFOLLOW
+      );
+
+      TConnectFlags = set of TConnectFlag;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AHandle : 
       ppsqlite3; AFilename : String; AFlags : TConnectFlags);

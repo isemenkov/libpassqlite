@@ -37,6 +37,13 @@ uses
 
 type
   TSQLite3Builder = class
+  public 
+    type
+      TConnectFlag = sqlite3.connection.TSQLite3DatabaseConnection.TConnectFlag;
+      TConnectFlags =
+        sqlite3.connection.TSQLite3DatabaseConnection.TConnectFlags;
+      TPrepareFlag = sqlite3.query.TSQLite3Query.TPrepareFlag;
+      TPrepareFlags = sqlite3.query.TSQLite3Query.TPrepareFlags;
   public
     constructor Create (AFilename : String; AFlags : TConnectFlags = 
       [SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE]);
@@ -54,6 +61,7 @@ type
     FHandle : psqlite3;
     FConnection : TSQLite3DatabaseConnection;
   public
+    { Get errors list. }
     property Errors : TSQL3LiteErrorsStack read FErrorsStack;
   end;
 

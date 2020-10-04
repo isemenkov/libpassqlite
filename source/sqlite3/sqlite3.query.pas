@@ -35,28 +35,29 @@ uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result;
 
 type
-  { Option that is used for special purposes. }
-  TPrepareFlag = (
-    { The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner that the 
-      prepared statement will be retained for a long time and probably reused 
-      many times. }
-    SQLITE_PREPARE_PERSISTENT,
-
-    { The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used to be 
-      required for any prepared statement that wanted to use the 
-      sqlite3_normalized_sql() interface. However, the sqlite3_normalized_sql() 
-      interface is now available to all prepared statements, regardless of 
-      whether or not they use this flag. }
-    SQLITE_PREPARE_NORMALIZE,
-
-    { The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler to return an error 
-      (error code SQLITE_ERROR) if the statement uses any virtual tables. }
-    SQLITE_PREPARE_NO_VTAB
-  );
-  TPrepareFlags = set of TPrepareFlag;
-
   { Single SQL query. }
   TSQLite3Query = class
+  public
+    type
+      { Option that is used for special purposes. }
+      TPrepareFlag = (
+        { The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner that the 
+          prepared statement will be retained for a long time and probably reused 
+          many times. }
+        SQLITE_PREPARE_PERSISTENT,
+
+        { The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used to be 
+          required for any prepared statement that wanted to use the 
+          sqlite3_normalized_sql() interface. However, the sqlite3_normalized_sql() 
+          interface is now available to all prepared statements, regardless of 
+          whether or not they use this flag. }
+        SQLITE_PREPARE_NORMALIZE,
+
+        { The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler to return an error 
+          (error code SQLITE_ERROR) if the statement uses any virtual tables. }
+        SQLITE_PREPARE_NO_VTAB
+      );
+      TPrepareFlags = set of TPrepareFlag;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle : 
       ppsqlite3; AQuery : String; AFlags : TPrepareFlags);

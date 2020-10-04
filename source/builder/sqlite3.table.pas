@@ -47,7 +47,7 @@ type
     procedure New (ASchema : TSQLite3Schema); 
 
     { Check if table exists. }
-    //function Has : Boolean;
+    function Exists : Boolean;
 
     { Check if table has column. }
     //function HasColumn (AColumnName : String) : Boolean;
@@ -155,10 +155,20 @@ begin
   FreeAndNil(Query);
 end;
 
-//function TSQLite3Table.Has : Boolean;
-//begin
-//  SELECT count(*) FROM sqlite_master WHERE type='table' AND name='table_name';  
-//end;
+function TSQLite3Table.Exists : Boolean;
+var 
+  Query : TSQLite3Select;
+  Row : TSQLite3ResultRow;
+begin
+  Query := TSQLite3Select.Create(FErrorsStack, FDBHandle, 'sqlite_master');
+  Row := Query.Field('count(*)'){.Where('type', 'table')}
+    .Where('name', FTableName)
+    .Get
+    .FirstRow
+    .Row;
+
+  Result := (Row.GetIntegerValue(0) > 0);
+end;
 
 //function TSQLite3Table.HasColumn (AColumnName : String) : Boolean;
 //begin
