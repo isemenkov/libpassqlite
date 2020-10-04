@@ -22,7 +22,7 @@
 (* Floor, Boston, MA 02110-1335, USA.                                         *)
 (*                                                                            *)
 (******************************************************************************)
-unit sqlite3.update;
+unit sqlite3.delete;
 
 {$mode objfpc}{$H+}
 {$IFOPT D+}
@@ -36,7 +36,7 @@ uses
   sqlite3.structures, sqlite3.result_row;
 
 type
-  TSQLite3Update = class
+  TSQLite3Delete = class
   public
     type
       TWhereComparisonOperator
@@ -46,33 +46,24 @@ type
       ppsqlite3; ATableName : String);
     destructor Destroy; override;
 
-    { Add update field to list. }
-    function Update (AColumnName : String) : TSQLite3Update; overload;
-    function Update (AColumnName : String; AValue : String) : TSQLite3Update;
-      overload;
-    function Update (AColumnName : String; AValue : Integer) : TSQLite3Update;
-      overload;
-    function Update (AColumnName : String; AValue : Double) : TSQLite3Update;
-      overload;
-    
     { Add where clause. }
     function Where (AColumnName : String; AComparison : 
       TSQLite3Structures.TWhereComparisonOperator; AValue : String) : 
-      TSQLite3Update; overload;
+      TSQLite3Delete; overload;
     function Where (AColumnName : String; AComparison : 
       TSQLite3Structures.TWhereComparisonOperator; AValue : Integer) : 
-      TSQLite3Update; overload;
+      TSQLite3Delete; overload;
     function Where (AColumnName : String; AComparison : 
       TSQLite3Structures.TWhereComparisonOperator; AValue : Double) : 
-      TSQLite3Update; overload;
-    function Where (AColumnName : String; AValue : String) : TSQLite3Update; 
+      TSQLite3Delete; overload;
+    function Where (AColumnName : String; AValue : String) : TSQLite3Delete;
       overload;
-    function Where (AColumnName : String; AValue : Integer) : TSQLite3Update; 
+    function Where (AColumnName : String; AValue : Integer) : TSQLite3Delete;
       overload;
-    function Where (AColumnName : String; AValue : Double) : TSQLite3Update; 
+    function Where (AColumnName : String; AValue : Double) : TSQLite3Delete;
       overload;
-    function WhereNull (AColumnName : String) : TSQLite3Update;
-    function WhereNotNull (AColumnName : String) : TSQLite3Update;
+    function WhereNull (AColumnName : String) : TSQLite3Delete;
+    function WhereNotNull (AColumnName : String) : TSQLite3Delete;
 
     { Get result. }
     function Get : Integer;
@@ -80,101 +71,31 @@ type
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
-    FUpdatesFieldsList : TSQLite3Structures.TUpdatesFieldsList;
     FWhereFieldsList : TSQLite3Structures.TWhereFieldsList;
   end;
 
 implementation
 
-{ TSQLite3Update }
+{ TSQLite3Delete }
 
-constructor TSQLite3Update.Create (AErrorsStack : PSQL3LiteErrorsStack; 
+constructor TSQLite3Delete.Create (AErrorsStack : PSQL3LiteErrorsStack; 
   ADBHandle : ppsqlite3; ATableName : String);
 begin
   FErrorsStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FTableName := ATableName;
-  FUpdatesFieldsList := TSQLite3Structures.TUpdatesFieldsList.Create;
   FWhereFieldsList := TSQLite3Structures.TWhereFieldsList.Create;
 end;
 
-destructor TSQLite3Update.Destroy;
+destructor TSQLite3Delete.Destroy;
 begin
-  FreeAndNil(FUpdatesFieldsList);
   FreeAndNil(FWhereFieldsList);
   inherited Destroy;
 end;
 
-function TSQLite3Update.Update (AColumnName : String) : TSQLite3Update;
-var
-  item : TSQLite3Structures.TUpdateItem;
-begin
-  item.Column_Name := AColumnName;
-  item.Value.Column_Name := '';
-  item.Value.Value_Type := SQLITE_NULL;
-  item.Value.Value_Integer := 0;
-  item.Value.Value_Float := 0;
-  item.Value.Value_Text := '';
-  item.Value.Value_Blob := nil;
-
-  FUpdatesFieldsList.Append(item);
-  Result := Self;
-end;
-
-function TSQLite3Update.Update (AColumnName : String; AValue : String) : 
-  TSQLite3Update;
-var
-  item : TSQLite3Structures.TUpdateItem;
-begin
-  item.Column_Name := AColumnName;
-  item.Value.Column_Name := '';
-  item.Value.Value_Type := SQLITE_TEXT;
-  item.Value.Value_Integer := 0;
-  item.Value.Value_Float := 0;
-  item.Value.Value_Text := AValue;
-  item.Value.Value_Blob := nil;
-
-  FUpdatesFieldsList.Append(item);
-  Result := Self;
-end;
-
-function TSQLite3Update.Update (AColumnName : String; AValue : Integer) : 
-  TSQLite3Update;
-var
-  item : TSQLite3Structures.TUpdateItem;
-begin
-  item.Column_Name := AColumnName;
-  item.Value.Column_Name := '';
-  item.Value.Value_Type := SQLITE_INTEGER;
-  item.Value.Value_Integer := AValue;
-  item.Value.Value_Float := 0;
-  item.Value.Value_Text := '';
-  item.Value.Value_Blob := nil;
-
-  FUpdatesFieldsList.Append(item);
-  Result := Self;
-end;
-
-function TSQLite3Update.Update (AColumnName : String; AValue : Double) : 
-  TSQLite3Update;
-var
-  item : TSQLite3Structures.TUpdateItem;
-begin
-  item.Column_Name := AColumnName;
-  item.Value.Column_Name := '';
-  item.Value.Value_Type := SQLITE_FLOAT;
-  item.Value.Value_Integer := 0;
-  item.Value.Value_Float := AValue;
-  item.Value.Value_Text := '';
-  item.Value.Value_Blob := nil;
-
-  FUpdatesFieldsList.Append(item);
-  Result := Self;
-end;
-
-function TSQLite3Update.Where (AColumnName : String; AComparison :
+function TSQLite3Delete.Where (AColumnName : String; AComparison :
   TSQLite3Structures.TWhereComparisonOperator; AValue : String) : 
-  TSQLite3Update;
+  TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -192,9 +113,9 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Where (AColumnName : String; AComparison :
+function TSQLite3Delete.Where (AColumnName : String; AComparison :
   TSQLite3Structures.TWhereComparisonOperator; AValue : Integer) : 
-  TSQLite3Update;
+  TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -212,9 +133,9 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Where (AColumnName : String; AComparison :
+function TSQLite3Delete.Where (AColumnName : String; AComparison :
   TSQLite3Structures.TWhereComparisonOperator; AValue : Double) : 
-  TSQLite3Update;
+  TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -232,8 +153,8 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Where (AColumnName : String; AValue : String) : 
-  TSQLite3Update;
+function TSQLite3Delete.Where (AColumnName : String; AValue : String) : 
+  TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -251,8 +172,8 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Where (AColumnName : String; AValue : Integer) : 
-  TSQLite3Update;
+function TSQLite3Delete.Where (AColumnName : String; AValue : Integer) : 
+  TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -270,8 +191,8 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Where (AColumnName : String; AValue : Double) : 
-  TSQLite3Update;
+function TSQLite3Delete.Where (AColumnName : String; AValue : Double) : 
+  TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -289,7 +210,7 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.WhereNull (AColumnName : String) : TSQLite3Update;
+function TSQLite3Delete.WhereNull (AColumnName : String) : TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -307,7 +228,7 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.WhereNotNull (AColumnName : String) : TSQLite3Update;
+function TSQLite3Delete.WhereNotNull (AColumnName : String) : TSQLite3Delete;
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
@@ -325,33 +246,17 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Get : Integer;
+function TSQLite3Delete.Get : Integer;
 var
   SQL : String;
-  update_item : TSQLite3Structures.TUpdateItem;
   where_item : TSQLite3Structures.TWhereFieldItem;
   i : Integer;
   Query : TSQLite3Query;
 begin
-  if not FUpdatesFieldsList.FirstEntry.HasValue then
-    Exit;
-
-  i := 0;
-  SQL := 'UPDATE ' + FTableName + ' SET ';
-  for update_item in FUpdatesFieldsList do
-  begin
-    { For every update pair. }
-    if i > 0 then
-      SQL := SQL + ', ';
-
-    { Set updated column name. }
-    SQL := SQL + update_item.Column_Name + ' = ?';      
-
-    Inc(i);
-  end;
+  SQL := 'DELETE FROM ' + FTableName;
 
   if FWhereFieldsList.FirstEntry.HasValue then
-  begin 
+  begin
     i := 0;
     SQL := SQL + ' WHERE ';
     for where_item in FWhereFieldsList do
@@ -376,28 +281,16 @@ begin
           SQL := SQL + ' NOT ';
       end;
 
-      SQL := SQL + '?';   
+      SQL := SQL + '?';
       Inc(i);
     end;
   end;
 
   i := 1;
-  SQL := SQL + ';';
+  SQL := SQL + ';'; 
   Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
 
-  for update_item in FUpdatesFieldsList do
-  begin
-    case update_item.Value.Value_Type of
-      SQLITE_INTEGER : Query.Bind(i, update_item.Value.Value_Integer);
-      SQLITE_FLOAT : Query.Bind(i, update_item.Value.Value_Float);
-      SQLITE_TEXT : Query.Bind(i, update_item.Value.Value_Text);
-      SQLITE_BLOB : Query.Bind(i, update_item.Value.Value_Blob);
-      SQLITE_NULL : Query.Bind(i);
-    end;
-    Inc(i);
-  end;
-  
   if FWhereFieldsList.FirstEntry.HasValue then
   begin
     for where_item in FWhereFieldsList do
@@ -413,7 +306,7 @@ begin
       Inc(i);  
     end;
   end;
-
+  
   { Run SQL query. }
   Query.Run;
   Result := sqlite3_changes(FDBHandle^);

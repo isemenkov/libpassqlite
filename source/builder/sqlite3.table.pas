@@ -33,7 +33,8 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
-  sqlite3.result_row, sqlite3.insert, sqlite3.select, sqlite3.update;
+  sqlite3.result_row, sqlite3.insert, sqlite3.select, sqlite3.update,
+  sqlite3.delete;
 
 type
   TSQLite3Table = class
@@ -65,6 +66,9 @@ type
 
     { Get update interface. }
     function Update : TSQLite3Update;
+
+    { Get delete interface. }
+    function Delete : TSQLite3Delete;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
@@ -201,6 +205,11 @@ end;
 function TSQLite3Table.Update : TSQLite3Update;
 begin
   Result := TSQLite3Update.Create(FErrorsStack, FDBHandle, FTableName);
+end;
+
+function TSQLite3Table.Delete : TSQLite3Delete;
+begin
+  Result := TSQLite3Delete.Create(FErrorsStack, FDBHandle, FTableName);
 end;
 
 end.

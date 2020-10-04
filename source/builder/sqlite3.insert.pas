@@ -196,8 +196,9 @@ begin
     end;
     Inc(i);
   end;
+  
   FQuery.Run;
-  Result := 0; // TODO
+  Result := sqlite3_changes(FDBHandle^);
   FreeAndNil(FQuery);
 end;
 
