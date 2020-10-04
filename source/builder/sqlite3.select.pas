@@ -369,7 +369,7 @@ begin
     end;
   end;
   
-  FErrorsStack^.Push(SQL);
+  { Run SQL query. }
   Result := Query.Run;  
 end;
 

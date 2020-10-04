@@ -32,7 +32,8 @@ unit sqlite3.result_row;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack;
+  SysUtils, libpassqlite, sqlite3.errors_stack, container.arraylist,
+  utils.functor;
 
 type
   { Fundamental database column datatypes. }
@@ -62,13 +63,27 @@ type
 
     { Return information about a single column of the current result row of a 
       query. }
-    function GetDoubleValue (AColumnIndex : Integer) : Double;
-    function GetIntegerValue (AColumnIndex : Integer) : Integer;
-    function GetInt64Value (AColumnIndex : Integer) : Int64;
-    function GetStringValue (AColumnIndex : Integer) : String;
+    function GetDoubleValue (AColumnIndex : Integer) : Double; overload;
+    function GetIntegerValue (AColumnIndex : Integer) : Integer; overload;
+    function GetInt64Value (AColumnIndex : Integer) : Int64; overload;
+    function GetStringValue (AColumnIndex : Integer) : String; overload;
+
+    { Return information about a single column of the current result row of a 
+      query by column name. }
+    function GetDoubleValue (AColumnName : String) : Double; overload;
+    function GetIntegerValue (AColumnName : String) : Integer; overload;
+    function GetInt64Value (AColumnName : String) : Int64; overload;
+    function GetStringValue (AColumnName : String) : String; overload;
+  private
+    type
+      TColumnsList = class
+        (specialize TArrayList<String, TCompareFunctorString>);
+
+    function GetColumnIndex (AColumnName : String) : Integer;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FStatementHandle : psqlite3_stmt;
+    FColumnsList : TColumnsList; 
   end;
 
 implementation
@@ -80,10 +95,12 @@ constructor TSQLite3ResultRow.Create(AErrorsStack : PSQL3LiteErrorsStack;
 begin
   FErrorsStack := AErrorsStack;
   FStatementHandle := AStatementHandle;
+  FColumnsList := TColumnsList.Create;
 end; 
 
 destructor TSQLite3ResultRow.Destroy;
 begin
+  FreeAndNil(FColumnsList);
   inherited Destroy;
 end;
 
@@ -107,9 +124,20 @@ begin
   Result := sqlite3_column_double(FStatementHandle, AColumnIndex);
 end;
 
+function TSQLite3ResultRow.GetDoubleValue (AColumnName : String) : Double;
+begin
+  Result := sqlite3_column_double(FStatementHandle, 
+    GetColumnIndex(AColumnName));
+end; 
+
 function TSQLite3ResultRow.GetIntegerValue (AColumnIndex : Integer) : Integer;
 begin
   Result := sqlite3_column_int(FStatementHandle, AColumnIndex);
+end;
+
+function TSQLite3ResultRow.GetIntegerValue (AColumnName : String) : Integer;
+begin
+  Result := sqlite3_column_int(FStatementHandle, GetColumnIndex(AColumnName));
 end;
 
 function TSQLite3ResultRow.GetInt64Value (AColumnIndex : Integer) : Int64;
@@ -117,9 +145,35 @@ begin
   Result := sqlite3_column_int64(FStatementHandle, AColumnIndex);
 end;
 
+function TSQLite3ResultRow.GetInt64Value (AColumnName : String) : Int64;
+begin
+  Result := sqlite3_column_int64(FStatementHandle, GetColumnIndex(AColumnName));
+end;
+
 function TSQLite3ResultRow.GetStringValue (AColumnIndex : Integer) : String;
 begin
   Result := PChar(sqlite3_column_text(FStatementHandle, AColumnIndex));
+end;
+
+function TSQLite3ResultRow.GetStringValue (AColumnName : String) : String;
+begin
+  Result := PChar(sqlite3_column_text(FStatementHandle, 
+    GetColumnIndex(AColumnName)));
+end;
+
+function TSQLite3ResultRow.GetColumnIndex (AColumnName : String) : Integer;
+var
+  i : Integer;
+begin
+  { Cache column names. }
+  if FColumnsList.Length = 0 then
+  begin
+    for i := 0 to ColumnCount - 1 do
+      FColumnsList.Append(ColumnName(i));
+  end;
+
+  { Get column name from cache. }
+  Result := FColumnsList.IndexOf(AColumnName);
 end;
 
 end.
