@@ -44,12 +44,13 @@ type
 
     { Get table interface. }
     function Table (ATableName : String) : TSQLite3Table;
+
   private
     FErrorsStack : TSQL3LiteErrorsStack;
     FHandle : psqlite3;
     FConnection : TSQLite3DatabaseConnection;
   public
-    property Erorrs : TSQL3LiteErrorsStack read FErrorsStack;
+    property Errors : TSQL3LiteErrorsStack read FErrorsStack;
   end;
 
 implementation

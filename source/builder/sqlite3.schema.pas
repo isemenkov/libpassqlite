@@ -78,6 +78,12 @@ type
     { Create blob column. }
     function Blob (AColumnName : String) : TSQLite3Schema;
 
+    { Add not null modifier to the last adding element. }
+    function NotNull() : TSQLite3Schema;
+
+    { Add unique modifier to the last adding element. }
+    function Unique() : TSQLite3Schema;
+
     { Clear columns list. }
     procedure Clear;
   private
@@ -197,6 +203,34 @@ begin
   Column.Option_Unique := False;
 
   FColumns.Append(Column);
+  Result := Self;
+end;
+
+function TSQLite3Schema.NotNull() : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  if FColumns.LastEntry.HasValue then
+  begin
+    Column := FColumns.LastEntry.Value;
+    Column.Option_NotNull := True;
+    FColumns.LastEntry.Value := Column;    
+  end; 
+
+  Result := Self; 
+end;
+
+function TSQLite3Schema.Unique() : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  if FColumns.LastEntry.HasValue then
+  begin
+    Column := FColumns.LastEntry.Value;
+    Column.Option_Unique := True;
+    FColumns.LastEntry.Value := Column;   
+  end; 
+
   Result := Self;
 end;
 

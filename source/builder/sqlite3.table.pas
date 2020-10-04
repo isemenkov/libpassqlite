@@ -32,8 +32,8 @@ unit sqlite3.table;
 interface
 
 uses
-  libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
-  sqlite3.result_row;
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
+  sqlite3.result_row, sqlite3.insert;
 
 type
   TSQLite3Table = class
@@ -46,19 +46,19 @@ type
     procedure New (ASchema : TSQLite3Schema); 
 
     { Check if table exists. }
-    function Has : Boolean;
+    //function Has : Boolean;
 
     { Check if table has column. }
-    function HasColumn (AColumnName : String) : Boolean;
+    //function HasColumn (AColumnName : String) : Boolean;
 
     { Delete table. }
     procedure Drop;
 
     { Rename table. }
     procedure Rename (ANewName : String);
-  private
-    { Create SQL query and run it. }
-    procedure CreateAndRunSchemaQuery (ASchema : TSQLite3Schema);
+
+    { Get insert interface. }
+    function Insert : TSQLite3Insert;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
@@ -84,7 +84,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TSQLite3Table.CreateAndRunSchemaQuery (ASchema : TSQLite3Schema);
+procedure TSQLite3Table.New (ASchema : TSQLite3Schema);
 var
   SQL : String;
   column : TSQLite3Schema.TColumnItem;
@@ -145,29 +145,44 @@ begin
   FQuery.Run;
 end;
 
-procedure TSQLite3Table.New (ASchema : TSQLite3Schema);
-begin
-  CreateAndRunSchemaQuery(ASchema);
-end;
+//function TSQLite3Table.Has : Boolean;
+//begin
+//  SELECT count(*) FROM sqlite_master WHERE type='table' AND name='table_name';  
+//end;
 
-function TSQLite3Table.Has : Boolean;
-begin
-  
-end;
-
-function TSQLite3Table.HasColumn (AColumnName : String) : Boolean;
-begin
-  
-end;
+//function TSQLite3Table.HasColumn (AColumnName : String) : Boolean;
+//begin
+//  PRAGMA table_info(your_table_name)
+//
+//  cid|name|type|notnull|dflt_value|pk
+//  0|id|INTEGER|0||1
+//  1|json|JSON|0||0
+//  2|name|TEXT|0||0  
+//end;
 
 procedure TSQLite3Table.Drop;
+var
+  SQL : String;
 begin
-  
+  SQL := 'DROP TABLE ' + FTableName + ';';
+  FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
+    [SQLITE_PREPARE_NORMALIZE]);
+  FreeAndNil(FQuery);
 end;
 
 procedure TSQLite3Table.Rename (ANewName : String);
+var
+  SQL : String;
 begin
-  
+  SQL := 'ALTER TABLE ' + FTableName + ' RENAME TO ' + ANewName + ';';
+  FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
+    [SQLITE_PREPARE_NORMALIZE]);
+  FreeAndNil(FQuery);
+end;
+
+function TSQLite3Table.Insert : TSQLite3Insert;
+begin
+  Result := TSQLite3Insert.Create(FErrorsStack, FDBHandle, FTableName);
 end;
 
 end.

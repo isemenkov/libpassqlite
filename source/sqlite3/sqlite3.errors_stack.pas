@@ -53,7 +53,7 @@ implementation
 function TSQL3LiteErrorsStack.GetEnumerator :
   TSQL3LiteErrorsStack.TErrorsEnumerator;
 begin
-  inherited GetEnumerator;
+  Result := inherited GetEnumerator;
 end;
 
 procedure TSQL3LiteErrorsStack.Push (AErrorCode : Integer);
