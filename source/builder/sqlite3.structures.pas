@@ -105,6 +105,23 @@ type
       { Where filds list. }
       TWhereFieldsList = class
         (specialize TList<TWhereFieldItem, TWhereFieldItemCompareFunction>);
+
+      { Update list value. }
+      TUpdateItem = record
+        Column_Name : String;
+        Value : TValueItem;
+      end;
+
+      { Update item compare functor. }
+      TUpdateItemCompareFunctor = class
+        (specialize TBinaryFunctor<TUpdateItem, Integer>)
+      public
+        function Call (AValue1, AValue2 : TUpdateItem) : Integer; override;
+      end;
+
+      { Updates list. }
+      TUpdatesFieldsList = class
+        (specialize TList<TUpdateItem, TUpdateItemCompareFunctor>);
   end;
 
 implementation
@@ -143,6 +160,19 @@ begin
   if AValue1.Comparison_ColumnName < AValue2.Comparison_ColumnName then
     Result := -1
   else if AValue2.Comparison_ColumnName < AValue1.Comparison_ColumnName then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+{ TSQLite3Structures.TUpdateItemCompareFunctor }
+
+function TSQLite3Structures.TUpdateItemCompareFunctor.Call (AValue1, 
+  AValue2 : TUpdateItem) : Integer;
+begin
+  if AValue1.Column_Name < AValue2.Column_Name then
+    Result := -1
+  else if AValue2.Column_Name < AValue1.Column_Name then
     Result := 1
   else
     Result := 0;

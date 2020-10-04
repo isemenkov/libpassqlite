@@ -33,7 +33,7 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
-  sqlite3.result_row, sqlite3.insert, sqlite3.select;
+  sqlite3.result_row, sqlite3.insert, sqlite3.select, sqlite3.update;
 
 type
   TSQLite3Table = class
@@ -62,11 +62,12 @@ type
 
     { Get insert interface. }
     function Insert : TSQLite3Insert;
+
+    { Get update interface. }
+    function Update : TSQLite3Update;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
-    FQuery : TSQLite3Query;
-
     FTableName : String;
   end;
 
@@ -92,6 +93,7 @@ var
   SQL : String;
   column : TSQLite3Schema.TColumnItem;
   i : Integer;
+  Query : TSQLite3Query;
 begin
   if not ASchema.Columns.FirstEntry.HasValue then
     Exit;
@@ -143,9 +145,10 @@ begin
   end;
   SQL := SQL + ');';
 
-  FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
-  FQuery.Run;
+  Query.Run;
+  FreeAndNil(Query);
 end;
 
 //function TSQLite3Table.Has : Boolean;
@@ -166,21 +169,23 @@ end;
 procedure TSQLite3Table.Drop;
 var
   SQL : String;
+  Query : TSQLite3Query;
 begin
   SQL := 'DROP TABLE ' + FTableName + ';';
-  FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
-  FreeAndNil(FQuery);
+  FreeAndNil(Query);
 end;
 
 procedure TSQLite3Table.Rename (ANewName : String);
 var
   SQL : String;
+  Query : TSQLite3Query;
 begin
   SQL := 'ALTER TABLE ' + FTableName + ' RENAME TO ' + ANewName + ';';
-  FQuery := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
-  FreeAndNil(FQuery);
+  FreeAndNil(Query);
 end;
 
 function TSQLite3Table.Select : TSQLite3Select;
@@ -191,6 +196,11 @@ end;
 function TSQLite3Table.Insert : TSQLite3Insert;
 begin
   Result := TSQLite3Insert.Create(FErrorsStack, FDBHandle, FTableName);
+end;
+
+function TSQLite3Table.Update : TSQLite3Update;
+begin
+  Result := TSQLite3Update.Create(FErrorsStack, FDBHandle, FTableName);
 end;
 
 end.
