@@ -34,7 +34,7 @@ interface
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
   sqlite3.result_row, sqlite3.insert, sqlite3.select, sqlite3.update,
-  sqlite3.delete;
+  sqlite3.delete, sqlite3.result;
 
 type
   TSQLite3Table = class
@@ -50,7 +50,7 @@ type
     function Exists : Boolean;
 
     { Check if table has column. }
-    //function HasColumn (AColumnName : String) : Boolean;
+    function HasColumn (AColumnName : String) : Boolean;
 
     { Delete table. }
     procedure Drop;
@@ -170,15 +170,26 @@ begin
   Result := (Row.GetIntegerValue(0) > 0);
 end;
 
-//function TSQLite3Table.HasColumn (AColumnName : String) : Boolean;
-//begin
-//  PRAGMA table_info(your_table_name)
-//
-//  cid|name|type|notnull|dflt_value|pk
-//  0|id|INTEGER|0||1
-//  1|json|JSON|0||0
-//  2|name|TEXT|0||0  
-//end;
+function TSQLite3Table.HasColumn (AColumnName : String) : Boolean;
+var
+  Query : TSQLite3Query;
+  Res : TSQLite3Result;
+  Row : TSQLite3ResultRow;
+begin
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, 
+    'PRAGMA table_info(' + FTableName + ');', [SQLITE_PREPARE_NORMALIZE]);
+  
+  Result := False;
+  Res := Query.Run;
+  for Row in Res do
+  begin
+    if Row.GetStringValue('name') = AColumnName then
+    begin  
+      Result := True;
+      Break;
+    end;
+  end; 
+end;
 
 procedure TSQLite3Table.Drop;
 var

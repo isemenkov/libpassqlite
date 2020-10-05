@@ -69,6 +69,7 @@ type
         FErrorsStack : PSQL3LiteErrorsStack;
         FStatementHandle : psqlite3_stmt;
         FResCode : Integer;
+        FCounter : Cardinal;
       end;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AStatementHandle : 
@@ -96,10 +97,17 @@ begin
   FErrorsStack := AErrorsStack;
   FStatementHandle := AStatementHandle;
   FResCode := AResCode;
+  FCounter := 0;
 end;
 
 function TSQLite3Result.TRowIterator.HasRow : Boolean;
 begin
+  if FCounter > 0 then
+  begin
+    FResCode := sqlite3_step(FStatementHandle);
+    FErrorsStack^.Push(FResCode);
+  end; 
+
   Result := (FResCode = SQLITE_ROW);
 end;
 
@@ -110,12 +118,14 @@ begin
 end;
 
 function TSQLite3Result.TRowIterator.MoveNext : Boolean;
-var
-  res_code : Integer;
 begin
-  res_code := sqlite3_step(FStatementHandle);
-  FErrorsStack^.Push(res_code);
-  Result := (res_code = SQLITE_ROW); 
+  if FCounter > 0 then
+  begin
+    FResCode := sqlite3_step(FStatementHandle);
+    FErrorsStack^.Push(FResCode);
+  end; 
+
+  Result := (FResCode = SQLITE_ROW);
 end;
 
 function TSQLite3Result.TRowIterator.GetEnumerator : 
@@ -127,6 +137,7 @@ end;
 function TSQLite3Result.TRowIterator.GetCurrent : TSQLite3ResultRow;
 begin
   Result := TSQLite3ResultRow.Create(FErrorsStack, FStatementHandle);
+  Inc(FCounter);
 end;
 
 { TSQLite3Result }
@@ -147,13 +158,13 @@ end;
 function TSQLite3Result.FirstRow : TSQLite3Result.TRowIterator;
 begin
   Result := TSQLite3Result.TRowIterator.Create(FErrorsStack, FStatementHandle,
-    sqlite3_step(FStatementHandle));
+    FResCode);
 end;
 
 function TSQLite3Result.GetEnumerator : TSQLite3Result.TRowIterator;
 begin
   Result := TSQLite3Result.TRowIterator.Create(FErrorsStack, FStatementHandle,
-    sqlite3_step(FStatementHandle));
+    FResCode);
 end;
 
 end.

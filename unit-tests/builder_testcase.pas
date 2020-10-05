@@ -55,6 +55,12 @@ begin
 
   AssertTrue('#Test_SQLite3Builder_CreateNewSchema -> ' +
     'Database table not exists', builder.Table('test_table').Exists);
+  AssertTrue('#Test_SQLite3Builder_CreateNewSchema -> ' +
+    'Database table not have id column', 
+    builder.Table('test_table').HasColumn('id'));
+  AssertTrue('#Test_SQLite3Builder_CreateNewSchema -> ' +
+    'Database table not have id column', 
+    builder.Table('test_table').HasColumn('txt'));
 
   FreeAndNil(builder);
 
