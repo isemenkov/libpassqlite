@@ -173,15 +173,13 @@ end;
 function TSQLite3Table.HasColumn (AColumnName : String) : Boolean;
 var
   Query : TSQLite3Query;
-  Res : TSQLite3Result;
   Row : TSQLite3ResultRow;
 begin
   Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, 
     'PRAGMA table_info(' + FTableName + ');', [SQLITE_PREPARE_NORMALIZE]);
   
   Result := False;
-  Res := Query.Run;
-  for Row in Res do
+  for Row in Query.Run do
   begin
     if Row.GetStringValue('name') = AColumnName then
     begin  
