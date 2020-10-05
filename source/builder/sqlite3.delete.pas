@@ -33,7 +33,7 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.query,
-  sqlite3.structures, sqlite3.result_row;
+  sqlite3.structures, sqlite3.where;
 
 type
   TSQLite3Delete = class
@@ -48,14 +48,11 @@ type
 
     { Add where clause. }
     function Where (AColumnName : String; AComparison : 
-      TSQLite3Structures.TWhereComparisonOperator; AValue : String) : 
-      TSQLite3Delete; overload;
+      TWhereComparisonOperator; AValue : String) : TSQLite3Delete; overload;
     function Where (AColumnName : String; AComparison : 
-      TSQLite3Structures.TWhereComparisonOperator; AValue : Integer) : 
-      TSQLite3Delete; overload;
+      TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete; overload;
     function Where (AColumnName : String; AComparison : 
-      TSQLite3Structures.TWhereComparisonOperator; AValue : Double) : 
-      TSQLite3Delete; overload;
+      TWhereComparisonOperator; AValue : Double) : TSQLite3Delete; overload;
     function Where (AColumnName : String; AValue : String) : TSQLite3Delete;
       overload;
     function Where (AColumnName : String; AValue : Integer) : TSQLite3Delete;
@@ -71,7 +68,7 @@ type
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
-    FWhereFieldsList : TSQLite3Structures.TWhereFieldsList;
+    FWhereFragment : TSQLite3Where;
   end;
 
 implementation
@@ -84,228 +81,81 @@ begin
   FErrorsStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FTableName := ATableName;
-  FWhereFieldsList := TSQLite3Structures.TWhereFieldsList.Create;
+  FWhereFragment := TSQLite3Where.Create;
 end;
 
 destructor TSQLite3Delete.Destroy;
 begin
-  FreeAndNil(FWhereFieldsList);
+  FreeAndNil(FWhereFragment);
   inherited Destroy;
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AComparison :
-  TSQLite3Structures.TWhereComparisonOperator; AValue : String) : 
-  TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
+  TWhereComparisonOperator; AValue : String) : TSQLite3Delete;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := AComparison;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_TEXT;
-  val.Comparison_Value.Value_Integer := 0;
-  val.Comparison_Value.Value_Float := 0;
-  val.Comparison_Value.Value_Text := AValue;
-  val.Comparison_Value.Value_Blob := nil;
-
-  FWhereFieldsList.Append(val);
+  FWhereFragment.Where(AColumnName, AComparison, AValue);
   Result := Self;  
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AComparison :
-  TSQLite3Structures.TWhereComparisonOperator; AValue : Integer) : 
-  TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
+  TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := AComparison;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_INTEGER;
-  val.Comparison_Value.Value_Integer := AValue;
-  val.Comparison_Value.Value_Float := 0;
-  val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
-  Result := Self;  
+  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  Result := Self; 
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AComparison :
-  TSQLite3Structures.TWhereComparisonOperator; AValue : Double) : 
-  TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
+  TWhereComparisonOperator; AValue : Double) : TSQLite3Delete;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := AComparison;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_FLOAT;
-  val.Comparison_Value.Value_Integer := 0;
-  val.Comparison_Value.Value_Float := AValue;
-  val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
-  Result := Self;  
+  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  Result := Self;
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AValue : String) : 
   TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := COMPARISON_EQUAL;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_TEXT;
-  val.Comparison_Value.Value_Integer := 0;
-  val.Comparison_Value.Value_Float := 0;
-  val.Comparison_Value.Value_Text := AValue;
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
-  Result := Self;  
+  FWhereFragment.Where(AColumnName, AValue);
+  Result := Self;
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AValue : Integer) : 
   TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := COMPARISON_EQUAL;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_INTEGER;
-  val.Comparison_Value.Value_Integer := AValue;
-  val.Comparison_Value.Value_Float := 0;
-  val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
-  Result := Self;  
+  FWhereFragment.Where(AColumnName, AValue);
+  Result := Self; 
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AValue : Double) : 
   TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := COMPARISON_EQUAL;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_FLOAT;
-  val.Comparison_Value.Value_Integer := 0;
-  val.Comparison_Value.Value_Float := AValue;
-  val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
-  Result := Self;  
+  FWhereFragment.Where(AColumnName, AValue);
+  Result := Self; 
 end;
 
 function TSQLite3Delete.WhereNull (AColumnName : String) : TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := COMPARISON_EQUAL;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_NULL;
-  val.Comparison_Value.Value_Integer := 0;
-  val.Comparison_Value.Value_Float := 0;
-  val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
-  Result := Self;  
+  FWhereFragment.WhereNull(AColumnName);
+  Result := Self; 
 end;
 
 function TSQLite3Delete.WhereNotNull (AColumnName : String) : TSQLite3Delete;
-var
-  val : TSQLite3Structures.TWhereFieldItem;
 begin
-  val.Comparison_ColumnName := AColumnName;
-  val.Comparison := COMPARISON_NOT;
-
-  val.Comparison_Value.Column_Name := '';
-  val.Comparison_Value.Value_Type := SQLITE_NULL;
-  val.Comparison_Value.Value_Integer := 0;
-  val.Comparison_Value.Value_Float := 0;
-  val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
-  
-  FWhereFieldsList.Append(val);
+  FWhereFragment.WhereNotNull(AColumnName);
   Result := Self;  
 end;
 
 function TSQLite3Delete.Get : Integer;
 var
   SQL : String;
-  where_item : TSQLite3Structures.TWhereFieldItem;
-  i : Integer;
   Query : TSQLite3Query;
 begin
   SQL := 'DELETE FROM ' + FTableName;
+  SQL := SQL + FWhereFragment.GetQuery + ';';
 
-  if FWhereFieldsList.FirstEntry.HasValue then
-  begin
-    i := 0;
-    SQL := SQL + ' WHERE ';
-    for where_item in FWhereFieldsList do
-    begin
-      // TODO
-
-      SQL := SQL + where_item.Comparison_ColumnName;
-      case where_item.Comparison of  
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_EQUAL :
-          SQL := SQL + ' = ';
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_NOT_EQUAL :
-          SQL := SQL + ' <> ';
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_LESS :
-          SQL := SQL + ' < ';
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_GREATER :
-          SQL := SQL + ' > ';
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_LESS_OR_EQUAL :
-          SQL := SQL + ' <= ';
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_GREATER_OR_EQUAL:
-          SQL := SQL + ' >= ';
-        TSQLite3Structures.TWhereComparisonOperator.COMPARISON_NOT :
-          SQL := SQL + ' NOT ';
-      end;
-
-      SQL := SQL + '?';
-      Inc(i);
-    end;
-  end;
-
-  i := 1;
-  SQL := SQL + ';'; 
   Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
 
-  if FWhereFieldsList.FirstEntry.HasValue then
-  begin
-    for where_item in FWhereFieldsList do
-    begin
-      case where_item.Comparison_Value.Value_Type of
-        SQLITE_INTEGER : Query.Bind(i, 
-          where_item.Comparison_Value.Value_Integer);
-        SQLITE_FLOAT : Query.Bind(i, where_item.Comparison_Value.Value_Float);
-        SQLITE_TEXT : Query.Bind(i, where_item.Comparison_Value.Value_Text);
-        SQLITE_BLOB : Query.Bind(i, where_item.Comparison_Value.Value_Blob);    
-        SQLITE_NULL : Query.Bind(i);
-      end;
-      Inc(i);  
-    end;
-  end;
+  FWhereFragment.BindQueryData(Query, 1);
   
   { Run SQL query. }
   Query.Run;

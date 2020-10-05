@@ -161,7 +161,7 @@ var
   Row : TSQLite3ResultRow;
 begin
   Query := TSQLite3Select.Create(FErrorsStack, FDBHandle, 'sqlite_master');
-  Row := Query.Field('count(*)'){.Where('type', 'table')}
+  Row := Query.Field('count(*)').Where('type', 'table')
     .Where('name', FTableName)
     .Get
     .FirstRow
