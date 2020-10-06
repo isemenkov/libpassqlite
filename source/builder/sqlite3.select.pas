@@ -52,6 +52,9 @@ type
     function Field (AColumnName, AColumnAlias : String) : TSQLite3Select;
       overload;
 
+    { Set distinct modifier. }
+    function Distinct : TSQLite3Select;
+
     { Add where clause. }
     function Where (AColumnName : String; AComparison : 
       TWhereComparisonOperator; AValue : String) : TSQLite3Select; overload;
@@ -68,14 +71,20 @@ type
     function WhereNull (AColumnName : String) : TSQLite3Select;
     function WhereNotNull (AColumnName : String) : TSQLite3Select;
 
+    { Set limit clause. }
+    function Limit (ACount : Cardinal) : TSQLite3Select;
+    function Offset (ACount : Cardinal) : TSQLite3Select;
+
     { Get result. }
     function Get : TSQLite3Result;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
+    FDistinct : Boolean;
     FSelectFieldsList : TSQLite3Structures.TSelectFieldsList;
     FWhereFragment : TSQLite3Where;
+    FLimit : TSQLite3Structures.TLimitItem;
   end;
 
 implementation
@@ -88,8 +97,11 @@ begin
   FErrorsStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FTableName := ATableName;
+  FDistinct := False;
   FSelectFieldsList := TSQLite3Structures.TSelectFieldsList.Create;
   FWhereFragment := TSQLite3Where.Create;
+  FLimit.Limit_Item := False;
+  FLimit.Offset_Item := False;
 end;
 
 destructor TSQLite3Select.Destroy;
@@ -127,6 +139,12 @@ begin
   item.Column_Name := AColumnName;
   item.Column_AliasName := AColumnAlias;
   FSelectFieldsList.Append(item);
+  Result := Self;
+end;
+
+function TSQLite3Select.Distinct : TSQLite3Select;
+begin
+  FDistinct := True;
   Result := Self;
 end;
 
@@ -196,6 +214,12 @@ begin
 
   i := 0;
   SQL := 'SELECT ';
+
+  // Set distinct modifier.
+  if FDistinct then
+    SQL := SQL + 'DISTINCT ';
+
+  // Set selected fields.
   for select_elem in FSelectFieldsList do
   begin
     { For every field. }
@@ -213,14 +237,50 @@ begin
   end;
   
   SQL := SQL + ' FROM ' + FTableName;
-  SQL := SQL + FWhereFragment.GetQuery + ';';
+  SQL := SQL + FWhereFragment.GetQuery;
 
+  { Set limit clause. }
+  if FLimit.Limit_Item then
+    SQL := SQL + ' LIMIT ?';
+
+  if FLimit.Offset_Item then
+    SQL := SQL + ' OFFSET ?';
+
+  { Close SQL query. }
+  SQL := SQL + ';';
+
+  { Bind query data. }
   Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
-  FWhereFragment.BindQueryData (Query, 1);
+  i := FWhereFragment.BindQueryData (Query, 1);
   
+  if FLimit.Limit_Item then
+  begin
+    Query.Bind(i, FLimit.Limit_Value);
+    Inc(i);
+  end;
+
+  if FLimit.Offset_Item then
+  begin
+    Query.Bind(i, FLimit.Offset_Value);
+  end;
+
   { Run SQL query. }
   Result := Query.Run;  
+end;
+
+function TSQLite3Select.Limit (ACount : Cardinal) : TSQLite3Select;
+begin
+  FLimit.Limit_Item := True;
+  FLimit.Limit_Value := ACount;
+  Result := Self;
+end;
+
+function TSQLite3Select.Offset (ACount : Cardinal) : TSQLite3Select;
+begin
+  FLimit.Offset_Item := True;
+  FLimit.Offset_Value := ACount;
+  Result := Self;
 end;
 
 end.

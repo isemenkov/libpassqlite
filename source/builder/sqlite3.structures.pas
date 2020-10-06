@@ -57,6 +57,7 @@ type
       end;
 
       { Values list. }
+      PValuesList = ^TValuesList;
       TValuesList = class
         (specialize TList<TValueItem, TValueItemCompareFunctor>);
 
@@ -122,6 +123,14 @@ type
       { Updates list. }
       TUpdatesFieldsList = class
         (specialize TList<TUpdateItem, TUpdateItemCompareFunctor>);
+
+      { Limit item clause. }
+      TLimitItem = record
+        Limit_Item : Boolean;
+        Limit_Value : Cardinal;
+        Offset_Item : Boolean;
+        Offset_Value : Cardinal;
+      end;
   end;
 
 implementation

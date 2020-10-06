@@ -44,7 +44,10 @@ type
     destructor Destroy; override;
 
     { Create new table. }
-    procedure New (ASchema : TSQLite3Schema); 
+    procedure New (ASchema : TSQLite3Schema);
+
+    { Check current database table schema. }
+    function CheckSchema (ASchema : TSQLite3Schema) : Boolean; 
 
     { Check if table exists. }
     function Exists : Boolean;
@@ -138,6 +141,9 @@ begin
           SQL := SQL + column.Column_Name + ' TEXT';
 
           { Add modificators. }
+          if column.Option_AutoIncrement then
+            SQL := SQL + ' AUTOINCREMENT';
+          
           if column.Option_NotNull then
             SQL := SQL + ' NOT NULL';
 
@@ -153,6 +159,90 @@ begin
     [SQLITE_PREPARE_NORMALIZE]);
   Query.Run;
   FreeAndNil(Query);
+end;
+
+function TSQLite3Table.CheckSchema (ASchema : TSQLite3Schema) : Boolean;
+var
+  column : TSQLite3Schema.TColumnsList.TIterator;
+  Query : TSQLite3Query;
+  Row : TSQLite3ResultRow;
+begin
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle,
+    'PRAGMA table_info(' + FTableName + ')', [SQLITE_PREPARE_NORMALIZE]);
+  column := ASchema.Columns.FirstEntry;
+  
+  Result := True;
+  for Row in Query.Run do
+  begin
+    // Check if has schema entry.
+    if not column.HasValue then
+    begin
+      Result := False;
+      Break;
+    end;
+
+    // Check column name.
+    if Row.GetStringValue('name') <> column.Value.Column_Name then
+    begin
+      Result := False;
+      Break;
+    end;
+
+    // Check column type.
+    case Row.GetStringValue('type') of
+      'INTEGER' : 
+        begin
+          if column.Value.Column_Type <> SQLITE_INTEGER then
+          begin
+            Result := False;
+            Break;
+          end;
+        end;
+      'REAL' : 
+        begin
+          if column.Value.Column_Type <> SQLITE_FLOAT then
+          begin
+            Result := False;
+            Break;
+          end;
+        end;
+      'TEXT' : 
+        begin
+          if column.Value.Column_Type <> SQLITE_TEXT then
+          begin
+            Result := False;
+            Break;
+          end;
+        end;
+      'BLOB' : 
+        begin
+          if column.Value.Column_Type <> SQLITE_BLOB then
+          begin
+            Result := False;
+            Break;
+          end;
+        end;
+    end;
+
+    // Check primary key modifier.
+    if (Row.GetIntegerValue('pk') = 0) and column.Value.Option_PrimaryKey then
+    begin
+      Result := False;
+      Break;
+    end;
+
+    // Check not null modifier.
+    if (Row.GetIntegerValue('notnull') = 0) and column.Value.Option_NotNull then
+    begin
+      if not column.Value.Option_PrimaryKey then
+      begin
+        Result := False;
+        Break;
+      end;
+    end;
+
+    column := column.Next;
+  end;
 end;
 
 function TSQLite3Table.Exists : Boolean;

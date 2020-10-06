@@ -78,11 +78,14 @@ type
     { Create blob column. }
     function Blob (AColumnName : String) : TSQLite3Schema;
 
+    { Add autoincrement to the last adding element. }
+    function Autoincrement : TSQLite3Schema;
+
     { Add not null modifier to the last adding element. }
-    function NotNull() : TSQLite3Schema;
+    function NotNull : TSQLite3Schema;
 
     { Add unique modifier to the last adding element. }
-    function Unique() : TSQLite3Schema;
+    function Unique : TSQLite3Schema;
 
     { Clear columns list. }
     procedure Clear;
@@ -206,7 +209,21 @@ begin
   Result := Self;
 end;
 
-function TSQLite3Schema.NotNull() : TSQLite3Schema;
+function TSQLite3Schema.Autoincrement : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  if FColumns.LastEntry.HasValue then
+  begin
+    Column := FColumns.LastEntry.Value;
+    Column.Option_AutoIncrement := True;
+    FColumns.LastEntry.Value := Column;    
+  end; 
+
+  Result := Self; 
+end;
+
+function TSQLite3Schema.NotNull : TSQLite3Schema;
 var
   Column : TColumnItem;
 begin
@@ -220,7 +237,7 @@ begin
   Result := Self; 
 end;
 
-function TSQLite3Schema.Unique() : TSQLite3Schema;
+function TSQLite3Schema.Unique : TSQLite3Schema;
 var
   Column : TColumnItem;
 begin
