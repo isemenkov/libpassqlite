@@ -86,11 +86,18 @@ type
         COMPARISON_GREATER,             { >   }
         COMPARISON_LESS_OR_EQUAL,       { <=  }
         COMPARISON_GREATER_OR_EQUAL,    { >=  }
-        COMPARISON_NOT                  { NOT }    
+        COMPARISON_NOT                  { IS NOT }    
       );  
+
+      { Where clause type. }
+      TWhereFieldType = (
+        WHERE_AND,
+        WHERE_OR
+      );
 
       { Where field item. }
       TWhereFieldItem = record
+        Comparison_Type : TWhereFieldType;
         Comparison_ColumnName : String;
         Comparison : TWhereComparisonOperator;
         Comparison_Value : TValueItem;

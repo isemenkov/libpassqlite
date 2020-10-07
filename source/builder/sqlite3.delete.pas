@@ -62,6 +62,36 @@ type
     function WhereNull (AColumnName : String) : TSQLite3Delete;
     function WhereNotNull (AColumnName : String) : TSQLite3Delete;
 
+    function AndWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : String) : TSQLite3Delete; overload;
+    function AndWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete; overload;
+    function AndWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Double) : TSQLite3Delete; overload;
+    function AndWhere (AColumnName : String; AValue : String) : TSQLite3Delete;
+      overload;
+    function AndWhere (AColumnName : String; AValue : Integer) : TSQLite3Delete;
+      overload;
+    function AndWhere (AColumnName : String; AValue : Double) : TSQLite3Delete;
+      overload;
+    function AndWhereNull (AColumnName : String) : TSQLite3Delete;
+    function AndWhereNotNull (AColumnName : String) : TSQLite3Delete;
+
+    function OrWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : String) : TSQLite3Delete; overload;
+    function OrWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete; overload;
+    function OrWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Double) : TSQLite3Delete; overload;
+    function OrWhere (AColumnName : String; AValue : String) : TSQLite3Delete;
+      overload;
+    function OrWhere (AColumnName : String; AValue : Integer) : TSQLite3Delete;
+      overload;
+    function OrWhere (AColumnName : String; AValue : Double) : TSQLite3Delete;
+      overload;
+    function OrWhereNull (AColumnName : String) : TSQLite3Delete;
+    function OrWhereNotNull (AColumnName : String) : TSQLite3Delete;
+
     { Get result. }
     function Get : Integer;
   private
@@ -93,54 +123,180 @@ end;
 function TSQLite3Delete.Where (AColumnName : String; AComparison :
   TWhereComparisonOperator; AValue : String) : TSQLite3Delete;
 begin
-  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    AComparison, AValue);
   Result := Self;  
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AComparison :
   TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete;
 begin
-  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    AComparison, AValue);
   Result := Self; 
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AComparison :
   TWhereComparisonOperator; AValue : Double) : TSQLite3Delete;
 begin
-  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    AComparison, AValue);
   Result := Self;
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AValue : String) : 
   TSQLite3Delete;
 begin
-  FWhereFragment.Where(AColumnName, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
   Result := Self;
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AValue : Integer) : 
   TSQLite3Delete;
 begin
-  FWhereFragment.Where(AColumnName, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
   Result := Self; 
 end;
 
 function TSQLite3Delete.Where (AColumnName : String; AValue : Double) : 
   TSQLite3Delete;
 begin
-  FWhereFragment.Where(AColumnName, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
   Result := Self; 
 end;
 
 function TSQLite3Delete.WhereNull (AColumnName : String) : TSQLite3Delete;
 begin
-  FWhereFragment.WhereNull(AColumnName);
+  FWhereFragment.WhereNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
   Result := Self; 
 end;
 
 function TSQLite3Delete.WhereNotNull (AColumnName : String) : TSQLite3Delete;
 begin
-  FWhereFragment.WhereNotNull(AColumnName);
+  FWhereFragment.WhereNotNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
+  Result := Self;  
+end;
+
+function TSQLite3Delete.AndWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : String) : TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Delete.AndWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    AComparison, AValue);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.AndWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Double) : TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    AComparison, AValue);
+  Result := Self;
+end;
+
+function TSQLite3Delete.AndWhere (AColumnName : String; AValue : String) : 
+  TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
+  Result := Self;
+end;
+
+function TSQLite3Delete.AndWhere (AColumnName : String; AValue : Integer) : 
+  TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.AndWhere (AColumnName : String; AValue : Double) : 
+  TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.AndWhereNull (AColumnName : String) : TSQLite3Delete;
+begin
+  FWhereFragment.WhereNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.AndWhereNotNull (AColumnName : String) : TSQLite3Delete;
+begin
+  FWhereFragment.WhereNotNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
+  Result := Self;  
+end;
+
+function TSQLite3Delete.OrWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : String) : TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, AColumnName, 
+    AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Delete.OrWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Integer) : TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, AColumnName, 
+    AComparison, AValue);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.OrWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Double) : TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, AColumnName, 
+    AComparison, AValue);
+  Result := Self;
+end;
+
+function TSQLite3Delete.OrWhere (AColumnName : String; AValue : String) : 
+  TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
+  Result := Self;
+end;
+
+function TSQLite3Delete.OrWhere (AColumnName : String; AValue : Integer) : 
+  TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.OrWhere (AColumnName : String; AValue : Double) : 
+  TSQLite3Delete;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, AColumnName, 
+    TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, AValue);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.OrWhereNull (AColumnName : String) : TSQLite3Delete;
+begin
+  FWhereFragment.WhereNull(TSQLite3Where.TWhereType.WHERE_OR, AColumnName);
+  Result := Self; 
+end;
+
+function TSQLite3Delete.OrWhereNotNull (AColumnName : String) : TSQLite3Delete;
+begin
+  FWhereFragment.WhereNotNull(TSQLite3Where.TWhereType.WHERE_OR, AColumnName);
   Result := Self;  
 end;
 

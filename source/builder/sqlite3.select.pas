@@ -72,6 +72,36 @@ type
     function WhereNull (AColumnName : String) : TSQLite3Select;
     function WhereNotNull (AColumnName : String) : TSQLite3Select;
 
+    function AndWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : String) : TSQLite3Select; overload;
+    function AndWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Integer) : TSQLite3Select; overload;
+    function AndWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Double) : TSQLite3Select; overload;
+    function AndWhere (AColumnName : String; AValue : String) : TSQLite3Select; 
+      overload;
+    function AndWhere (AColumnName : String; AValue : Integer) : TSQLite3Select; 
+      overload;
+    function AndWhere (AColumnName : String; AValue : Double) : TSQLite3Select; 
+      overload;
+    function AndWhereNull (AColumnName : String) : TSQLite3Select;
+    function AndWhereNotNull (AColumnName : String) : TSQLite3Select;
+
+    function OrWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : String) : TSQLite3Select; overload;
+    function OrWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Integer) : TSQLite3Select; overload;
+    function OrWhere (AColumnName : String; AComparison : 
+      TWhereComparisonOperator; AValue : Double) : TSQLite3Select; overload;
+    function OrWhere (AColumnName : String; AValue : String) : TSQLite3Select; 
+      overload;
+    function OrWhere (AColumnName : String; AValue : Integer) : TSQLite3Select; 
+      overload;
+    function OrWhere (AColumnName : String; AValue : Double) : TSQLite3Select; 
+      overload;
+    function OrWhereNull (AColumnName : String) : TSQLite3Select;
+    function OrWhereNotNull (AColumnName : String) : TSQLite3Select;
+
     { Join clause. }
     function Join (ATableName : String; AJoinType : TJoinType; AColumnName : 
       String; ACurrentTableColumn : String) : TSQLite3Select;
@@ -173,54 +203,189 @@ end;
 function TSQLite3Select.Where (AColumnName : String; AComparison :
   TWhereComparisonOperator; AValue : String) : TSQLite3Select;
 begin
-  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, AComparison, AValue);
   Result := Self;  
 end;
 
 function TSQLite3Select.Where (AColumnName : String; AComparison :
   TWhereComparisonOperator; AValue : Integer) : TSQLite3Select;
 begin
-  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, AComparison, AValue);
   Result := Self;  
 end;
 
 function TSQLite3Select.Where (AColumnName : String; AComparison :
   TWhereComparisonOperator; AValue : Double) : TSQLite3Select;
 begin
-  FWhereFragment.Where(AColumnName, AComparison, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, AComparison, AValue);
   Result := Self;  
 end;
 
 function TSQLite3Select.Where (AColumnName : String; AValue : String) : 
   TSQLite3Select;
 begin
-  FWhereFragment.Where(AColumnName, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
   Result := Self;  
 end;
 
 function TSQLite3Select.Where (AColumnName : String; AValue : Integer) : 
   TSQLite3Select;
 begin
-  FWhereFragment.Where(AColumnName, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
   Result := Self;  
 end;
 
 function TSQLite3Select.Where (AColumnName : String; AValue : Double) : 
   TSQLite3Select;
 begin
-  FWhereFragment.Where(AColumnName, AValue);
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
   Result := Self;  
 end;
 
 function TSQLite3Select.WhereNull (AColumnName : String) : TSQLite3Select;
 begin
-  FWhereFragment.WhereNull(AColumnName);
+  FWhereFragment.WhereNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
   Result := Self;  
 end;
 
 function TSQLite3Select.WhereNotNull (AColumnName : String) : TSQLite3Select;
 begin
-  FWhereFragment.WhereNotNull(AColumnName);
+  FWhereFragment.WhereNotNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : String) : TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Integer) : TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Double) : TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhere (AColumnName : String; AValue : String) : 
+  TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhere (AColumnName : String; AValue : Integer) : 
+  TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhere (AColumnName : String; AValue : Double) : 
+  TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_AND, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhereNull (AColumnName : String) : TSQLite3Select;
+begin
+  FWhereFragment.WhereNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
+  Result := Self;  
+end;
+
+function TSQLite3Select.AndWhereNotNull (AColumnName : String) : TSQLite3Select;
+begin
+  FWhereFragment.WhereNotNull(TSQLite3Where.TWhereType.WHERE_AND, AColumnName);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : String) : TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, 
+    AColumnName, AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Integer) : TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, 
+    AColumnName, AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhere (AColumnName : String; AComparison :
+  TWhereComparisonOperator; AValue : Double) : TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, 
+    AColumnName, AComparison, AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhere (AColumnName : String; AValue : String) : 
+  TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhere (AColumnName : String; AValue : Integer) : 
+  TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhere (AColumnName : String; AValue : Double) : 
+  TSQLite3Select;
+begin
+  FWhereFragment.Where(TSQLite3Where.TWhereType.WHERE_OR, 
+    AColumnName, TSQLite3Where.TWhereComparisonOperator.COMPARISON_EQUAL, 
+    AValue);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhereNull (AColumnName : String) : TSQLite3Select;
+begin
+  FWhereFragment.WhereNull(TSQLite3Where.TWhereType.WHERE_OR, AColumnName);
+  Result := Self;  
+end;
+
+function TSQLite3Select.OrWhereNotNull (AColumnName : String) : TSQLite3Select;
+begin
+  FWhereFragment.WhereNotNull(TSQLite3Where.TWhereType.WHERE_OR, AColumnName);
   Result := Self;  
 end;
 

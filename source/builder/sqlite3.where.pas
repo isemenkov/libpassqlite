@@ -38,24 +38,21 @@ type
   TSQLite3Where = class
   public
     type
-      TWhereComparisonOperator
-        = sqlite3.structures.TSQLite3Structures.TWhereComparisonOperator;
+      TWhereComparisonOperator = TSQLite3Structures.TWhereComparisonOperator;
+      TWhereType = TSQLite3Structures.TWhereFieldType;
   public
     constructor Create;
     destructor Destroy; override;
 
     { Add where clause. }
-    procedure Where (AColumnName : String; AComparison : 
+    procedure Where (AType : TWhereType; AColumnName : String; AComparison : 
       TWhereComparisonOperator; AValue : String); overload;
-    procedure Where (AColumnName : String; AComparison : 
+    procedure Where (AType : TWhereType; AColumnName : String; AComparison : 
       TWhereComparisonOperator; AValue : Integer); overload;
-    procedure Where (AColumnName : String; AComparison : 
+    procedure Where (AType : TWhereType; AColumnName : String; AComparison : 
       TWhereComparisonOperator; AValue : Double); overload;
-    procedure Where (AColumnName : String; AValue : String); overload;
-    procedure Where (AColumnName : String; AValue : Integer); overload;
-    procedure Where (AColumnName : String; AValue : Double); overload;
-    procedure WhereNull (AColumnName : String);
-    procedure WhereNotNull (AColumnName : String);
+    procedure WhereNull (AType : TWhereType; AColumnName : String);
+    procedure WhereNotNull (AType : TWhereType; AColumnName : String);
 
     { Form SQL query fragment. }
     function GetQuery : String;
@@ -82,11 +79,12 @@ begin
   inherited Destroy;
 end;
 
-procedure TSQLite3Where.Where (AColumnName : String; AComparison : 
-  TWhereComparisonOperator; AValue : String);
+procedure TSQLite3Where.Where (AType : TWhereType; AColumnName : String; 
+  AComparison : TWhereComparisonOperator; AValue : String);
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
+  val.Comparison_Type := AType;
   val.Comparison_ColumnName := AColumnName;
   val.Comparison := AComparison;
 
@@ -100,11 +98,12 @@ begin
   FWhereFieldsList.Append(val);
 end;
 
-procedure TSQLite3Where.Where (AColumnName : String; AComparison : 
-  TWhereComparisonOperator; AValue : Integer);
+procedure TSQLite3Where.Where (AType : TWhereType; AColumnName : String; 
+  AComparison : TWhereComparisonOperator; AValue : Integer);
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
+  val.Comparison_Type := AType;
   val.Comparison_ColumnName := AColumnName;
   val.Comparison := AComparison;
 
@@ -118,11 +117,12 @@ begin
   FWhereFieldsList.Append(val);
 end;
 
-procedure TSQLite3Where.Where (AColumnName : String; AComparison : 
-  TWhereComparisonOperator; AValue : Double);
+procedure TSQLite3Where.Where (AType : TWhereType; AColumnName : String; 
+  AComparison : TWhereComparisonOperator; AValue : Double);
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
+  val.Comparison_Type := AType;
   val.Comparison_ColumnName := AColumnName;
   val.Comparison := AComparison;
 
@@ -136,25 +136,11 @@ begin
   FWhereFieldsList.Append(val);
 end;
 
-procedure TSQLite3Where.Where (AColumnName : String; AValue : String);
-begin
-  Where(AColumnName, COMPARISON_EQUAL, AValue);  
-end;
-
-procedure TSQLite3Where.Where (AColumnName : String; AValue : Integer); 
-begin
-  Where(AColumnName, COMPARISON_EQUAL, AValue);
-end;
-
-procedure TSQLite3Where.Where (AColumnName : String; AValue : Double);
-begin
-  Where(AColumnName, COMPARISON_EQUAL, AValue);
-end;
-
-procedure TSQLite3Where.WhereNull (AColumnName : String);
+procedure TSQLite3Where.WhereNull (AType : TWhereType; AColumnName : String);
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
+  val.Comparison_Type := AType;
   val.Comparison_ColumnName := AColumnName;
   val.Comparison := COMPARISON_EQUAL;
 
@@ -168,10 +154,11 @@ begin
   FWhereFieldsList.Append(val);
 end;
 
-procedure TSQLite3Where.WhereNotNull (AColumnName : String);
+procedure TSQLite3Where.WhereNotNull (AType : TWhereType; AColumnName : String);
 var
   val : TSQLite3Structures.TWhereFieldItem;
 begin
+  val.Comparison_Type := AType;
   val.Comparison_ColumnName := AColumnName;
   val.Comparison := COMPARISON_NOT;
 
