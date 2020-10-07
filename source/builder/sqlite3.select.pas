@@ -41,6 +41,7 @@ type
     type
       TWhereComparisonOperator = TSQLite3Structures.TWhereComparisonOperator;
       TJoinType = TSQLite3Structures.TJoinType;
+      TOrderByType = TSQLite3Structures.TOrderByType;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle :
       ppsqlite3; ATableName : String);
@@ -79,6 +80,10 @@ type
     function LeftJoin (ATableName : String; AColumnName : String; 
       ACurrentTableColumn : String) : TSQLite3Select; 
 
+    { Order by clause. }
+    function OrderBy (AColumnName : String; AOrderBy : TOrderByType) :
+      TSQLite3Select;
+
     { Set limit clause. }
     function Limit (ACount : Cardinal) : TSQLite3Select;
     function Offset (ACount : Cardinal) : TSQLite3Select;
@@ -87,6 +92,7 @@ type
     function Get : TSQLite3Result;
   private
     function PrepareJoinQuery : String;
+    function PrepareOrderByQuery : String;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
@@ -95,6 +101,7 @@ type
     FSelectFieldsList : TSQLite3Structures.TSelectFieldsList;
     FWhereFragment : TSQLite3Where;
     FJoinsList : TSQLite3Structures.TJoinsList;
+    FOrderByList : TSQLite3Structures.TOrderByList;
     FLimit : TSQLite3Structures.TLimitItem;
   end;
 
@@ -112,6 +119,7 @@ begin
   FSelectFieldsList := TSQLite3Structures.TSelectFieldsList.Create;
   FWhereFragment := TSQLite3Where.Create;
   FJoinsList := TSQLite3Structures.TJoinsList.Create;
+  FOrderByList := TSQLite3Structures.TOrderByList.Create;
   FLimit.Limit_Item := False;
   FLimit.Offset_Item := False;
 end;
@@ -121,6 +129,7 @@ begin
   FreeAndNil(FSelectFieldsList);
   FreeAndNil(FWhereFragment);
   FreeAndNil(FJoinsList);
+  FreeAndNil(FOrderByList);
   inherited Destroy;
 end;
 
@@ -241,6 +250,18 @@ begin
   Result := Join(ATableName, JOIN_OUTER_LEFT, AColumnName, ACurrentTableColumn);
 end;
 
+function TSQLite3Select.OrderBy (AColumnName : String; AOrderBy : TOrderByType)
+ : TSQLite3Select;
+var
+  item : TSQLite3Structures.TOrderByItem;
+begin
+  item.Column_Name := AColumnName;
+  item.Order_Type := AOrderBy;
+
+  FOrderByList.Append(item);
+  Result := Self;
+end;
+
 function TSQLite3Select.Limit (ACount : Cardinal) : TSQLite3Select;
 begin
   FLimit.Limit_Item := True;
@@ -284,6 +305,36 @@ begin
   Result := SQL;
 end;
 
+function TSQLite3Select.PrepareOrderByQuery : String;
+var
+  SQL : String;
+  order_item : TSQLite3Structures.TOrderByItem;
+  i : Integer;
+begin
+  if not FOrderByList.FirstEntry.HasValue then
+    Exit('');
+
+  SQL := ' ORDER BY ';
+
+  i := 0;
+  for order_item in FOrderByList do
+  begin
+    if i > 0 then
+      SQL := SQL + ', ';
+
+    SQL := SQL + order_item.Column_Name;
+
+    case order_item.Order_Type of
+      ORDER_ASC : SQL := SQL + ' ASC';
+      ORDER_DESC : SQL := SQL + ' DESC';
+    end;
+
+    Inc(i);
+  end;
+
+  Result := SQL;
+end;
+
 function TSQLite3Select.Get : TSQLite3Result;
 var
   SQL : String;
@@ -321,6 +372,7 @@ begin
   SQL := SQL + ' FROM ' + FTableName;
   SQL := SQL + PrepareJoinQuery;
   SQL := SQL + FWhereFragment.GetQuery;
+  SQL := SQL + PrepareOrderByQuery;
 
   { Set limit clause. }
   if FLimit.Limit_Item then

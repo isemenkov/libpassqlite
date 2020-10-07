@@ -146,9 +146,32 @@ type
         function Call (AValue1, AValue2 : TJoinItem) : Integer; override;
       end;
 
-      { Updates list. }
+      { Joins list. }
       TJoinsList = class
         (specialize TList<TJoinItem, TJoinItemCompareFunctor>);
+
+      { Order by type. }
+      TOrderByType = (
+        ORDER_ASC,
+        ORDER_DESC
+      );
+
+      { Order by item. }
+      TOrderByItem = record
+        Column_Name : String;
+        Order_Type : TOrderByType;
+      end;
+
+      { Order by item compare functor. }
+      TOrderByItemCompareFunctor = class
+        (specialize TBinaryFunctor<TOrderByItem, Integer>)
+      public
+        function Call (AValue1, AValue2 : TOrderByItem) : Integer; override;
+      end;
+
+      { Order by list. }
+      TOrderByList = class
+        (specialize TList<TOrderByItem, TOrderByItemCompareFunctor>);
 
       { Limit item clause. }
       TLimitItem = record
@@ -217,6 +240,19 @@ end;
 
 function TSQLite3Structures.TJoinItemCompareFunctor.Call (AValue1, 
   AValue2 : TJoinItem) : Integer;
+begin
+  if AValue1.Column_Name < AValue2.Column_Name then
+    Result := -1
+  else if AValue2.Column_Name < AValue1.Column_Name then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+{ TSQLite3Structures.TOrderByItemCompareFunctor }
+
+function TSQLite3Structures.TOrderByItemCompareFunctor.Call (AValue1,
+  AValue2 : TOrderByItem) : Integer;
 begin
   if AValue1.Column_Name < AValue2.Column_Name then
     Result := -1

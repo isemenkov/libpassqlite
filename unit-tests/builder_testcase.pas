@@ -19,6 +19,7 @@ type
     procedure Test_SQLite3Builder_CheckTableSchema;
     procedure Test_SQLite3Builder_SelectLimitOffset;
     procedure Test_SQLite3Builder_SelectWhere;
+    procedure Test_SQLite3Builder_SelectOrderBy;
     procedure Test_SQLite3Builder_Join;
   end;
 
@@ -410,6 +411,105 @@ begin
   end;
 
   AssertTrue('Database selected rows count is not correct', counter = 1);
+
+  FreeAndNil(builder);
+
+  AssertTrue('Database file not exists', FileExists('test.db'));
+
+  DeleteFile('test.db');
+end;
+
+procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_SelectOrderBy;
+var
+  schema : TSQLite3Schema;
+  builder : TSQLite3Builder;
+  inserted_rows : Integer;
+  row : TSQLite3ResultRow;
+  counter : Integer;
+begin
+  schema := TSQLite3Schema.Create;
+  schema.Id.Integer('val_1').Float('val_2').Text('val_3');
+
+  AssertTrue('Database file already exists', not FileExists('test.db'));
+
+  builder := TSQLite3Builder.Create('test.db',
+    [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
+  builder.Table('test_table').New(schema);
+
+  AssertTrue('Table ''test_table'' schema is not correct',
+    builder.Table('test_table').CheckSchema(schema));
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('test_table').Insert
+    .Column('val_1', SQLITE_INTEGER)
+    .Column('val_2', SQLITE_FLOAT)
+    .Column('val_3', SQLITE_TEXT)
+    .Row
+      .Value(12)
+      .Value(3.14)
+      .Value('some value')
+    .Row
+      .Value(54)
+      .Value(6.54)
+      .Value('string value')
+    .Row
+      .Value(-874)
+      .Value(532.00)
+      .Value('test value')
+    .Row
+      .Value(471)
+      .Value(0.025)
+      .ValueNull
+    .Get;
+
+  AssertTrue('Database inserted rows count is not correct', inserted_rows = 4);
+
+  counter := 0;
+  for row in builder.Table('test_table').Select.All
+    .OrderBy('val_1', TSQLite3Select.TOrderByType.ORDER_ASC)
+    .Get do
+  begin
+    case counter of
+      0 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct', 
+          row.GetIntegerValue('val_1') = -874);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 532.00, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct', 
+          row.GetStringValue('val_3') = 'test value');
+      end;
+      1 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct', 
+          row.GetIntegerValue('val_1') = 12);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 3.14, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct', 
+          row.GetStringValue('val_3') = 'some value');
+      end;
+      2 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct', 
+          row.GetIntegerValue('val_1') = 54);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 6.54, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct', 
+          row.GetStringValue('val_3') = 'string value');
+      end;
+      3 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct', 
+          row.GetIntegerValue('val_1') = 471);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 0.025, 0.001);
+        AssertTrue('Selected row ''val_3'' column value is not correct', 
+          row.IsNull('val_3'));
+      end;
+      4 : begin
+        Fail('Impossible row.');
+      end;
+    end;
+    Inc(counter);
+  end;
+
+  AssertTrue('Database selected rows count is not correct', counter = 4);
 
   FreeAndNil(builder);
 
