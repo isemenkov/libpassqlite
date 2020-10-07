@@ -413,7 +413,8 @@ begin
     { For each value item in row. }
     for value_item in value_row do
     begin
-      if column_iterator.Value.Value_Type <> value_item.Value_Type then
+      if (column_iterator.Value.Value_Type <> value_item.Value_Type) and
+         (value_item.Value_Type <> SQLITE_NULL) then
         raise Exception.Create('Mistmach column type.');
 
       if j > 0 then

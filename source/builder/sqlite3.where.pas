@@ -202,20 +202,26 @@ begin
 
     Result := Result + where_item.Comparison_ColumnName;
     case where_item.Comparison of  
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_EQUAL :
-        Result := Result + ' = ';
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_NOT_EQUAL :
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_EQUAL :
+        begin
+          if where_item.Comparison_Value.Value_Type = SQLITE_NULL then
+            Result := Result + ' IS '
+          else
+            Result := Result + ' = ';
+        end;
+        
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_NOT_EQUAL :
         Result := Result + ' <> ';
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_LESS :
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_LESS :
         Result := Result + ' < ';
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_GREATER :
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_GREATER :
         Result := Result + ' > ';
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_LESS_OR_EQUAL :
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_LESS_OR_EQUAL :
         Result := Result + ' <= ';
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_GREATER_OR_EQUAL:
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_GREATER_OR_EQUAL:
         Result := Result + ' >= ';
-    TSQLite3Structures.TWhereComparisonOperator.COMPARISON_NOT :
-        Result := Result + ' NOT ';
+      TSQLite3Structures.TWhereComparisonOperator.COMPARISON_NOT :
+        Result := Result + ' IS NOT ';
     end;
 
     Result := Result + '?';
@@ -248,7 +254,7 @@ begin
     Inc(i);  
   end;
 
-  Result := i + 1;
+  Result := i;
 end;
 
 end.

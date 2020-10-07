@@ -74,6 +74,10 @@ type
     function GetIntegerValue (AColumnName : String) : Integer; overload;
     function GetInt64Value (AColumnName : String) : Int64; overload;
     function GetStringValue (AColumnName : String) : String; overload;
+
+    { Check if column values is null. }
+    function IsNull (AColumnIndex : Integer) : Boolean; overload;
+    function IsNull (AColumnName : String) : Boolean; overload;
   private
     type
       TColumnsList = class
@@ -159,6 +163,16 @@ function TSQLite3ResultRow.GetStringValue (AColumnName : String) : String;
 begin
   Result := PChar(sqlite3_column_text(FStatementHandle, 
     GetColumnIndex(AColumnName)));
+end;
+
+function TSQLite3ResultRow.IsNull (AColumnIndex : Integer) : Boolean;
+begin
+  Result := (GetColumnType(AColumnIndex) = SQLITE_NULL);
+end;
+
+function TSQLite3ResultRow.IsNull (AColumnName : String) : Boolean;
+begin
+  Result := (GetColumnType(GetColumnIndex(AColumnName)) = SQLITE_NULL);
 end;
 
 function TSQLite3ResultRow.GetColumnIndex (AColumnName : String) : Integer;

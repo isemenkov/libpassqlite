@@ -124,6 +124,32 @@ type
       TUpdatesFieldsList = class
         (specialize TList<TUpdateItem, TUpdateItemCompareFunctor>);
 
+      { Joins type. }
+      TJoinType = (
+        JOIN_INNER,
+        JOIN_OUTER_LEFT,
+        JOIN_CROSS
+      );
+
+      { Join list value. }
+      TJoinItem = record
+        Table_Name : String;
+        Column_Name : String;
+        Join_Type : TJoinType;
+        CurrColumn_Name : String;
+      end;
+
+      { Join item compare functor. }
+      TJoinItemCompareFunctor = class
+        (specialize TBinaryFunctor<TJoinItem, Integer>)
+      public
+        function Call (AValue1, AValue2 : TJoinItem) : Integer; override;
+      end;
+
+      { Updates list. }
+      TJoinsList = class
+        (specialize TList<TJoinItem, TJoinItemCompareFunctor>);
+
       { Limit item clause. }
       TLimitItem = record
         Limit_Item : Boolean;
@@ -178,6 +204,19 @@ end;
 
 function TSQLite3Structures.TUpdateItemCompareFunctor.Call (AValue1, 
   AValue2 : TUpdateItem) : Integer;
+begin
+  if AValue1.Column_Name < AValue2.Column_Name then
+    Result := -1
+  else if AValue2.Column_Name < AValue1.Column_Name then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+{ TSQLite3Structures.TJoinItemCompareFunctor }
+
+function TSQLite3Structures.TJoinItemCompareFunctor.Call (AValue1, 
+  AValue2 : TJoinItem) : Integer;
 begin
   if AValue1.Column_Name < AValue2.Column_Name then
     Result := -1

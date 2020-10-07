@@ -138,8 +138,8 @@ begin
   
   Column.Option_AutoIncrement := True;
   Column.Option_PrimaryKey := True;
-  Column.Option_NotNull := True;
-  Column.Option_Unique := True;
+  Column.Option_NotNull := False;
+  Column.Option_Unique := False;
 
   FColumns.Append(Column);
   Result := Self;

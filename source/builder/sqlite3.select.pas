@@ -39,8 +39,8 @@ type
   TSQLite3Select = class
   public
     type
-      TWhereComparisonOperator
-        = sqlite3.structures.TSQLite3Structures.TWhereComparisonOperator;
+      TWhereComparisonOperator = TSQLite3Structures.TWhereComparisonOperator;
+      TJoinType = TSQLite3Structures.TJoinType;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle :
       ppsqlite3; ATableName : String);
@@ -71,6 +71,14 @@ type
     function WhereNull (AColumnName : String) : TSQLite3Select;
     function WhereNotNull (AColumnName : String) : TSQLite3Select;
 
+    { Join clause. }
+    function Join (ATableName : String; AJoinType : TJoinType; AColumnName : 
+      String; ACurrentTableColumn : String) : TSQLite3Select;
+    function InnerJoin (ATableName : String; AColumnName : String; 
+      ACurrentTableColumn : String) : TSQLite3Select; 
+    function LeftJoin (ATableName : String; AColumnName : String; 
+      ACurrentTableColumn : String) : TSQLite3Select; 
+
     { Set limit clause. }
     function Limit (ACount : Cardinal) : TSQLite3Select;
     function Offset (ACount : Cardinal) : TSQLite3Select;
@@ -78,12 +86,15 @@ type
     { Get result. }
     function Get : TSQLite3Result;
   private
+    function PrepareJoinQuery : String;
+  private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
     FDistinct : Boolean;
     FSelectFieldsList : TSQLite3Structures.TSelectFieldsList;
     FWhereFragment : TSQLite3Where;
+    FJoinsList : TSQLite3Structures.TJoinsList;
     FLimit : TSQLite3Structures.TLimitItem;
   end;
 
@@ -100,6 +111,7 @@ begin
   FDistinct := False;
   FSelectFieldsList := TSQLite3Structures.TSelectFieldsList.Create;
   FWhereFragment := TSQLite3Where.Create;
+  FJoinsList := TSQLite3Structures.TJoinsList.Create;
   FLimit.Limit_Item := False;
   FLimit.Offset_Item := False;
 end;
@@ -108,6 +120,7 @@ destructor TSQLite3Select.Destroy;
 begin
   FreeAndNil(FSelectFieldsList);
   FreeAndNil(FWhereFragment);
+  FreeAndNil(FJoinsList);
   inherited Destroy;
 end;
 
@@ -202,6 +215,75 @@ begin
   Result := Self;  
 end;
 
+function TSQLite3Select.Join (ATableName : String; AJoinType : TJoinType;
+  AColumnName : String; ACurrentTableColumn : String) : TSQLite3Select;
+var
+  item : TSQLite3Structures.TJoinItem;
+begin
+  item.Table_Name := ATableName;
+  item.Column_Name := AColumnName;
+  item.Join_Type := AJoinType;
+  item.CurrColumn_Name := ACurrentTableColumn;
+
+  FJoinsList.Append(item);
+  Result := Self;
+end;
+
+function TSQLite3Select.InnerJoin(ATableName : String; AColumnName : String;
+  ACurrentTableColumn : String) : TSQLite3Select;
+begin
+  Result := Join(ATableName, JOIN_INNER, AColumnName, ACurrentTableColumn);
+end;
+
+function TSQLite3Select.LeftJoin(ATableName : String; AColumnName : String;
+  ACurrentTableColumn : String) : TSQLite3Select;
+begin
+  Result := Join(ATableName, JOIN_OUTER_LEFT, AColumnName, ACurrentTableColumn);
+end;
+
+function TSQLite3Select.Limit (ACount : Cardinal) : TSQLite3Select;
+begin
+  FLimit.Limit_Item := True;
+  FLimit.Limit_Value := ACount;
+  Result := Self;
+end;
+
+function TSQLite3Select.Offset (ACount : Cardinal) : TSQLite3Select;
+begin
+  FLimit.Offset_Item := True;
+  FLimit.Offset_Value := ACount;
+  Result := Self;
+end;
+
+function TSQLite3Select.PrepareJoinQuery : String;
+var
+  SQL : String;
+  join_item : TSQLite3Structures.TJoinItem;
+begin
+  if not FJoinsList.FirstEntry.HasValue then
+    Exit('');
+
+  SQL := '';
+  for join_item in FJoinsList do
+  begin
+    { Add join type. }
+    case join_item.Join_Type of
+      JOIN_INNER : 
+        SQL := SQL + ' INNER JOIN ';
+      JOIN_OUTER_LEFT :
+        SQL := SQL + ' LEFT OUTER JOIN ';
+      JOIN_CROSS :
+        SQL := SQL + ' CROSS JOIN ';
+    end;
+
+    SQL := SQL + join_item.Table_Name + ' ON ' + join_item.Table_Name + '.' +
+      join_item.Column_Name + ' = ' + FTableName + '.' + 
+      join_item.CurrColumn_Name;
+  end;
+
+  Result := SQL;
+end;
+
 function TSQLite3Select.Get : TSQLite3Result;
 var
   SQL : String;
@@ -215,11 +297,11 @@ begin
   i := 0;
   SQL := 'SELECT ';
 
-  // Set distinct modifier.
+  { Set distinct modifier. }
   if FDistinct then
     SQL := SQL + 'DISTINCT ';
 
-  // Set selected fields.
+  { Set selected fields. }
   for select_elem in FSelectFieldsList do
   begin
     { For every field. }
@@ -237,6 +319,7 @@ begin
   end;
   
   SQL := SQL + ' FROM ' + FTableName;
+  SQL := SQL + PrepareJoinQuery;
   SQL := SQL + FWhereFragment.GetQuery;
 
   { Set limit clause. }
@@ -267,20 +350,6 @@ begin
 
   { Run SQL query. }
   Result := Query.Run;  
-end;
-
-function TSQLite3Select.Limit (ACount : Cardinal) : TSQLite3Select;
-begin
-  FLimit.Limit_Item := True;
-  FLimit.Limit_Value := ACount;
-  Result := Self;
-end;
-
-function TSQLite3Select.Offset (ACount : Cardinal) : TSQLite3Select;
-begin
-  FLimit.Offset_Item := True;
-  FLimit.Offset_Value := ACount;
-  Result := Self;
 end;
 
 end.

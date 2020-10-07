@@ -114,43 +114,25 @@ begin
       SQL := SQL + ',';
 
     case column.Column_Type of
-      SQLITE_INTEGER : 
-        begin
-          { If it is a primary key. }
-          if column.Option_PrimaryKey then
-          begin
-            SQL := SQL + column.Column_Name + ' INTEGER PRIMARY KEY';
-            Inc(i);
-            continue;
-          end;
-
-          { Ignore all modificators. }
-          SQL := SQL + column.Column_Name + ' INTEGER';
-        end;
-      SQLITE_FLOAT : 
-        begin
-          SQL := SQL + column.Column_Name + ' REAL';    
-        end;
-      SQLITE_BLOB : 
-        begin
-          SQL := SQL + column.Column_Name + ' BLOB';  
-        end;
-      SQLITE_TEXT : 
-        begin
-          { Add text column. }
-          SQL := SQL + column.Column_Name + ' TEXT';
-
-          { Add modificators. }
-          if column.Option_AutoIncrement then
-            SQL := SQL + ' AUTOINCREMENT';
-          
-          if column.Option_NotNull then
-            SQL := SQL + ' NOT NULL';
-
-          if column.Option_Unique then
-            SQL := SQL + ' UNIQUE';
-        end;
+      SQLITE_INTEGER : SQL := SQL + column.Column_Name + ' INTEGER';
+      SQLITE_FLOAT   : SQL := SQL + column.Column_Name + ' REAL';    
+      SQLITE_BLOB    : SQL := SQL + column.Column_Name + ' BLOB';  
+      SQLITE_TEXT    : SQL := SQL + column.Column_Name + ' TEXT';
     end;
+
+    { Add modificators. }
+    if column.Option_PrimaryKey then
+      SQL := SQL + ' PRIMARY KEY';
+
+    if column.Option_PrimaryKey and column.Option_AutoIncrement then
+      SQL := SQL + ' AUTOINCREMENT';
+
+    if column.Option_NotNull then
+      SQL := SQL + ' NOT NULL';
+
+    if column.Option_Unique then
+      SQL := SQL + ' UNIQUE';
+
     Inc(i);
   end;
   SQL := SQL + ');';
