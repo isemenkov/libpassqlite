@@ -56,6 +56,8 @@ type
     { Get table interface. }
     function Table (ATableName : String) : TSQLite3Table;
 
+    { Get last insert row id. }
+    function LastInsertID : int64;
   private
     FErrorsStack : TSQL3LiteErrorsStack;
     FHandle : psqlite3;
@@ -92,6 +94,11 @@ end;
 function TSQLite3Builder.Table (ATableName : String) : TSQLite3Table;
 begin
   Result := TSQLite3Table.Create(@FErrorsStack, @FHandle, ATableName);
+end;
+
+function TSQLite3Builder.LastInsertID : Int64;
+begin
+  Result := sqlite3_last_insert_rowid(FHandle);
 end;
 
 end.

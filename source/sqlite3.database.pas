@@ -60,6 +60,9 @@ type
   public
     { Get errors list. }
     property Errors : TSQL3LiteErrorsStack read FErrorsStack;
+
+    { Get database handle. }
+    property Handle : psqlite3 read FHandle;
   end;
 
   // sqlite3_extended_result_codes

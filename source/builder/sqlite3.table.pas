@@ -45,6 +45,7 @@ type
 
     { Create new table. }
     procedure New (ASchema : TSQLite3Schema);
+    procedure NewIfNotExists (ASchema : TSQLite3Schema);
 
     { Check current database table schema. }
     function CheckSchema (ASchema : TSQLite3Schema) : Boolean; 
@@ -57,6 +58,7 @@ type
 
     { Delete table. }
     procedure Drop;
+    procedure DropIfExists;
 
     { Rename table. }
     procedure Rename (ANewName : String);
@@ -72,6 +74,9 @@ type
 
     { Get delete interface. }
     function Delete : TSQLite3Delete;
+  private
+    procedure CreateTable (ASchema : TSQLite3Schema; AIfNotExists : Boolean);
+    procedure DropTable (AIfExists : Boolean);
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
@@ -95,7 +100,8 @@ begin
   inherited Destroy;
 end;
 
-procedure TSQLite3Table.New (ASchema : TSQLite3Schema);
+procedure TSQLite3Table.CreateTable (ASchema : TSQLite3Schema; AIfNotExists :
+  Boolean);
 var
   SQL : String;
   column : TSQLite3Schema.TColumnItem;
@@ -106,7 +112,12 @@ begin
     Exit;
 
   i := 0;
-  SQL := 'CREATE TABLE ' + FTableName + ' (';
+  SQL := 'CREATE TABLE ';
+  
+  if AIfNotExists then
+    SQL := SQL + ' IF NOT EXISTS ';
+
+  SQL := SQL + FTableName + ' (';
   for column in ASchema.Columns do
   begin
     { For every column. }
@@ -141,6 +152,16 @@ begin
     [SQLITE_PREPARE_NORMALIZE]);
   Query.Run;
   FreeAndNil(Query);
+end;
+
+procedure TSQLite3Table.New (ASchema : TSQLite3Schema);
+begin
+  CreateTable(ASchema, False);  
+end;
+
+procedure TSQLite3Table.NewIfNotExists (ASchema : TSQLite3Schema);
+begin
+  CreateTable(ASchema, True);
 end;
 
 function TSQLite3Table.CheckSchema (ASchema : TSQLite3Schema) : Boolean;
@@ -261,15 +282,30 @@ begin
   end; 
 end;
 
-procedure TSQLite3Table.Drop;
+procedure TSQLite3Table.DropTable (AIfExists : Boolean);
 var
   SQL : String;
   Query : TSQLite3Query;
 begin
-  SQL := 'DROP TABLE ' + FTableName + ';';
+  SQL := 'DROP TABLE ';
+  
+  if AIfExists then
+    SQL := SQL + ' IF EXISTS ';
+
+  SQL := SQL + FTableName + ';';
   Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
   FreeAndNil(Query);
+end;
+
+procedure TSQLite3Table.Drop;
+begin
+  DropTable(False);
+end;
+
+procedure TSQLite3Table.DropIfExists;
+begin
+  DropTable(True);
 end;
 
 procedure TSQLite3Table.Rename (ANewName : String);
