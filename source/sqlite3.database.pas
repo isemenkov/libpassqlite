@@ -53,6 +53,9 @@ type
     { Create new SQL query. }
     function Query (AQuery : String; AFlags : TPrepareFlags = 
       [SQLITE_PREPARE_NORMALIZE]) : TSQLite3Query;
+
+    { Get last insert row id. }
+    function LastInsertID : int64;
   private
     FErrorsStack : TSQL3LiteErrorsStack;
     FHandle : psqlite3;
@@ -90,6 +93,11 @@ function TSQLite3Database.Query (AQuery : String; AFlags : TPrepareFlags) :
   TSQLite3Query;
 begin
   Result := TSQLite3Query.Create(@FErrorsStack, @FHandle, AQuery, AFlags);
+end;
+
+function TSQLite3Database.LastInsertID : Int64;
+begin
+  Result := sqlite3_last_insert_rowid(FHandle);
 end;
 
 end.
