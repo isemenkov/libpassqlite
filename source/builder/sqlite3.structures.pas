@@ -46,7 +46,9 @@ type
         Value_Integer : Integer;
         Value_Float : Double;
         Value_Text : String;
-        Value_Blob : PByte;
+        Value_BlobStream : Pointer;
+        Value_BlobBuffer : Pointer;
+        Value_BlobLength : Int64;
       end;
 
       { Value item compare functor. }

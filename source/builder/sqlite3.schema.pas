@@ -198,7 +198,7 @@ var
   Column : TColumnItem;
 begin
   Column.Column_Name := AColumnName;
-  Column.Column_Type := SQLITE_TEXT;
+  Column.Column_Type := SQLITE_BLOB;
   
   Column.Option_AutoIncrement := False;
   Column.Option_PrimaryKey := False;

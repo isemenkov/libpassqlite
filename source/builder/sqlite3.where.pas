@@ -93,7 +93,9 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := AValue;
-  val.Comparison_Value.Value_Blob := nil;
+  val.Comparison_Value.Value_BlobStream := nil;
+  val.Comparison_Value.Value_BlobBuffer := nil;
+  val.Comparison_Value.Value_BlobLength := 0;
 
   FWhereFieldsList.Append(val);
 end;
@@ -112,7 +114,9 @@ begin
   val.Comparison_Value.Value_Integer := AValue;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
+  val.Comparison_Value.Value_BlobStream := nil;
+  val.Comparison_Value.Value_BlobBuffer := nil;
+  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -131,7 +135,9 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := AValue;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
+  val.Comparison_Value.Value_BlobStream := nil;
+  val.Comparison_Value.Value_BlobBuffer := nil;
+  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -149,7 +155,9 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
+  val.Comparison_Value.Value_BlobStream := nil;
+  val.Comparison_Value.Value_BlobBuffer := nil;
+  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -167,7 +175,9 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_Blob := nil;
+  val.Comparison_Value.Value_BlobStream := nil;
+  val.Comparison_Value.Value_BlobBuffer := nil;
+  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -235,7 +245,7 @@ begin
         where_item.Comparison_Value.Value_Integer);
       SQLITE_FLOAT : AQuery.Bind(i, where_item.Comparison_Value.Value_Float);
       SQLITE_TEXT : AQuery.Bind(i, where_item.Comparison_Value.Value_Text);
-      SQLITE_BLOB : AQuery.Bind(i, where_item.Comparison_Value.Value_Blob);    
+      //SQLITE_BLOB : AQuery.Bind(i, where_item.Comparison_Value.Value_Blob);    
       SQLITE_NULL : AQuery.Bind(i);
     end;
     Inc(i);  

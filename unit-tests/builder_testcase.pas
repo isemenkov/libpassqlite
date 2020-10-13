@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, fpcunit, testregistry, sqlite3.builder, sqlite3.schema,
-  sqlite3.result_row, sqlite3.select;
+  sqlite3.result_row, sqlite3.select, container.memorybuffer;
 
 type
   { TSQLite3BuilderTestCase }
@@ -21,6 +21,7 @@ type
     procedure Test_SQLite3Builder_SelectWhere;
     procedure Test_SQLite3Builder_SelectOrderBy;
     procedure Test_SQLite3Builder_Join;
+    procedure Test_SQLite3Builder_Blob;
   end;
 
 implementation
@@ -667,6 +668,45 @@ begin
   AssertTrue('Database file not exists', FileExists('test.db'));
 
   DeleteFile('test.db');
+end;
+
+procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_Blob;
+var
+  schema : TSQLite3Schema;
+  builder : TSQLite3Builder;
+  inserted_rows : Integer;
+  buffer : TMemoryBuffer;
+begin
+  schema := TSQLite3Schema.Create;
+  schema.Id('id').Blob('data');
+
+  AssertTrue('Database file already exists', not FileExists('test.db'));
+
+  builder := TSQLite3Builder.Create('test.db',
+    [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
+  builder.Table('test_table').New(schema);
+
+  AssertTrue('Table ''test_table'' schema is not correct',
+    builder.Table('test_table').CheckSchema(schema));
+  FreeAndNil(schema);
+
+  buffer := TMemoryBuffer.Create;
+  buffer.SetBufferDataSize(200);
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('test_table').Insert
+    .Column('data', SQLITE_BLOB)
+    .Row
+      .Value(buffer)
+    .Get;
+
+  AssertTrue('Database inserted rows count is not correct', inserted_rows = 1);
+
+  FreeAndNil(builder);
+
+  AssertTrue('Database file not exists', FileExists('test.db'));
+
+  //DeleteFile('test.db');
 end;
 
 initialization

@@ -33,7 +33,8 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.query,
-  sqlite3.structures, sqlite3.where, sqlite3.result_row;
+  sqlite3.structures, sqlite3.where, sqlite3.result_row, Classes,
+  container.memorybuffer;
 
 type
   TSQLite3Update = class
@@ -54,6 +55,10 @@ type
       overload;
     function Update (AColumnName : String; AValue : Double) : TSQLite3Update;
       overload;
+    function Update (AColumnName : String; AValue : TStream) : TSQLite3Update;
+      overload;
+    function Update (AColumnName : String; AValue : TMemoryBuffer) : 
+      TSQLite3Update; overload;
     
     { Add where clause. }
     function Where (AColumnName : String; AComparison : 
@@ -142,7 +147,9 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := '';
-  item.Value.Value_Blob := nil;
+  item.Value.Value_BlobStream := nil;
+  item.Value.Value_BlobBuffer := nil;
+  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -159,7 +166,9 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := AValue;
-  item.Value.Value_Blob := nil;
+  item.Value.Value_BlobStream := nil;
+  item.Value.Value_BlobBuffer := nil;
+  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -176,7 +185,9 @@ begin
   item.Value.Value_Integer := AValue;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := '';
-  item.Value.Value_Blob := nil;
+  item.Value.Value_BlobStream := nil;
+  item.Value.Value_BlobBuffer := nil;
+  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -193,7 +204,47 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := AValue;
   item.Value.Value_Text := '';
-  item.Value.Value_Blob := nil;
+  item.Value.Value_BlobStream := nil;
+  item.Value.Value_BlobBuffer := nil;
+  item.Value.Value_BlobLength := 0;
+
+  FUpdatesFieldsList.Append(item);
+  Result := Self;
+end;
+
+function TSQLite3Update.Update (AColumnName : String; AValue : TStream) : 
+  TSQLite3Update;
+var
+  item : TSQLite3Structures.TUpdateItem;
+begin
+  item.Column_Name := AColumnName;
+  item.Value.Column_Name := '';
+  item.Value.Value_Type := SQLITE_BLOB;
+  item.Value.Value_Integer := 0;
+  item.Value.Value_Float := 0;
+  item.Value.Value_Text := '';
+  item.Value.Value_BlobStream := @AValue;
+  item.Value.Value_BlobBuffer := nil;
+  item.Value.Value_BlobLength := AValue.Size;
+
+  FUpdatesFieldsList.Append(item);
+  Result := Self;
+end;
+
+function TSQLite3Update.Update (AColumnName : String; AValue : TMemoryBuffer) : 
+  TSQLite3Update;
+var
+  item : TSQLite3Structures.TUpdateItem;
+begin
+  item.Column_Name := AColumnName;
+  item.Value.Column_Name := '';
+  item.Value.Value_Type := SQLITE_BLOB;
+  item.Value.Value_Integer := 0;
+  item.Value.Value_Float := 0;
+  item.Value.Value_Text := '';
+  item.Value.Value_BlobStream := nil;
+  item.Value.Value_BlobBuffer := @AValue;
+  item.Value.Value_BlobLength := AValue.GetBufferDataSize;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -415,7 +466,7 @@ begin
       SQLITE_INTEGER : Query.Bind(i, update_item.Value.Value_Integer);
       SQLITE_FLOAT : Query.Bind(i, update_item.Value.Value_Float);
       SQLITE_TEXT : Query.Bind(i, update_item.Value.Value_Text);
-      SQLITE_BLOB : Query.Bind(i, update_item.Value.Value_Blob);
+      SQLITE_BLOB : Query.BindBlobZero(i, update_item.Value.Value_BlobLength);
       SQLITE_NULL : Query.Bind(i);
     end;
     Inc(i);

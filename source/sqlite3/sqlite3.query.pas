@@ -41,20 +41,21 @@ type
     type
       { Option that is used for special purposes. }
       TPrepareFlag = (
-        { The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner that the 
-          prepared statement will be retained for a long time and probably reused 
-          many times. }
+        { The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner that
+          the prepared statement will be retained for a long time and probably
+          reused many times. }
         SQLITE_PREPARE_PERSISTENT,
 
         { The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used to be 
           required for any prepared statement that wanted to use the 
-          sqlite3_normalized_sql() interface. However, the sqlite3_normalized_sql() 
-          interface is now available to all prepared statements, regardless of 
-          whether or not they use this flag. }
+          sqlite3_normalized_sql() interface. However, the
+          sqlite3_normalized_sql() interface is now available to all prepared
+          statements, regardless of whether or not they use this flag. }
         SQLITE_PREPARE_NORMALIZE,
 
-        { The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler to return an error 
-          (error code SQLITE_ERROR) if the statement uses any virtual tables. }
+        { The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler to return an
+          error (error code SQLITE_ERROR) if the statement uses any virtual
+          tables. }
         SQLITE_PREPARE_NO_VTAB
       );
       TPrepareFlags = set of TPrepareFlag;
@@ -73,7 +74,8 @@ type
     function Bind(AIndex : Integer; AValue : Integer) : TSQLite3Query; overload;
     function Bind(AIndex : Integer; AValue : Int64)   : TSQLite3Query; overload;
     function Bind(AIndex : Integer; AValue : String)  : TSQLite3Query; overload;
-
+    function BindBlobZero(AIndex : Integer; ASize : Int64) : TSQLite3Query;
+      
     { Reset all bindings on a prepared query. }
     procedure ClearBindings;
 
@@ -146,6 +148,13 @@ function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
   FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex, PChar(AValue),
     Length(PChar(AValue)), nil));
+  Result := Self;
+end;
+
+function TSQLite3Query.BindBlobZero(AIndex : Integer; ASize : Int64) : 
+  TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_zeroblob(FStatementHandle, AIndex, ASize));
   Result := Self;
 end;
 
