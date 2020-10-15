@@ -599,8 +599,8 @@ begin
   Result := i;
 end;
 
-procedure TSQLite3Insert.WriteBlob (ARowIndex : sqlite3_int64; AStream : 
-  TStream);
+procedure TSQLite3Insert.WriteBlob (ARowIndex : sqlite3_int64; AColumnName :
+  String; AStream : TStream);
 begin
   
 end;
@@ -611,8 +611,8 @@ var
   blob : psqlite3_blob;
   result_code : Integer;
 begin
-  result_code := sqlite3_blob_open(FDBHandle^, 'main', FTableName, AColumnName,
-    ARowIndex, 1, @blob);
+  result_code := sqlite3_blob_open(FDBHandle^, 'main', PChar(FTableName),
+    PChar(AColumnName), ARowIndex, 1, @blob);
   
   if result_code <> SQLITE_OK then
   begin
