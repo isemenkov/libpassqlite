@@ -153,7 +153,44 @@ begin
     SQLITE_IOERR_SHORT_READ : Push('SQLITE_IOERR_SHORT_READ: A read attempt '+
       'in the VFS layer was unable to obtain as many bytes as was requested.');
     SQLITE_CORRUPT_SEQUENCE : Push('SQLITE_CORRUPT_SEQUENCE: The schema of '+
-      'the sqlite_sequence table is corrupt.')
+      'the sqlite_sequence table is corrupt.');
+    SQLITE_CANTOPEN_ISDIR : Push('SQLITE_CANTOPEN_ISDIR: A file open ' +
+      'operation failed because the file is really a directory.');
+    SQLITE_CONSTRAINT_COMMITHOOK : Push('SQLITE_CONSTRAINT_COMMITHOOK: ' +
+      'A commit hook callback returned non-zero that thus caused the SQL ' +
+      'statement to be rolled back.');
+    SQLITE_NOTICE_RECOVER_ROLLBACK : Push('SQLITE_NOTICE_RECOVER_ROLLBACK: ' +
+      'A hot journal is rolled back.');
+    SQLITE_ERROR_SNAPSHOT : Push('SQLITE_ERROR_SNAPSHOT: ' +
+      'Attempting to start a read transaction on an historical version of ' +
+      'the database. The historical snapshot is no longer available.');
+    SQLITE_READONLY_ROLLBACK : Push('SQLITE_READONLY_ROLLBACK: ' +
+      'A database cannot be opened because it has a hot journal that needs ' +
+      'to be rolled back but cannot because the database is readonly.');
+    SQLITE_IOERR_WRITE : Push('SQLITE_IOERR_WRITE: An I/O error in the VFS ' +
+      'layer while trying to write into a file on disk.');
+    SQLITE_CANTOPEN_FULLPATH : Push('SQLITE_CANTOPEN_FULLPATH: ' +
+      'A file open operation failed because the operating system was unable ' +
+      'to convert the filename into a full pathname.');
+    SQLITE_CONSTRAINT_FOREIGNKEY : Push('SQLITE_CONSTRAINT_FOREIGNKEY:' +
+      'A foreign key constraint failed.');
+    SQLITE_READONLY_DBMOVED : Push('SQLITE_READONLY_DBMOVED: ' + 
+      'A database cannot be modified because the database file has been ' +
+      'moved since it was opened, and so any attempt to modify the database ' +
+      'might result in database corruption.');
+    SQLITE_IOERR_FSYNC : Push('SQLITE_IOERR_FSYNC: An I/O error in the VFS ' +
+      'layer while trying to flush previously written content out of OS ' +
+      'and/or disk-control buffers and into persistent storage.');
+    SQLITE_CANTOPEN_CONVPATH : Push('SQLITE_CANTOPEN_CONVPATH: ' +
+      'The cygwin_conv_path() system call failed while trying to open a file.');
+    SQLITE_READONLY_CANTINIT : Push('SQLITE_READONLY_CANTINIT : The shared ' +
+      'memory region used by WAL mode exists buts its content is unreliable ' +
+      'and unusable by the current process since the current process does ' +
+      'not have write permission on the shared memory region.');
+    SQLITE_IOERR_DIR_FSYNC : Push('SQLITE_IOERR_DIR_FSYNC: An I/O error in ' +
+      'the VFS layer while trying to invoke fsync() on a directory.');
+    SQLITE_CONSTRAINT_NOTNULL : Push('SQLITE_CONSTRAINT_NOTNULL :' +
+      'A NOT NULL constraint failed.')
   else
     Push(IntToStr(Integer(AError)) + ': Undefined SQLite3 database error code.');
   end;  

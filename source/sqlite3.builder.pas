@@ -44,6 +44,21 @@ type
         sqlite3.connection.TSQLite3DatabaseConnection.TConnectFlags;
       TPrepareFlag = sqlite3.query.TSQLite3Query.TPrepareFlag;
       TPrepareFlags = sqlite3.query.TSQLite3Query.TPrepareFlags;
+
+      { Database transactions type. }
+      TTransactionType = (
+        { Means that the transaction does not actually start until the database 
+          is first accessed. }
+        DEFERRED, 
+
+        { Cause the database connection to start a new write immediately,
+          without waiting for a write statement. }
+        IMMEDIATE,
+
+        { Prevents other database connections from reading the database while 
+          the transaction is underway. }
+        EXCLUSIVE 
+      );
   public
     constructor Create (AFilename : String; AFlags : TConnectFlags = 
       [SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE]);
@@ -55,6 +70,16 @@ type
 
     { Get table interface. }
     function Table (ATableName : String) : TSQLite3Table;
+
+    { Start new database transaction. }
+    procedure BeginTransaction (AType : TTransactionType = DEFERRED; 
+      ATransactionName : String = '');
+
+    { End database transaction. }
+    procedure EndTransaction (ATransactionName : String = '');
+
+    { Rollback database transaction. }
+    procedure RollbackTransaction (ATransactionName : String = '');
 
     { Get last insert row id. }
     function LastInsertID : int64;
@@ -94,6 +119,72 @@ end;
 function TSQLite3Builder.Table (ATableName : String) : TSQLite3Table;
 begin
   Result := TSQLite3Table.Create(@FErrorsStack, @FHandle, ATableName);
+end;
+
+procedure TSQLite3Builder.BeginTransaction (AType : TTransactionType;
+  ATransactionName : String = '');
+var
+  SQL : String;
+  Query : TSQLite3Query;
+begin
+  SQL := 'BEGIN ';
+
+  case AType of
+    DEFERRED :  SQL := SQL + 'DEFERRED ';
+    IMMEDIATE : SQL := SQL + 'IMMEDIATE ';
+    EXCLUSIVE : SQL := SQL + 'EXCLUSIVE ';
+  end;
+
+  SQL := SQL + 'TRANSACTION;';
+  Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, SQL,
+    [SQLITE_PREPARE_NORMALIZE]);
+  FreeAndNil(Query);
+
+  { Start new savepoint. }
+  if ATransactionName <> '' then
+  begin
+    Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, 'SAVEPOINT ' +
+    ATransactionName + ';', [SQLITE_PREPARE_NORMALIZE]);
+    FreeAndNil(Query);
+  end;
+end;
+
+procedure TSQLite3Builder.EndTransaction (ATransactionName : String = '');
+var
+  SQL : String;
+  Query : TSQLite3Query;
+begin
+  if ATransactionName <> '' then
+  begin
+    SQL := 'RELEASE SAVEPOINT ' + ATransactionName + ';';
+  end else
+  begin
+    SQL := 'COMMIT TRANSACTION;';
+  end;
+
+  Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, SQL,
+    [SQLITE_PREPARE_NORMALIZE]);
+  FreeAndNil(Query);
+end;
+
+procedure TSQLite3Builder.RollbackTransaction (ATransactionName : String = '');
+var
+  SQL : String;
+  Query : TSQLite3Query;
+begin
+  SQL := 'ROLLBACK TRANSACTION ';
+
+  if ATransactionName <> '' then
+  begin
+    SQL := SQL + 'TO  SAVEPOINT ' + ATransactionName + ';';
+  end else
+  begin
+    SQL := SQL + ';';
+  end;
+
+  Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, SQL,
+    [SQLITE_PREPARE_NORMALIZE]);
+  FreeAndNil(Query);
 end;
 
 function TSQLite3Builder.LastInsertID : Int64;

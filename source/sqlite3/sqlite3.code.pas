@@ -458,7 +458,7 @@ type
     SQLITE_IOERR_CONVPATH = Longint(libpassqlite.SQLITE_IOERR_CONVPATH),
 
     SQLITE_CODE_LAST = SQLITE_IOERR_CONVPATH
-  );
+  {%H-});
 
 implementation
 
