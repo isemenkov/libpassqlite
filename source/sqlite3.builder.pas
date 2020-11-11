@@ -138,6 +138,7 @@ begin
   SQL := SQL + 'TRANSACTION;';
   Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
+  Query.Run;
   FreeAndNil(Query);
 
   { Start new savepoint. }
@@ -164,6 +165,7 @@ begin
 
   Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
+  Query.Run;
   FreeAndNil(Query);
 end;
 
@@ -176,14 +178,13 @@ begin
 
   if ATransactionName <> '' then
   begin
-    SQL := SQL + 'TO  SAVEPOINT ' + ATransactionName + ';';
-  end else
-  begin
-    SQL := SQL + ';';
+    SQL := SQL + 'TO  SAVEPOINT ' + ATransactionName;
   end;
+  SQL := SQL + ';';
 
   Query := TSQLite3Query.Create(@FErrorsStack, @FHandle, SQL,
     [SQLITE_PREPARE_NORMALIZE]);
+  Query.Run;
   FreeAndNil(Query);
 end;
 

@@ -43,7 +43,7 @@ type
     SQLITE_BLOB                          = Longint(libpassqlite.SQLITE_BLOB),
     SQLITE_NULL                          = Longint(libpassqlite.SQLITE_NULL),
     SQLITE_TEXT                          = Longint(libpassqlite.SQLITE3_TEXT)
-  );
+  {%H-});
 
   { SQLite3 database query result collection row. }
   TSQLite3ResultRow = class

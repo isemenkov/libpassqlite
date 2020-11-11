@@ -22,6 +22,7 @@ type
     procedure Test_SQLite3Builder_SelectOrderBy;
     procedure Test_SQLite3Builder_Join;
     procedure Test_SQLite3Builder_Blob;
+    procedure Test_SQLite3Builder_Transaction;
   end;
 
 implementation
@@ -706,7 +707,128 @@ begin
 
   AssertTrue('Database file not exists', FileExists('test.db'));
 
-  //DeleteFile('test.db');
+  DeleteFile('test.db');
+end;
+
+procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_Transaction;
+var
+  schema : TSQLite3Schema;
+  builder : TSQLite3Builder;
+  inserted_rows : Integer;
+  row : TSQLite3ResultRow;
+  counter : Integer;
+begin
+  AssertTrue('Database file already exists', not FileExists('test.db'));
+
+  schema := TSQLite3Schema.Create;
+  schema.Id.Integer('val_1').Text('str').Integer('key_id');
+
+  builder := TSQLite3Builder.Create('test.db',
+    [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
+  builder.Table('table1').New(schema);
+
+  AssertTrue('Table ''table1'' schema is not correct',
+    builder.Table('table1').CheckSchema(schema));
+  FreeAndNil(schema);
+
+  builder.BeginTransaction;
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('table1').Insert
+    .Column('val_1', SQLITE_INTEGER)
+    .Column('str', SQLITE_TEXT)
+    .Column('key_id', SQLITE_INTEGER)
+    .Row
+      .Value(12)
+      .Value('some value')
+      .Value(1)
+    .Row
+      .Value(54)
+      .Value('string value')
+      .Value(2)
+    .Row
+      .Value(-874)
+      .Value('test value')
+      .ValueNull
+    .Row
+      .Value(471)
+      .ValueNull
+      .ValueNull
+    .Get;
+
+  AssertTrue('Database inserted rows count is not correct', inserted_rows = 4);
+
+  builder.EndTransaction;
+
+  counter := 0;
+  for row in builder.Table('table1').Select.All
+    .WhereNotNull('key_id')
+    .Get do
+  begin
+    case counter of
+      0 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = 12);
+        AssertTrue('Selected row ''str'' column value is not correct',
+          row.GetStringValue('str') = 'some value');
+      end;
+      1 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = 54);
+        AssertTrue('Selected row ''str'' column value is not correct',
+          row.GetStringValue('str') = 'string value');
+      end;
+      2 : begin
+        Fail('Impossible row.');
+      end;
+    end;
+    Inc(counter);
+  end;
+
+  AssertTrue('Database selected rows count is not correct', counter = 2);
+
+  schema := TSQLite3Schema.Create;
+  schema.Id.Integer('val_2');
+
+  builder.Table('table2').New(schema);
+
+  AssertTrue('Table ''table2'' schema is not correct',
+    builder.Table('table2').CheckSchema(schema));
+  FreeAndNil(schema);
+
+  builder.BeginTransaction;
+
+  inserted_rows := builder.Table('table2').Insert
+    .Column('val_2', SQLITE_INTEGER)
+      .Row.Value(-58)
+      .Row.Value(-145)
+      .Row.Value(-874)
+      .Row.Value(471)
+    .Get;
+
+  AssertTrue('Database inserted rows count is not correct', inserted_rows = 4);
+
+  builder.RollbackTransaction;
+
+  counter := 0;
+  for row in builder.Table('table2').Select.All
+    .Get do
+  begin
+    case counter of
+      0 : begin
+        Fail('Impossible row.');
+      end;
+    end;
+    Inc(counter);
+  end;
+
+  AssertTrue('Database selected rows count is not correct', counter = 0);
+
+  FreeAndNil(builder);
+
+  AssertTrue('Database file not exists', FileExists('test.db'));
+
+  DeleteFile('test.db');
 end;
 
 initialization
