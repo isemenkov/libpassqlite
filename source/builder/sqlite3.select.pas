@@ -114,6 +114,9 @@ type
     function OrderBy (AColumnName : String; AOrderBy : TOrderByType) :
       TSQLite3Select;
 
+    { Group by clause. }
+    function GroupBy (AColumnName : String) : TSQLite3Select;
+
     { Set limit clause. }
     function Limit (ACount : Cardinal) : TSQLite3Select;
     function Offset (ACount : Cardinal) : TSQLite3Select;
@@ -123,6 +126,7 @@ type
   private
     function PrepareJoinQuery : String;
     function PrepareOrderByQuery : String;
+    function PrepareGroupByQuery : String;
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
@@ -133,6 +137,7 @@ type
     FJoinsList : TSQLite3Structures.TJoinsList;
     FOrderByList : TSQLite3Structures.TOrderByList;
     FLimit : TSQLite3Structures.TLimitItem;
+    FGroupByList : TSQLite3Structures.TGroupByList;
   end;
 
 implementation
@@ -152,6 +157,7 @@ begin
   FOrderByList := TSQLite3Structures.TOrderByList.Create;
   FLimit.Limit_Item := False;
   FLimit.Offset_Item := False;
+  FGroupByList := TSQLite3Structures.TGroupByList.Create;
 end;
 
 destructor TSQLite3Select.Destroy;
@@ -160,6 +166,7 @@ begin
   FreeAndNil(FWhereFragment);
   FreeAndNil(FJoinsList);
   FreeAndNil(FOrderByList);
+  FreeAndNil(FGroupByList);
   inherited Destroy;
 end;
 
@@ -427,6 +434,16 @@ begin
   Result := Self;
 end;
 
+function TSQLite3Select.GroupBy (AColumnName : String) : TSQLite3Select;
+begin
+  if AColumnName <> '' then
+  begin
+    FGroupByList.Append(AColumnName);
+  end;
+
+  Result := Self;
+end;
+
 function TSQLite3Select.Limit (ACount : Cardinal) : TSQLite3Select;
 begin
   FLimit.Limit_Item := True;
@@ -500,6 +517,30 @@ begin
   Result := SQL;
 end;
 
+function TSQLite3Select.PrepareGroupByQuery : String;
+var
+  SQL : String;
+  Column : String;
+  i : Integer;
+begin
+  if not FGroupByList.FirstEntry.HasValue then
+    Exit('');
+
+  SQL := ' GROUP BY ';
+
+  i := 0;
+  for Column in FGroupByList do
+  begin
+    if i > 0 then
+      SQL := SQL + ', ';
+
+    SQL := SQL + Column;
+    Inc(i);
+  end;
+
+  Result := SQL;
+end;
+
 function TSQLite3Select.Get : TSQLite3Result;
 var
   SQL : String;
@@ -538,6 +579,7 @@ begin
   SQL := SQL + PrepareJoinQuery;
   SQL := SQL + FWhereFragment.GetQuery;
   SQL := SQL + PrepareOrderByQuery;
+  SQL := SQL + PrepareGroupByQuery;
 
   { Set limit clause. }
   if FLimit.Limit_Item then

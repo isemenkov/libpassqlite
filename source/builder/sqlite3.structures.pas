@@ -189,6 +189,17 @@ type
         Offset_Item : Boolean;
         Offset_Value : Cardinal;
       end;
+
+      { Group by item compare functor. }
+      TGroupByItemCompareFunctor = class
+        (specialize TBinaryFunctor<String, Integer>)
+      public
+        function Call (AValue1, AValue2 : String) : Integer; override;
+      end;
+
+      { Group by list. }
+      TGroupByList = class
+        (specialize TList<String, TGroupByItemCompareFunctor>);
   end;
 
 implementation
@@ -266,6 +277,19 @@ begin
   if AValue1.Column_Name < AValue2.Column_Name then
     Result := -1
   else if AValue2.Column_Name < AValue1.Column_Name then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+{ TSQLite3Structures.TGroupByItemCompareFunctor }
+
+function TSQLite3Structures.TGroupByItemCompareFunctor.Call (AValue1,
+  AValue2 : String) : Integer;
+begin
+  if AValue1 < AValue2 then
+    Result := -1
+  else if AValue2 < AValue1 then
     Result := 1
   else
     Result := 0;
