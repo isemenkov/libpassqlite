@@ -578,8 +578,9 @@ begin
   SQL := SQL + ' FROM ' + FTableName;
   SQL := SQL + PrepareJoinQuery;
   SQL := SQL + FWhereFragment.GetQuery;
-  SQL := SQL + PrepareOrderByQuery;
   SQL := SQL + PrepareGroupByQuery;
+  SQL := SQL + PrepareOrderByQuery;
+  
 
   { Set limit clause. }
   if FLimit.Limit_Item then

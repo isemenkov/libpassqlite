@@ -80,8 +80,8 @@ type
       Integer;
 
     { Write blob data. }
-    procedure WriteBlob (ARowIndex : sqlite3_int64; AColumnName : String; 
-      AStream : TStream); overload;
+    procedure WriteBlob ({%H-}ARowIndex : sqlite3_int64; {%H-}AColumnName : String; 
+      {%H-}AStream : TStream); overload;
     procedure WriteBlob (ARowIndex : sqlite3_int64; AColumnName : String; 
       ABuffer : TMemoryBuffer); overload;
   private
@@ -407,7 +407,7 @@ var
   SQL : String;
   i : Integer;
   blob_count : Integer;
-  row_index : sqlite3_int64;
+  {%H-}row_index : sqlite3_int64;
 begin
 
   { Set values. }
