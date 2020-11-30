@@ -39,9 +39,17 @@ type
   TSQLite3Select = class
   public
     type
+      TSelectFieldItem = TSQLite3Structures.TSelectFieldItem;
+      TSelectFieldsList = TSQLite3Structures.TSelectFieldsList;
       TWhereComparisonOperator = TSQLite3Structures.TWhereComparisonOperator;
       TJoinType = TSQLite3Structures.TJoinType;
+      TJoinItem = TSQLite3Structures.TJoinItem;
+      TJoinsList = TSQLite3Structures.TJoinsList;
+      TOrderByItem = TSQLite3Structures.TOrderByItem;
       TOrderByType = TSQLite3Structures.TOrderByType;
+      TOrderByList = TSQLite3Structures.TOrderByList;
+      TLimitItem = TSQLite3Structures.TLimitItem;
+      TGroupByList = TSQLite3Structures.TGroupByList;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle :
       ppsqlite3; ATableName : String);
@@ -132,12 +140,12 @@ type
     FDBHandle : ppsqlite3;
     FTableName : String;
     FDistinct : Boolean;
-    FSelectFieldsList : TSQLite3Structures.TSelectFieldsList;
+    FSelectFieldsList : TSelectFieldsList;
     FWhereFragment : TSQLite3Where;
-    FJoinsList : TSQLite3Structures.TJoinsList;
-    FOrderByList : TSQLite3Structures.TOrderByList;
-    FLimit : TSQLite3Structures.TLimitItem;
-    FGroupByList : TSQLite3Structures.TGroupByList;
+    FJoinsList : TJoinsList;
+    FOrderByList : TOrderByList;
+    FLimit : TLimitItem;
+    FGroupByList : TGroupByList;
   end;
 
 implementation
@@ -151,13 +159,13 @@ begin
   FDBHandle := ADBHandle;
   FTableName := ATableName;
   FDistinct := False;
-  FSelectFieldsList := TSQLite3Structures.TSelectFieldsList.Create;
+  FSelectFieldsList := TSelectFieldsList.Create;
   FWhereFragment := TSQLite3Where.Create;
-  FJoinsList := TSQLite3Structures.TJoinsList.Create;
-  FOrderByList := TSQLite3Structures.TOrderByList.Create;
+  FJoinsList := TJoinsList.Create;
+  FOrderByList := TOrderByList.Create;
   FLimit.Limit_Item := False;
   FLimit.Offset_Item := False;
-  FGroupByList := TSQLite3Structures.TGroupByList.Create;
+  FGroupByList := TGroupByList.Create;
 end;
 
 destructor TSQLite3Select.Destroy;
@@ -172,7 +180,7 @@ end;
 
 function TSQLite3Select.All : TSQLite3Select;
 var
-  item : TSQLite3Structures.TSelectFieldItem;
+  item : TSelectFieldItem;
 begin
   item.Column_Name := '*';
   item.Column_AliasName := '';
@@ -182,7 +190,7 @@ end;
 
 function TSQLite3Select.Field (AColumnName : String) : TSQLite3Select;
 var
-  item : TSQLite3Structures.TSelectFieldItem;
+  item : TSelectFieldItem;
 begin
   item.Column_Name := AColumnName;
   item.Column_AliasName := '';
@@ -193,7 +201,7 @@ end;
 function TSQLite3Select.Field (AColumnName, AColumnAlias : String) : 
   TSQLite3Select;
 var
-  item : TSQLite3Structures.TSelectFieldItem;
+  item : TSelectFieldItem;
 begin
   item.Column_Name := AColumnName;
   item.Column_AliasName := AColumnAlias;
@@ -399,7 +407,7 @@ end;
 function TSQLite3Select.Join (ATableName : String; AJoinType : TJoinType;
   AColumnName : String; ACurrentTableColumn : String) : TSQLite3Select;
 var
-  item : TSQLite3Structures.TJoinItem;
+  item : TJoinItem;
 begin
   item.Table_Name := ATableName;
   item.Column_Name := AColumnName;
@@ -425,7 +433,7 @@ end;
 function TSQLite3Select.OrderBy (AColumnName : String; AOrderBy : TOrderByType)
  : TSQLite3Select;
 var
-  item : TSQLite3Structures.TOrderByItem;
+  item : TOrderByItem;
 begin
   item.Column_Name := AColumnName;
   item.Order_Type := AOrderBy;
@@ -461,7 +469,7 @@ end;
 function TSQLite3Select.PrepareJoinQuery : String;
 var
   SQL : String;
-  join_item : TSQLite3Structures.TJoinItem;
+  join_item : TJoinItem;
 begin
   if not FJoinsList.FirstEntry.HasValue then
     Exit('');
@@ -490,7 +498,7 @@ end;
 function TSQLite3Select.PrepareOrderByQuery : String;
 var
   SQL : String;
-  order_item : TSQLite3Structures.TOrderByItem;
+  order_item : TOrderByItem;
   i : Integer;
 begin
   if not FOrderByList.FirstEntry.HasValue then
@@ -544,7 +552,7 @@ end;
 function TSQLite3Select.Get : TSQLite3Result;
 var
   SQL : String;
-  select_elem : TSQLite3Structures.TSelectFieldItem;
+  select_elem : TSelectFieldItem;
   i : Integer;
   Query : TSQLite3Query;
 begin
