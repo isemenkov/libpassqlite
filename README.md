@@ -10,7 +10,6 @@ It is object pascal bindings and wrapper around [SQLite library](https://www.sql
 * [Installation](#installation)
 * [Usage](#usage)
 * [Testing](#testing)
-* [Examples](#examples)
 * [Bindings](#bindings)
   * [Usage example](#usage-example)
 * [Object wrapper](#object-wrapper)
@@ -46,3 +45,35 @@ Add the unit you want to use to the `uses` clause.
 A testing framework consists of the following ingredients:
 1. Test runner project located in `unit-tests` directory.
 2. Test cases (FPCUnit based) for additional helpers classes.
+
+
+
+### Bindings
+
+[libpassqlite.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/libpassqlite.pas) file contains the SQLite translated headers to use this library in pascal programs. You can find C API documentation at [SQLite website](https://www.sqlite.org/docs.html).
+
+#### Usage example
+
+```pascal
+uses
+  libpassqlite;
+
+var
+  Handle : ppsqlite3;
+  StatementHandle : psqlite3_stmt;
+  Query : String;
+
+begin
+  sqlite3_open_v2(PChar('database.db'), Handle, SQLITE_OPEN_READWRITE);
+  
+  Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
+  sqlite3_prepare_v3(Handle^, PChar(Query), Length(PChar(Query)), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
+
+  sqlite3_step(StatementHandle);
+
+  sqlite3_finalize(StatementHandle);
+  sqlite3_close_v2(Handle^);
+end.
+```
+
+
