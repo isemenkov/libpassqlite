@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.errors_stack;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -37,13 +39,15 @@ uses
 type
   { TSQLite3 database errors stack. }
   PSQL3LiteErrorsStack = ^TSQL3LiteErrorsStack;
-  TSQL3LiteErrorsStack = class(specialize TListErrorsStack<String>)
+  TSQL3LiteErrorsStack = class({$IFDEF FPC}specialize{$ENDIF}
+    TListErrorsStack<String>)
   public
     { Add error to the stack. }
     procedure Push (AError : TSQLite3Code); overload;
     procedure Push (AErrorCode : Integer); overload;
 
-    function GetEnumerator : TErrorsEnumerator;
+    function GetEnumerator : {$IFNDEF FPC}TListErrorsStack<String>.{$ENDIF}
+      TErrorsEnumerator;
   end;
 
 implementation

@@ -1,20 +1,30 @@
 unit builder_testcase;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, sqlite3.builder, sqlite3.schema,
-  sqlite3.result_row, sqlite3.select, container.memorybuffer;
+  Classes, SysUtils, sqlite3.builder, sqlite3.schema, sqlite3.result_row,
+  sqlite3.select, container.memorybuffer {$IFDEF FPC}, fpcunit,
+  testregistry{$ELSE}, TestFramework{$ENDIF};
 
 type
   { TSQLite3BuilderTestCase }
   TSQLite3BuilderTestCase = class(TTestCase)
+  public
+    {$IFNDEF FPC}
+    procedure AssertTrue (AMessage : String; ACondition : Boolean);
+    procedure AssertEquals (AMessage : String; AExpectedValue, AActualValue,
+      ADelta : Double);
+    {$ENDIF}
   published
     procedure Test_SQLite3Builder_CreateNewEmpty;
     procedure Test_SQLite3Builder_CreateNewSchema;
     procedure Test_SQLite3Builder_InsertData;
+    procedure Tets_SQLite3Builder_InsertData2;
     procedure Test_SQLite3Builder_InsertMultipleData;
     procedure Test_SQLite3Builder_CheckTableSchema;
     procedure Test_SQLite3Builder_SelectLimitOffset;
@@ -26,6 +36,20 @@ type
   end;
 
 implementation
+
+{$IFNDEF FPC}
+procedure TSQLite3BuilderTestCase.AssertTrue(AMessage : String; ACondition :
+  Boolean);
+begin
+  CheckTrue(ACondition, AMessage);
+end;
+
+procedure TSQLite3BuilderTestCase.AssertEquals (AMessage : String;
+  AExpectedValue, AActualValue, ADelta : Double);
+begin
+  CheckEquals(AExpectedValue, AActualValue, ADelta, AMessage);
+end;
+{$ENDIF}
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_CreateNewEmpty;
 var
@@ -127,6 +151,113 @@ begin
   end;  
 
   AssertTrue('Database selected rows count is not correct', counter = 1);
+
+  FreeAndNil(builder);
+
+  AssertTrue('Database file not exists', FileExists('test.db'));
+
+  DeleteFile('test.db');
+end;
+
+procedure TSQLite3BuilderTestCase.Tets_SQLite3Builder_InsertData2;
+var
+  schema : TSQLite3Schema;
+  builder : TSQLite3Builder;
+  inserted_rows : Integer;
+  row : TSQLite3ResultRow;
+  counter : Integer;
+begin
+  schema := TSQLite3Schema.Create;
+  schema.Id.Integer('int1').Integer('int2').Integer('int3').Text('txt');
+
+  AssertTrue('Database file already exists', not FileExists('test.db'));
+
+  builder := TSQLite3Builder.Create('test.db',
+    [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
+  builder.Table('test_table').New(schema);
+
+  AssertTrue('Database table not exists', builder.Table('test_table').Exists);
+  AssertTrue('Database table not have id column',
+    builder.Table('test_table').HasColumn('id'));
+  AssertTrue('Database table not have int1 column',
+    builder.Table('test_table').HasColumn('int1'));
+  AssertTrue('Database table not have int2 column',
+    builder.Table('test_table').HasColumn('int2'));
+  AssertTrue('Database table not have int3 column',
+    builder.Table('test_table').HasColumn('int3'));
+  AssertTrue('Database table not have txt column',
+    builder.Table('test_table').HasColumn('txt'));
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('test_table').Insert
+    .Value('int1', 12)
+    .Value('int2', 43)
+    .Value('int3', -54)
+    .Value('txt', 'string')
+    .Get;
+
+  AssertTrue('Database inserted row count is not correct', inserted_rows = 1);
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('test_table').Insert
+    .Value('int1', 23)
+    .Value('int2', 32)
+    .Value('int3', 3343)
+    .Value('txt', 'test_value')
+    .Get;
+
+  AssertTrue('Database inserted row count is not correct', inserted_rows = 1);
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('test_table').Insert
+    .Value('int1', 57)
+    .Value('int2', -55)
+    .Value('int3', 114)
+    .Value('txt', 'some text')
+    .Get;
+
+  AssertTrue('Database inserted row count is not correct', inserted_rows = 1);
+
+  counter := 0;
+  for row in builder.Table('test_table').Select.All.Get do
+  begin
+    case counter of
+    0 : begin
+      AssertTrue('Selected row ''int1'' column value is not correct',
+        row.GetIntegerValue('int1') = 12);
+      AssertTrue('Selected row ''int2'' column value is not correct',
+        row.GetIntegerValue('int2') = 43);
+      AssertTrue('Selected row ''int3'' column value is not correct',
+        row.GetIntegerValue('int3') = -54);
+      AssertTrue('Selected row ''txt'' column value is not correct',
+        row.GetStringValue('txt') = 'string');
+      end;
+    1 : begin
+      AssertTrue('Selected row ''int1'' column value is not correct',
+        row.GetIntegerValue('int1') = 23);
+      AssertTrue('Selected row ''int2'' column value is not correct',
+        row.GetIntegerValue('int2') = 32);
+      AssertTrue('Selected row ''int3'' column value is not correct',
+        row.GetIntegerValue('int3') = 3343);
+      AssertTrue('Selected row ''txt'' column value is not correct',
+        row.GetStringValue('txt') = 'test_value');
+      end;
+    2 : begin
+      AssertTrue('Selected row ''int1'' column value is not correct',
+        row.GetIntegerValue('int1') = 57);
+      AssertTrue('Selected row ''int2'' column value is not correct',
+        row.GetIntegerValue('int2') = -55);
+      AssertTrue('Selected row ''int3'' column value is not correct',
+        row.GetIntegerValue('int3') = 114);
+      AssertTrue('Selected row ''txt'' column value is not correct',
+        row.GetStringValue('txt') = 'some text');
+      end;
+
+    end;
+    Inc(counter);
+  end;
+
+  AssertTrue('Database selected rows count is not correct', counter = 3);
 
   FreeAndNil(builder);
 
@@ -832,6 +963,6 @@ begin
 end;
 
 initialization
-  RegisterTest(TSQLite3BuilderTestCase);
+  RegisterTest(TSQLite3BuilderTestCase{$IFNDEF FPC}.Suite{$ENDIF});
 end.
 

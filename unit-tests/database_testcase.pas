@@ -1,16 +1,23 @@
 unit database_testcase;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, sqlite3.database, sqlite3.query,
-  sqlite3.result, sqlite3.result_row;
+  Classes, SysUtils, sqlite3.database, sqlite3.query, sqlite3.result, 
+  sqlite3.result_row {$IFDEF FPC}, fpcunit, testregistry{$ELSE},
+  TestFramework{$ENDIF};
 
 type
   { TSQLite3DatabaseTestCase }
   TSQLite3DatabaseTestCase = class(TTestCase)
+  public
+    {$IFNDEF FPC}
+    procedure AssertTrue (AMessage : String; ACondition : Boolean);
+    {$ENDIF}
   published
     procedure Test_SQLite3Database_CreateNewEmpty;
     procedure Test_SQLite3Database_Query;
@@ -19,6 +26,14 @@ type
 implementation
 
 { TSQLite3DatabaseTestCase }
+
+{$IFNDEF FPC}
+procedure TSQLite3DatabaseTestCase.AssertTrue(AMessage : String; ACondition :
+  Boolean);
+begin
+  CheckTrue(ACondition, AMessage);
+end;
+{$ENDIF}
 
 procedure TSQLite3DatabaseTestCase.Test_SQLite3Database_CreateNewEmpty;
 var
@@ -106,6 +121,6 @@ begin
 end;
 
 initialization
-  RegisterTest(TSQLite3DatabaseTestCase);
+  RegisterTest(TSQLite3DatabaseTestCase{$IFNDEF FPC}.Suite{$ENDIF});
 end.
 

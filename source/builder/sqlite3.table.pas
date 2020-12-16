@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.table;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -34,7 +36,7 @@ interface
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.schema, sqlite3.query,
   sqlite3.result_row, sqlite3.insert, sqlite3.select, sqlite3.update,
-  sqlite3.delete, sqlite3.result;
+  sqlite3.delete, sqlite3.result{$IFNDEF FPC}, StrUtils{$ENDIF};
 
 type
   TSQLite3Table = class
@@ -192,8 +194,13 @@ begin
     end;
 
     // Check column type.
+    {$IFDEF FPC}
     case Row.GetStringValue('type') of
-      'INTEGER' : 
+    {$ELSE}
+    case IndexStr(Row.GetStringValue('type'), ['INTEGER', 'REAL', 'TEXT', 
+      'BLOB']) of
+    {$ENDIF}
+      {$IFDEF FPC}'INTEGER'{$ELSE}0{$ENDIF} : 
         begin
           if column.Value.Column_Type <> SQLITE_INTEGER then
           begin
@@ -201,7 +208,7 @@ begin
             Break;
           end;
         end;
-      'REAL' : 
+      {$IFDEF FPC}'REAL'{$ELSE}1{$ENDIF} : 
         begin
           if column.Value.Column_Type <> SQLITE_FLOAT then
           begin
@@ -209,7 +216,7 @@ begin
             Break;
           end;
         end;
-      'TEXT' : 
+      {$IFDEF FPC}'TEXT'{$ELSE}2{$ENDIF} : 
         begin
           if column.Value.Column_Type <> SQLITE_TEXT then
           begin
@@ -217,7 +224,7 @@ begin
             Break;
           end;
         end;
-      'BLOB' : 
+      {$IFDEF FPC}'BLOB'{$ELSE}3{$ENDIF} : 
         begin
           if column.Value.Column_Type <> SQLITE_BLOB then
           begin

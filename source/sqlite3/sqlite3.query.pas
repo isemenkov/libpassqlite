@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.query; 
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -98,8 +100,9 @@ constructor TSQLite3Query.Create (AErrorsStack : PSQL3LiteErrorsStack;
 begin
   FErrorStack := AErrorsStack;
   FDBHandle := ADBHandle;
-  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^, PChar(AQuery),
-    Length(PChar(AQuery)), PrepareFlags(AFlags), @FStatementHandle, nil));
+  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^,
+    PAnsiChar(Utf8Encode(AQuery)), Length(PChar(AQuery)), PrepareFlags(AFlags),
+    @FStatementHandle, nil));
 end;
 
 destructor TSQLite3Query.Destroy;
@@ -146,8 +149,8 @@ end;
 
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
-  FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex, PChar(AValue),
-    Length(PChar(AValue)), nil));
+  FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex,
+    PAnsiChar(AnsiString(AValue)), Length(AValue), nil));
   Result := Self;
 end;
 

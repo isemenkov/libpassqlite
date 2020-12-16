@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.schema;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -51,14 +53,15 @@ type
 
       { ColumnItem compare functor. }
       TColumnItemCompareFunctor = class
-        (specialize TBinaryFunctor<TColumnItem, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TColumnItem, Integer>)
       public
         function Call (AValue1, AValue2 : TColumnItem) : Integer; override;
       end;
 
       { Columns list. }  
       TColumnsList = class
-        (specialize TList<TColumnItem, TColumnItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TColumnItem,
+        TColumnItemCompareFunctor>);
   public
     constructor Create;
     destructor Destroy; override;
@@ -101,7 +104,7 @@ implementation
 { TSQLite3Schema.TColumnItemCompareFunctor }
 
 function TSQLite3Schema.TColumnItemCompareFunctor.Call (AValue1, AValue2 :
-  TColumnItem) : Integer;
+  TColumnItem) : {$IFNDEF FPC}System.{$ENDIF}Integer;
 begin
   if AValue1.Column_Name < AValue2.Column_Name then
     Result := -1

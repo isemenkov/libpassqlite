@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.insert;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -69,7 +71,7 @@ type
     function Value (AValue : String) : TSQLite3Insert; overload;
     function Value (AValue : TStream) : TSQLite3Insert; overload;
     function Value (AValue : TMemoryBuffer) : TSQLite3Insert; overload;
-    function ValueNull : TSQLite3Insert;
+    function ValueNull : TSQLite3Insert; overload;
 
     { Get result. }
     function Get : Integer;  
@@ -80,21 +82,22 @@ type
       Integer;
 
     { Write blob data. }
-    procedure WriteBlob ({%H-}ARowIndex : sqlite3_int64; {%H-}AColumnName : String; 
-      {%H-}AStream : TStream); overload;
+    procedure WriteBlob ({%H-}ARowIndex : sqlite3_int64; {%H-}AColumnName :
+      String; {%H-}AStream : TStream); overload;
     procedure WriteBlob (ARowIndex : sqlite3_int64; AColumnName : String; 
       ABuffer : TMemoryBuffer); overload;
   private
     type
       TMultipleValuesListCompareFunctor = class
-        (specialize TBinaryFunctor<TSQLite3Structures.TValuesList, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF}
+        TBinaryFunctor<TSQLite3Structures.TValuesList, Integer>)
       public
         function Call (AValue1, AValue2 : TSQLite3Structures.TValuesList) : 
           Integer; override;
       end;
 
       TMultipleValuesList = class
-        (specialize TList<TSQLite3Structures.TValuesList, 
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TSQLite3Structures.TValuesList,
         TMultipleValuesListCompareFunctor>);
   private
     FErrorsStack : PSQL3LiteErrorsStack;
@@ -611,8 +614,9 @@ var
   blob : psqlite3_blob;
   result_code : Integer;
 begin
-  result_code := sqlite3_blob_open(FDBHandle^, 'main', PChar(FTableName),
-    PChar(AColumnName), ARowIndex, 1, @blob);
+  result_code := sqlite3_blob_open(FDBHandle^, 'main',
+    PAnsiChar(AnsiString(FTableName)), PAnsiChar(AnsiString(AColumnName)),
+    ARowIndex, 1, @blob);
   
   if result_code <> SQLITE_OK then
   begin

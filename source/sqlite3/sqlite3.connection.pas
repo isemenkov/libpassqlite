@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.connection;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -101,7 +103,8 @@ constructor TSQLite3DatabaseConnection.Create (AErrorsStack :
 begin
   FHandle := AHandle;
   FErrorStack := AErrorsStack;
-  FErrorStack^.Push(sqlite3_open_v2(PChar(AFilename), FHandle,
+
+  FErrorStack^.Push(sqlite3_open_v2(PAnsiChar(Utf8Encode(AFilename)), FHandle,
     PrepareFlags(AFlags), nil));
 end;
 

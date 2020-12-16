@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.builder;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -122,7 +124,7 @@ begin
 end;
 
 procedure TSQLite3Builder.BeginTransaction (AType : TTransactionType;
-  ATransactionName : String = '');
+  ATransactionName : String);
 var
   SQL : String;
   Query : TSQLite3Query;

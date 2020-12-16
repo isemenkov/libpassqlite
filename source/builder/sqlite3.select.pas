@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.select;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -557,7 +559,7 @@ var
   Query : TSQLite3Query;
 begin
   if not FSelectFieldsList.FirstEntry.HasValue then
-    Exit;
+    Exit(nil);
 
   i := 0;
   SQL := 'SELECT ';

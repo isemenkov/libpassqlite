@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.result_row; 
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -81,7 +83,8 @@ type
   private
     type
       TColumnsList = class
-        (specialize TArrayList<String, TCompareFunctorString>);
+        ({$IFDEF FPC}specialize{$ENDIF} TArrayList<String,
+        TCompareFunctorString>);
 
     function GetColumnIndex (AColumnName : String) : Integer;
   private
@@ -115,7 +118,7 @@ end;
 
 function TSQLite3ResultRow.ColumnName (AIndex : Integer) : String;
 begin
-  Result := sqlite3_column_name(FStatementHandle, AIndex);
+  Result := String(sqlite3_column_name(FStatementHandle, AIndex));
 end;
 
 function TSQLite3ResultRow.GetColumnType (AIndex : Integer) : TDataType;
@@ -156,12 +159,12 @@ end;
 
 function TSQLite3ResultRow.GetStringValue (AColumnIndex : Integer) : String;
 begin
-  Result := PChar(sqlite3_column_text(FStatementHandle, AColumnIndex));
+  Result := String(sqlite3_column_text(FStatementHandle, AColumnIndex));
 end;
 
 function TSQLite3ResultRow.GetStringValue (AColumnName : String) : String;
 begin
-  Result := PChar(sqlite3_column_text(FStatementHandle, 
+  Result := String(sqlite3_column_text(FStatementHandle,
     GetColumnIndex(AColumnName)));
 end;
 

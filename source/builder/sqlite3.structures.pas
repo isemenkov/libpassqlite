@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.structures;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -53,7 +55,7 @@ type
 
       { Value item compare functor. }
       TValueItemCompareFunctor = class
-        (specialize TBinaryFunctor<TValueItem, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TValueItem, Integer>)
       public
         function Call (AValue1, AValue2 : TValueItem) : Integer; override;
       end;
@@ -61,7 +63,8 @@ type
       { Values list. }
       PValuesList = ^TValuesList;
       TValuesList = class
-        (specialize TList<TValueItem, TValueItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TValueItem,
+        TValueItemCompareFunctor>);
 
       { Select field item. }  
       TSelectFieldItem = record
@@ -70,15 +73,16 @@ type
       end;
 
       { Select item compare functior. }
-      TSelectFieldItemCompareFunctor = class
-        (specialize TBinaryFunctor<TSelectFieldItem, Integer>)
+      TSelectFieldItemCompareFunctor = class({$IFDEF FPC}specialize{$ENDIF}
+        TBinaryFunctor<TSelectFieldItem, Integer>)
       public
         function Call (AValue1, AValue2 : TSelectFieldItem) : Integer; override;
       end;
 
       { Select fields list. }  
       TSelectFieldsList = class
-        (specialize TList<TSelectFieldItem, TSelectFieldItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TSelectFieldItem,
+        TSelectFieldItemCompareFunctor>);
 
       { Where clause experssion. }  
       TWhereComparisonOperator = (
@@ -107,14 +111,16 @@ type
 
       { Where item compare functor. }
       TWhereFieldItemCompareFunction = class
-        (specialize TBinaryFunctor<TWhereFieldItem, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TWhereFieldItem,
+        Integer>)
       public
         function Call (AValue1, AValue2 : TWhereFieldItem) : Integer; override;
       end;
 
       { Where filds list. }
       TWhereFieldsList = class
-        (specialize TList<TWhereFieldItem, TWhereFieldItemCompareFunction>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TWhereFieldItem,
+        TWhereFieldItemCompareFunction>);
 
       { Update list value. }
       TUpdateItem = record
@@ -124,14 +130,15 @@ type
 
       { Update item compare functor. }
       TUpdateItemCompareFunctor = class
-        (specialize TBinaryFunctor<TUpdateItem, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TUpdateItem, Integer>)
       public
         function Call (AValue1, AValue2 : TUpdateItem) : Integer; override;
       end;
 
       { Updates list. }
       TUpdatesFieldsList = class
-        (specialize TList<TUpdateItem, TUpdateItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TUpdateItem,
+        TUpdateItemCompareFunctor>);
 
       { Joins type. }
       TJoinType = (
@@ -150,14 +157,15 @@ type
 
       { Join item compare functor. }
       TJoinItemCompareFunctor = class
-        (specialize TBinaryFunctor<TJoinItem, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TJoinItem, Integer>)
       public
         function Call (AValue1, AValue2 : TJoinItem) : Integer; override;
       end;
 
       { Joins list. }
       TJoinsList = class
-        (specialize TList<TJoinItem, TJoinItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TJoinItem,
+        TJoinItemCompareFunctor>);
 
       { Order by type. }
       TOrderByType = (
@@ -173,14 +181,15 @@ type
 
       { Order by item compare functor. }
       TOrderByItemCompareFunctor = class
-        (specialize TBinaryFunctor<TOrderByItem, Integer>)
+        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TOrderByItem, Integer>)
       public
         function Call (AValue1, AValue2 : TOrderByItem) : Integer; override;
       end;
 
       { Order by list. }
       TOrderByList = class
-        (specialize TList<TOrderByItem, TOrderByItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TOrderByItem,
+        TOrderByItemCompareFunctor>);
 
       { Limit item clause. }
       TLimitItem = record
@@ -190,16 +199,9 @@ type
         Offset_Value : Cardinal;
       end;
 
-      { Group by item compare functor. }
-      TGroupByItemCompareFunctor = class
-        (specialize TBinaryFunctor<String, Integer>)
-      public
-        function Call (AValue1, AValue2 : String) : Integer; override;
-      end;
-
       { Group by list. }
       TGroupByList = class
-        (specialize TList<String, TGroupByItemCompareFunctor>);
+        ({$IFDEF FPC}specialize{$ENDIF} TList<String, TCompareFunctorString>);
   end;
 
 implementation
@@ -277,19 +279,6 @@ begin
   if AValue1.Column_Name < AValue2.Column_Name then
     Result := -1
   else if AValue2.Column_Name < AValue1.Column_Name then
-    Result := 1
-  else
-    Result := 0;
-end;
-
-{ TSQLite3Structures.TGroupByItemCompareFunctor }
-
-function TSQLite3Structures.TGroupByItemCompareFunctor.Call (AValue1,
-  AValue2 : String) : Integer;
-begin
-  if AValue1 < AValue2 then
-    Result := -1
-  else if AValue2 < AValue1 then
     Result := 1
   else
     Result := 0;

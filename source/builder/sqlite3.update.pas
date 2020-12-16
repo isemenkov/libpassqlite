@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit sqlite3.update;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 {$IFOPT D+}
   {$DEFINE DEBUG}
 {$ENDIF}
@@ -438,7 +440,7 @@ var
   Query : TSQLite3Query;
 begin
   if not FUpdatesFieldsList.FirstEntry.HasValue then
-    Exit;
+    Exit(0);
 
   i := 0;
   SQL := 'UPDATE ' + FTableName + ' SET ';

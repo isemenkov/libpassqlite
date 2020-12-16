@@ -1,4 +1,4 @@
-(******************************************************************************)
+﻿(******************************************************************************)
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
@@ -24,7 +24,9 @@
 (******************************************************************************)
 unit libpassqlite;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
@@ -34,9 +36,9 @@ uses
 {$IFDEF FPC}
   {$PACKRECORDS C}
 {$ENDIF}
-  
+
 const
-  {$IFDEF WINDOWS}
+  {$IFDEF WIN32 OR IFDEF WIN64}
     sqlite3_lib = 'sqlite3.dll';
   {$ENDIF}
   {$IFDEF UNIX}
@@ -46,7 +48,7 @@ const
     sqlite3_lib = 'libsqlite3.dylib';
   {$ENDIF}
 
-  { Many SQLite functions return an integer result code from the set shown here 
+  { Many SQLite functions return an integer result code from the set shown here
    in order to indicate success or failure. }
 const
   SQLITE_OK         { Successful result }                            = 0;
@@ -2399,7 +2401,7 @@ const
 
 type
   PPPChar = ^PPChar;
-  PPChar = ^PChar;
+  PPChar = ^PAnsiChar;
   PPointer = ^Pointer;
   PPByte = ^PByte;
   
@@ -2409,7 +2411,7 @@ type
   sqlite3_rtree_dbl = type Double;
 
   psqlite3_uint64 = ^sqlite3_uint64;
-  sqlite3_uint64 = type QWord;
+  sqlite3_uint64 = type Int64;
 
   { Strutures forward declarations. }
   ppsqlite3 = ^psqlite3;
@@ -2473,11 +2475,11 @@ type
   xBusy_callback = function (ptr : Pointer; invoked : Integer) : Integer of 
     object; cdecl;
   xAuth_callback = function (pAuthArg : Pointer; action_code : Integer; 
-    const zArg1 : PChar; const zArg2 : PChar; const zArg3 : PChar; const zArg4 :
-    PChar) : Integer of object; cdecl;
-  xTrace_callback = procedure (statement : Pointer; const text : PChar) of
+    const zArg1 : PAnsiChar; const zArg2 : PAnsiChar; const zArg3 : PAnsiChar;
+    const zArg4 : PAnsiChar) : Integer of object; cdecl;
+  xTrace_callback = procedure (statement : Pointer; const text : PAnsiChar) of
     object; cdecl;
-  xProfile_callback = procedure (statement : Pointer; const text : PChar; 
+  xProfile_callback = procedure (statement : Pointer; const text : PAnsiChar;
     estimate : sqlite3_uint64) of object; cdecl;
   xCallback_callback = function (invoked : Cardinal; context : Pointer; depend1
     : Pointer; depend2 : Pointer) : Integer of object; cdecl;
@@ -2498,26 +2500,26 @@ type
     const eTextRep1 : Pointer; nBytes2 : Integer; const eTextRep2 : Pointer) :
     Integer of object; cdecl;
   xCollNeeded_callback = procedure (pArg : Pointer; db : psqlite3; eTextRep :
-    Integer; const collation_name : PChar) of object; cdecl;
+    Integer; const collation_name : PAnsiChar) of object; cdecl;
   xCollNeeded16_callback = procedure (pArg : Pointer; db : psqlite3; eTextRep :
     Integer; const collation_name : Pointer) of object; cdecl;
   xCallbackHook_callback = function (pArg : Pointer) : Integer of object; cdecl;
   xCallbackUpdateHook_callback = procedure (pArg : Pointer; invoked : Integer;
-    database_name : PChar; table_name : PChar; rowid : sqlite3_int64) of object;
-    cdecl;
+    database_name : PAnsiChar; table_name : PAnsiChar; rowid : sqlite3_int64) of
+    object; cdecl;
   xEntryPoint_callback = function (db : psqlite3; const pzErrMgs : PPChar; 
     const pThunk : psqlite3_api_routines) : Integer of object; cdecl;
   xNotify_callback = procedure (apArg : PPointer; nArg : Integer) of object;
     cdecl;
   xWalCallback_callback = function (pWalArg : Pointer; db : psqlite3; 
-    const zDbName : PChar; nEntry : Integer) : Integer of object; cdecl;
+    const zDbName : PAnsiChar; nEntry : Integer) : Integer of object; cdecl;
   xPreUpdate_callback = procedure (pCtx : Pointer; db : psqlite3; op : Integer;
-    const zDb : PChar; const zName : PChar; iKey1 : sqlite3_int64; iKey2 :
-    sqlite3_int64) of object; cdecl;
+    const zDb : PAnsiChar; const zName : PAnsiChar; iKey1 : sqlite3_int64;
+    iKey2 : sqlite3_int64) of object; cdecl;
   xGeom_callback = function (pInfo : psqlite3_rtree_geometry; nCoord : Integer;
     aCoord : psqlite3_rtree_dbl; eWithin : PInteger) : Integer of object; cdecl;
-  xFilter_callback = function (pCtx : Pointer; const zTab : PChar) : Integer of
-    object; cdecl;
+  xFilter_callback = function (pCtx : Pointer; const zTab : PAnsiChar) : Integer
+    of object; cdecl;
   xConflict_callback = function (pCtx : Pointer; eConflict : Integer; p :
     psqlite3_changeset_iter) : Integer of object; cdecl;
   xInput_callback = function (pIn : Pointer; pData : Pointer; pnData : PInteger)
@@ -2529,7 +2531,7 @@ type
   xOutput_callback = function (pOut : Pointer; const pData : Pointer; nData :
     Integer) : Integer of object; cdecl;
   xToken_callback = function (pCtx : Pointer; tflags : Integer; const pToken :
-    PChar; nToken : Integer; iStart : Integer; iEnd : Integer) : Integer of
+    PAnsiChar; nToken : Integer; iStart : Integer; iEnd : Integer) : Integer of
     object; cdecl;
   xCallback_fts5extension_callback = function (const pApi : pFts5ExtensionApi;
     pContext : pFts5Context; ptr : Pointer) : Integer of object; cdecl;
@@ -2674,31 +2676,31 @@ type
     szOsFile : Integer;       { Size of subclassed sqlite3_file }
     mxPathname : Integer;     { Maximum file pathname length }
     pNext : psqlite3_vfs;     { Next registered VFS }
-    zName : PChar;            { Name of this virtual file system }
+    zName : PAnsiChar;        { Name of this virtual file system }
     pAppData : Pointer;       { Pointer to application-specific data }
-    xOpen : function (pVfs : psqlite3_vfs; const zName : PChar; pFile :
+    xOpen : function (pVfs : psqlite3_vfs; const zName : PAnsiChar; pFile :
       psqlite3_file; flags : Integer; pOutFlags : PInteger) : Integer; cdecl;
-    xDelete : function (pVfs : psqlite3_vfs; const zName : PChar; syncDir :
+    xDelete : function (pVfs : psqlite3_vfs; const zName : PAnsiChar; syncDir :
       Integer) : Integer; cdecl;
-    xAccess : function (pVfs : psqlite3_vfs; const zName : PChar; flags : 
+    xAccess : function (pVfs : psqlite3_vfs; const zName : PAnsiChar; flags :
       Integer; pResOut : PInteger) : Integer; cdecl;
-    xFullPathname : function (pVfs : psqlite3_vfs; const zName : PChar; nOut :
-      Integer; zOut : PChar) : Integer; cdecl;
-    xDlOpen : function (pVfs : psqlite3_vfs; const zFilename : PChar) :
+    xFullPathname : function (pVfs : psqlite3_vfs; const zName : PAnsiChar;
+      nOut : Integer; zOut : PAnsiChar) : Integer; cdecl;
+    xDlOpen : function (pVfs : psqlite3_vfs; const zFilename : PAnsiChar) :
       Pointer; cdecl;
     xDlError : procedure (pVfs : psqlite3_vfs; nByte : Integer; zErrMgs : 
-      PChar); cdecl;
+      PAnsiChar); cdecl;
     xDlSym : function (pVfs : psqlite3_vfs; pHandle : Pointer; const zSymbol :
-      PChar) : Pointer; cdecl;
+      PAnsiChar) : Pointer; cdecl;
     xDlClose : procedure (pVfs : psqlite3_vfs; pHandle : Pointer); cdecl;
-    xRandomness : function (pVfs : psqlite3_vfs; nByte : Integer; zOut : PChar) 
-      : Integer; cdecl;
+    xRandomness : function (pVfs : psqlite3_vfs; nByte : Integer; zOut :
+      PAnsiChar) : Integer; cdecl;
     xSleep : function (pVfs : psqlite3_vfs; microseconds : Integer) : Integer;
       cdecl;
     xCurrentTime : function (pVfs : psqlite3_vfs; pTimeout : PDouble) : Integer;
       cdecl;
-    xGetLastError : function (pVfs : psqlite3_vfs; nBuf : Integer; zBuf : PChar)
-      : Integer; cdecl;
+    xGetLastError : function (pVfs : psqlite3_vfs; nBuf : Integer; zBuf :
+      PAnsiChar) : Integer; cdecl;
     
     { The methods above are in version 1 of the sqlite_vfs object definition. 
       Those that follow are added in version 2 or later }
@@ -2707,12 +2709,12 @@ type
     
     { The methods above are in versions 1 and 2 of the sqlite_vfs object. Those 
       below are for version 3 and greater. }
-    xSetSystemCall : function (pVfs : psqlite3_vfs; const zName : PChar; 
+    xSetSystemCall : function (pVfs : psqlite3_vfs; const zName : PAnsiChar;
       pNewFunc : sqlite3_syscall_ptr) : Integer; cdecl;
-    xGetSystemCall : function (pVfs : psqlite3_vfs; const zName : PChar) :
+    xGetSystemCall : function (pVfs : psqlite3_vfs; const zName : PAnsiChar) :
       sqlite3_syscall_ptr; cdecl;
-    xNextSystemCall : function (pVfs : psqlite3_vfs; const zName : PChar) :
-      PChar; cdecl;
+    xNextSystemCall : function (pVfs : psqlite3_vfs; const zName : PAnsiChar) :
+      PAnsiChar; cdecl;
 
     { The methods above are in versions 1 through 3 of the sqlite_vfs object. 
       New fields may be appended in future versions. The iVersion value will 
@@ -2855,7 +2857,7 @@ type
   sqlite3_vtab = record
     pModule : psqlite3_module;    { The module for this virtual table }
     nRef : Integer;               { Number of open cursors }
-    zErrMsg : PChar;              { Error message from sqlite3_mprintf() }
+    zErrMsg : PAnsiChar;          { Error message from sqlite3_mprintf() }
   end;
 
   { The sqlite3_index_info structure and its substructures is used as part of 
@@ -2980,7 +2982,7 @@ type
     { Outputs }
     aConstraintUsage : psqlite3_index_constraint_usage;
     idxNum : Integer;                 { Number used to identify the index }
-    idxStr : PChar;                   { String, possibly obtained from 
+    idxStr : PAnsiChar;               { String, possibly obtained from
                                         sqlite3_malloc }
     needToFreeIdxStr : Integer;       {Free idxStr using sqlite3_free() if true}
     orderByConsumed : Integer;        { True if output is already ordered }
@@ -3039,11 +3041,11 @@ type
   sqlite3_module = record
     iVersion : Integer;
     xCreate : function (db : psqlite3; pAux : Pointer; argc : Integer; 
-      const argv : PChar; ppVtab : ppsqlite3_vtab; pzErr : PPchar) : Integer; 
-      cdecl;
+      const argv : PAnsiChar; ppVtab : ppsqlite3_vtab; pzErr : PPchar) :
+      Integer; cdecl;
     xConnect : function (db : psqlite3; pAux : Pointer; argc : Integer; 
-      const argv : PChar; ppVtab : ppsqlite3_vtab; pzErr : PPChar) : Integer;
-      cdecl;
+      const argv : PAnsiChar; ppVtab : ppsqlite3_vtab; pzErr : PPChar) :
+      Integer; cdecl;
     xBestIndex : function (pVTab : psqlite3_vtab; index_info : 
       psqlite3_index_info) : Integer; cdecl;
     xDisconnect : function (pVTab : psqlite3_vtab) : Integer; cdecl;
@@ -3052,8 +3054,8 @@ type
       Integer; cdecl;
     xClose : function (pCursor : psqlite3_vtab_cursor) : Integer; cdecl;
     xFilter : function (pCursor : psqlite3_vtab_cursor; idxNum : Integer;
-      const idxStr : PChar; argc : Integer; argv : ppsqlite3_value) : Integer;
-      cdecl;
+      const idxStr : PAnsiChar; argc : Integer; argv : ppsqlite3_value) :
+      Integer; cdecl;
     xNext : function (pCursor : psqlite3_vtab_cursor) : Integer; cdecl;
     xEof : function (pCursor : psqlite3_vtab_cursor) : Integer; cdecl;
     xColumn : function (pCursor : psqlite3_vtab_cursor; pContext :
@@ -3067,10 +3069,10 @@ type
     xCommit : function (pVTab : psqlite3_vtab) : Integer; cdecl;
     xRollback : function (pVTab : psqlite3_vtab) : Integer; cdecl;
     xFindFunction : function (pVTab : psqlite3_vtab; nArg : Integer; 
-      const zName : PChar; pxFunc : xFunc_callback; ppArg : PPointer) : Integer;
-      cdecl;
-    xRename : function (pVTab : psqlite3_vtab; const zName : PChar) : Integer;
-      cdecl;
+      const zName : PAnsiChar; pxFunc : xFunc_callback; ppArg : PPointer) :
+      Integer; cdecl;
+    xRename : function (pVTab : psqlite3_vtab; const zName : PAnsiChar) :
+      Integer; cdecl;
     { The methods above are in version 1 of the sqlite_module object. Those
       below are for version 2 and greater. }
     xSavepoint : function (pVTab : psqlite3_vtab; iSvpt : Integer) : Integer;
@@ -3081,7 +3083,7 @@ type
       cdecl;
     { The methods above are in versions 1 and 2 of the sqlite_module object.
       Those below are for version 3 and greater. }
-    xShadowName : function (const zName : PChar) : Integer; cdecl;
+    xShadowName : function (const zName : PAnsiChar) : Integer; cdecl;
   end;
 
   { An instance of this object represents an open BLOB on which incremental BLOB 
@@ -3665,8 +3667,9 @@ type
     xColumnTotalSize : function (pContext : pFts5Context; iCol : Integer;
       pnToken : psqlite3_int64) : Integer; cdecl;
     
-    xTokenize : function (pContext : pFts5Context; const pText : PChar; nText :
-      Integer; pCtx : Pointer; xToken : xToken_callback) : Integer; cdecl;
+    xTokenize : function (pContext : pFts5Context; const pText : PAnsiChar;
+      nText : Integer; pCtx : Pointer; xToken : xToken_callback) : Integer;
+      cdecl;
     
     xPhraseCount : function (pContext : pFts5Context) : Integer; cdecl;
     xPhraseSize : function (pContext : pFts5Context; iPhrase : Integer) : 
@@ -3869,22 +3872,25 @@ type
       ppOut : ppFts5Tokenizer) : Integer; cdecl;
     xDelete : procedure (pTokenizer : pFts5Tokenizer); cdecl;
     xTokenize : function (pTokenizer : pFts5Tokenizer; pCtx : Pointer; flags :
-      Integer; const pText : PChar; nText : Integer; xToken : xToken_callback)
+      Integer; const pText : PAnsiChar; nText : Integer; xToken : xToken_callback)
       : Integer; cdecl;
   end;
 
   fts5_api = record
     iVersion : Integer;           { Currently always set to 2 }
 
-    xCreateTokenizer : function (pApi : pfts5_api; const zName : PChar; 
+    xCreateTokenizer : function (pApi : pfts5_api; const zName : PAnsiChar;
       pContext : Pointer; pTokenizer : pfts5_tokenizer; xDestroy : 
       xDestroy_callback) : Integer; cdecl;
-    xFindTokenizer : function (pApi : pfts5_api; const zName : PChar; ppContext 
-      : PPointer; pTokenizer : pfts5_tokenizer) : Integer; cdecl;
-    xCreateFunction : function (pApi : pfts5_api; const zName : PChar;
+    xFindTokenizer : function (pApi : pfts5_api; const zName : PAnsiChar;
+      ppContext : PPointer; pTokenizer : pfts5_tokenizer) : Integer; cdecl;
+    xCreateFunction : function (pApi : pfts5_api; const zName : PAnsiChar;
       pContext : Pointer; xFunction : fts5_extension_function; xDestroy :
       xDestroy_callback) : Integer; cdecl;
   end;
+
+
+
 
 { These interfaces provide the same information as the SQLITE_VERSION, 
   SQLITE_VERSION_NUMBER, and SQLITE_SOURCE_ID C preprocessor macros but are 
@@ -3903,8 +3909,8 @@ type
   SQLITE_SOURCE_ID C preprocessor macro. Except if SQLite is built using an 
   edited copy of the amalgamation, then the last four characters of the hash 
   might be different from SQLITE_SOURCE_ID. }
-function sqlite3_libversion : PChar; cdecl; external sqlite3_lib;
-function sqlite3_sourceid : PChar; cdecl; external sqlite3_lib;
+function sqlite3_libversion : PAnsiChar; cdecl external sqlite3_lib;
+function sqlite3_sourceid : PAnsiChar; cdecl; external sqlite3_lib;
 function sqlite3_libversion_number : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_compileoption_used() function returns 0 or 1 indicating whether 
@@ -3920,9 +3926,9 @@ function sqlite3_libversion_number : Integer; cdecl; external sqlite3_lib;
   Support for the diagnostic functions sqlite3_compileoption_used() and 
   sqlite3_compileoption_get() may be omitted by specifying the 
   SQLITE_OMIT_COMPILEOPTION_DIAGS option at compile time. }
-function sqlite3_compileoption_used(const zOptName : PChar) : Integer; cdecl;
-  external sqlite3_lib;
-function sqlite3_compileoption_get(N : Integer) : PChar; cdecl; 
+function sqlite3_compileoption_used(const zOptName : PAnsiChar) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_compileoption_get(N : Integer) : PAnsiChar; cdecl;
   external sqlite3_lib;
 
 { The sqlite3_threadsafe() function returns zero if and only if SQLite was 
@@ -4028,7 +4034,7 @@ function sqlite3_close_v2(handle : psqlite3) : Integer; cdecl;
   If the 2nd parameter to sqlite3_exec() is a NULL pointer, a pointer to an 
   empty string, or a pointer that contains only whitespace and/or SQL comments, 
   then no SQL statements are evaluated and the database is not changed. }
-function sqlite3_exec(handle : psqlite3; const sql : PChar; callback : 
+function sqlite3_exec(handle : psqlite3; const sql : PAnsiChar; callback :
   sqlite3_callback; callback_arg : Pointer; errmsg : PPChar) : Integer; cdecl;
   external sqlite3_lib;
 
@@ -4324,9 +4330,9 @@ procedure sqlite3_interrupt(db : psqlite3); cdecl; external sqlite3_lib;
 
   The input to sqlite3_complete16() must be a zero-terminated UTF-16 string in 
   native byte order. }
-function sqlite3_complete(const zSql : PChar) : Integer; cdecl; 
+function sqlite3_complete(const zSql : PAnsiChar) : Integer; cdecl;
   external sqlite3_lib;
-function sqlite3_complete16(const zSql : PChar) : Integer; cdecl;
+function sqlite3_complete16(const zSql : PAnsiChar) : Integer; cdecl;
   external sqlite3_lib;
 
 { The sqlite3_busy_handler(D,X,P) routine sets a callback function X that might 
@@ -4431,7 +4437,7 @@ function sqlite3_busy_timeout(db : psqlite3; ms : Integer) : Integer; cdecl;
   here. As a consequence, errors that occur in the wrapper layer outside of the 
   internal sqlite3_exec() call are not reflected in subsequent calls to 
   sqlite3_errcode() or sqlite3_errmsg(). }
-function sqlite3_get_table(db : psqlite3; const zSql : PChar; pazResult :
+function sqlite3_get_table(db : psqlite3; const zSql : PAnsiChar; pazResult :
   PPPChar; pnRow : PInteger; pnColumn : PInteger; pzErrmsg : PPChar) : Integer;
   cdecl; external sqlite3_lib;
 procedure sqlite3_free_table(result : PPChar); cdecl; external sqlite3_lib;
@@ -4465,14 +4471,15 @@ procedure sqlite3_free_table(result : PPChar); cdecl; external sqlite3_lib;
   longest string that can be completely written will be n-1 characters.
 
   The sqlite3_vsnprintf() routine is a varargs version of sqlite3_snprintf(). }
-function sqlite3_mprintf(const zName : PChar) : PChar; cdecl; varargs;
+function sqlite3_mprintf(const zName : PAnsiChar) : PAnsiChar; cdecl; varargs;
   external sqlite3_lib;
-function sqlite3_vmprintf(const zName : PChar; va_list : array of const) : 
-  PChar; cdecl; varargs; external sqlite3_lib;
-function sqlite3_snprintf(size : Integer; zName : PChar) : PChar; cdecl;
+function sqlite3_vmprintf(const zName : PAnsiChar; va_list : array of const) :
+  PAnsiChar; cdecl; varargs; external sqlite3_lib;
+function sqlite3_snprintf(size : Integer; zName : PAnsiChar) : PAnsiChar; cdecl;
   varargs; external sqlite3_lib;
-function sqlite3_vsnprintf(size : Integer; zName : PChar; const zFormat : PChar;
-  va_list : array of const) : PChar; cdecl; varargs; external sqlite3_lib;
+function sqlite3_vsnprintf(size : Integer; zName : PAnsiChar; const zFormat :
+  PAnsiChar; va_list : array of const) : PAnsiChar; cdecl; varargs;
+  external sqlite3_lib;
 
 { The SQLite core uses these three routines for all of its own internal memory 
   allocation needs. "Core" in the previous sentence does not include 
@@ -4760,12 +4767,12 @@ procedure sqlite3_progress_handler(db : psqlite3; nOps : Integer; xProgress :
   The sqlite3_open_v2() interface works like sqlite3_open() except that it 
   accepts two additional parameters for additional control over the new database 
   connection. }
-function sqlite3_open(const filename : PChar; ppDb : ppsqlite3) : Integer;
+function sqlite3_open(const filename : PAnsiChar; ppDb : ppsqlite3) : Integer;
   cdecl; external sqlite3_lib;
 function sqlite3_open16(const filename : Pointer; ppDb : ppsqlite3) : Integer;
   cdecl; external sqlite3_lib;
-function sqlite3_open_v2(const filename : PChar; ppDb : ppsqlite3; flags : 
-  Integer; const zVfs : PChar) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_open_v2(const filename : PAnsiChar; ppDb : ppsqlite3; flags :
+  Integer; const zVfs : PAnsiChar) : Integer; cdecl; external sqlite3_lib;
 
 { These are utility routines, useful to custom VFS implementations, that check 
   if a database file was a URI that contained a specific query parameter, and if 
@@ -4824,14 +4831,14 @@ function sqlite3_open_v2(const filename : PChar; ppDb : ppsqlite3; flags :
   parameters as were found on the main database file.
 
   See the URI filename documentation for additional information. }
-function sqlite3_uri_parameter(const zFilename : PChar; const zParam : PChar) :
-  PChar; cdecl; external sqlite3_lib;
-function sqlite3_uri_boolean(const zFile : PChar; const zParam : PChar; 
+function sqlite3_uri_parameter(const zFilename : PAnsiChar; const zParam :
+  PAnsiChar) : PAnsiChar; cdecl; external sqlite3_lib;
+function sqlite3_uri_boolean(const zFile : PAnsiChar; const zParam : PAnsiChar;
   bDefault : Integer) : Integer; cdecl; external sqlite3_lib;
-function sqlite3_uri_int64(const zFilename : PChar; const zParam : PChar;
-  bDflt : sqlite3_int64) : Integer; cdecl; external sqlite3_lib;
-function sqlite3_uri_key(const zFilename : PChar; N : Integer) : PChar; cdecl;
-  external sqlite3_lib;
+function sqlite3_uri_int64(const zFilename : PAnsiChar; const zParam :
+  PAnsiChar; bDflt : sqlite3_int64) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_uri_key(const zFilename : PAnsiChar; N : Integer) : PAnsiChar;
+  cdecl; external sqlite3_lib;
 
 { These routines are available to custom VFS implementations for translating 
   filenames between the main database file, the journal file, and the WAL file.
@@ -4854,11 +4861,11 @@ function sqlite3_uri_key(const zFilename : PChar; N : Integer) : PChar; cdecl;
   filename passed into the VFS from the SQLite core and F is not the return 
   value from sqlite3_db_filename(), then the result is undefined and is likely a 
   memory access violation. }
-function sqlite3_filename_database(const zFilename : PChar) : Pchar; cdecl;
-  external sqlite3_lib;
-function sqlite3_filename_journal(const zFilename : PChar) : PChar; cdecl;
-  external sqlite3_lib;
-function sqlite3_filename_wal(const zFilename : PChar) : PChar; cdecl;
+function sqlite3_filename_database(const zFilename : PAnsiChar) : PAnsiChar;
+  cdecl; external sqlite3_lib;
+function sqlite3_filename_journal(const zFilename : PAnsiChar) : PAnsiChar;
+  cdecl; external sqlite3_lib;
+function sqlite3_filename_wal(const zFilename : PAnsiChar) : PAnsiChar; cdecl;
   external sqlite3_lib;
 
 { If X is the name of a rollback or WAL-mode journal file that is passed into 
@@ -4871,7 +4878,7 @@ function sqlite3_filename_wal(const zFilename : PChar) : PChar; cdecl;
   flags parameter to xOpen contains one of the bits SQLITE_OPEN_MAIN_JOURNAL or 
   SQLITE_OPEN_WAL. Any other use of this routine results in undefined and 
   probably undesirable behavior. }
-function sqlite3_database_file_object(const zName : PChar) : psqlite3_file;
+function sqlite3_database_file_object(const zName : PAnsiChar) : psqlite3_file;
   cdecl; external sqlite3_lib;
 
 { These interfces are provided for use by VFS shim implementations and are not 
@@ -4914,10 +4921,10 @@ function sqlite3_database_file_object(const zName : PChar) : psqlite3_file;
   if the sqlite3_vfs.xOpen() method of a VFS has been called using Y, then the 
   corresponding [sqlite3_module.xClose() method should also be invoked prior to 
   calling sqlite3_free_filename(Y). }
-function sqlite3_create_filename(const zDatabase : PChar; const zJournal : 
-  PChar; const zWal : PChar; nParam : Integer; const azParam : PPChar) : PChar;
-  cdecl; external sqlite3_lib;
-procedure sqlite3_free_filename(databaseName : PChar); cdecl; 
+function sqlite3_create_filename(const zDatabase : PAnsiChar; const zJournal :
+  PAnsiChar; const zWal : PAnsiChar; nParam : Integer; const azParam : PPChar) :
+  PAnsiChar; cdecl; external sqlite3_lib;
+procedure sqlite3_free_filename(databaseName : PAnsiChar); cdecl;
   external sqlite3_lib;
 
 { If the most recent sqlite3_* API call associated with database connection D 
@@ -4962,9 +4969,9 @@ procedure sqlite3_free_filename(databaseName : PChar); cdecl;
 function sqlite3_errcode(db : psqlite3) : Integer; cdecl; external sqlite3_lib;
 function sqlite3_extended_errcode(db : psqlite3) : Integer; cdecl;
   external sqlite3_lib;
-function sqlite3_errmsg(db : psqlite3) : PChar; cdecl; external sqlite3_lib;
+function sqlite3_errmsg(db : psqlite3) : PAnsiChar; cdecl; external sqlite3_lib;
 function sqlite3_errmsg16(db : psqlite3) : Pointer; cdecl; external sqlite3_lib;
-function sqlite3_errstr(rc : Integer) : PChar; cdecl; external sqlite3_lib;
+function sqlite3_errstr(rc : Integer) : PAnsiChar; cdecl; external sqlite3_lib;
 
 { This interface allows the size of various constructs to be limited on a 
   connection by connection basis. The first parameter is the database connection 
@@ -5074,15 +5081,15 @@ function sqlite3_limit(db : psqlite3; id : Integer; newVal : Integer) : Integer;
   extra prepFlags parameter, which is a bit array consisting of zero or more of 
   the SQLITE_PREPARE_* flags. The sqlite3_prepare_v2() interface works exactly 
   the same as sqlite3_prepare_v3() with a zero prepFlags parameter. }
-function sqlite3_prepare(db : psqlite3; const zSql : PChar; nByte : Integer;
-  ppStmt : ppsqlite3_stmt; const pzTail : PPChar) : Integer; cdecl; 
-  external sqlite3_lib;
-function sqlite3_prepare_v2(db : psqlite3; const zSql : PChar; nByte : Integer;
+function sqlite3_prepare(db : psqlite3; const zSql : PAnsiChar; nByte : Integer;
   ppStmt : ppsqlite3_stmt; const pzTail : PPChar) : Integer; cdecl;
   external sqlite3_lib;
-function sqlite3_prepare_v3(db : psqlite3; const zSql : PChar; nByte : Integer;
-  prepFlags : Cardinal; ppStmt : ppsqlite3_stmt; const pzTail : PChar) : 
-  Integer; cdecl; external sqlite3_lib;
+function sqlite3_prepare_v2(db : psqlite3; const zSql : PAnsiChar; nByte :
+  Integer; ppStmt : ppsqlite3_stmt; const pzTail : PPChar) : Integer; cdecl;
+  external sqlite3_lib;
+function sqlite3_prepare_v3(db : psqlite3; const zSql : PAnsiChar; nByte :
+  Integer; prepFlags : Cardinal; ppStmt : ppsqlite3_stmt; const pzTail :
+  PAnsiChar) : Integer; cdecl; external sqlite3_lib;
 function sqlite3_prepare16(db : psqlite3; const zSql : Pointer; nBytes : 
   Integer; ppStmt : ppsqlite3_stmt; const pzTail : PPointer) : Integer; cdecl;
   external sqlite3_lib;
@@ -5122,11 +5129,11 @@ function sqlite3_prepare16_v3(db : psqlite3; const zSql : Pointer; nByte :
   finalized. The string returned by sqlite3_expanded_sql(P), on the other hand, 
   is obtained from sqlite3_malloc() and must be free by the application by 
   passing it to sqlite3_free(). }
-function sqlite3_sql(pStmt : psqlite3_stmt) : PChar; cdecl; 
+function sqlite3_sql(pStmt : psqlite3_stmt) : PAnsiChar; cdecl;
   external sqlite3_lib;
-function sqlite3_expanded_sql(pStmt : psqlite3_stmt) : PChar; cdecl;
+function sqlite3_expanded_sql(pStmt : psqlite3_stmt) : PAnsiChar; cdecl;
   external sqlite3_lib;
-function sqlite3_normalized_sql(pStmt : psqlite3_stmt) : PChar; cdecl;
+function sqlite3_normalized_sql(pStmt : psqlite3_stmt) : PAnsiChar; cdecl;
   external sqlite3_lib;
 
 { The sqlite3_stmt_readonly(X) interface returns true (non-zero) if and only if 
@@ -5288,19 +5295,19 @@ function sqlite3_bind_int64(pStmt : psqlite3_stmt; i : Integer; iValue :
 function sqlite3_bind_null(pStmt : psqlite3_stmt; i : Integer) : Integer;
   cdecl; external sqlite3_lib;
 function sqlite3_bind_text(pStmt : psqlite3_stmt; i : Integer; const zData :
-  PChar; nData : Integer; xDel : xDel_callback) : Integer; cdecl; 
+  PAnsiChar; nData : Integer; xDel : xDel_callback) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_bind_text16(pStmt : psqlite3_stmt; i : Integer; const zData :
   Pointer; nData : Integer; xDel : xDel_callback) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_bind_text64(pStmt : psqlite3_stmt; i : Integer; const zData :
-  PChar; nData : sqlite3_uint64; xDel : xDel_callback; encoding : Byte) : 
+  PAnsiChar; nData : sqlite3_uint64; xDel : xDel_callback; encoding : Byte) :
   Integer; cdecl; external sqlite3_lib;
 function sqlite3_bind_value(pStmt : psqlite3_stmt; i : Integer; const pValue :
   psqlite3_value) : Integer; cdecl; external sqlite3_lib;
 function sqlite3_bind_pointer(pStmt : psqlite3_stmt; i : Integer; pPtr : 
-  Pointer; const zPTtype : PChar; xDestructor : xDestructor_callback) : Integer;
-  cdecl; external sqlite3_lib;
+  Pointer; const zPTtype : PAnsiChar; xDestructor : xDestructor_callback) :
+  Integer; cdecl; external sqlite3_lib;
 function sqlite3_bind_zeroblob(pStmt : psqlite3_stmt; i : Integer; n : Integer) 
   : Integer; cdecl; external sqlite3_lib;
 function sqlite3_bind_zeroblob64(pStmt : psqlite3_stmt; i : Integer; n :
@@ -5333,7 +5340,7 @@ function sqlite3_bind_parameter_count(pStmt : psqlite3_stmt) : Integer; cdecl;
   parameter was originally specified as UTF-16 in sqlite3_prepare16(), 
   sqlite3_prepare16_v2(), or sqlite3_prepare16_v3(). } 
 function sqlite3_bind_parameter_name(pStmt : psqlite3_stmt; i : Integer) : 
-  PChar; cdecl; external sqlite3_lib;
+  PAnsiChar; cdecl; external sqlite3_lib;
 
 { Return the index of an SQL parameter given its name. The index value returned 
   is suitable for use as the second parameter to sqlite3_bind(). A zero is 
@@ -5341,7 +5348,7 @@ function sqlite3_bind_parameter_name(pStmt : psqlite3_stmt; i : Integer) :
   in UTF-8 even if the original statement was prepared from UTF-16 text using 
   sqlite3_prepare16_v2() or sqlite3_prepare16_v3(). }
 function sqlite3_bind_parameter_index(pStmt : psqlite3_stmt; const zName : 
-  PChar) : Integer; cdecl; external sqlite3_lib;
+  PAnsiChar) : Integer; cdecl; external sqlite3_lib;
 
 { Contrary to the intuition of many, sqlite3_reset() does not reset the bindings 
   on a prepared statement. Use this routine to reset all host parameters to 
@@ -5378,8 +5385,8 @@ function sqlite3_column_count(pStmt : psqlite3_stmt) : Integer; cdecl;
   The name of a result column is the value of the "AS" clause for that column, 
   if there is an AS clause. If there is no AS clause then the name of the column 
   is unspecified and may change from one release of SQLite to the next. }
-function sqlite3_column_name(pStmt : psqlite3_stmt; N : Integer) : PChar; cdecl;
-  external sqlite3_lib;
+function sqlite3_column_name(pStmt : psqlite3_stmt; N : Integer) : PAnsiChar;
+  cdecl; external sqlite3_lib;
 function sqlite3_column_name16(pStmt : psqlite3_stmt; N : Integer) : Pointer;
   cdecl; external sqlite3_lib;
 
@@ -5417,15 +5424,15 @@ function sqlite3_column_name16(pStmt : psqlite3_stmt; N : Integer) : Pointer;
   same prepared statement and result column at the same time then the results 
   are undefined. }
 function sqlite3_column_database_name(pStmt : psqlite3_stmt; N : Integer) : 
-  PChar; cdecl; external sqlite3_lib;
+  PAnsiChar; cdecl; external sqlite3_lib;
 function sqlite3_column_database_name16(pStmt : psqlite3_stmt; N : Integer) :
   Pointer; cdecl; external sqlite3_lib;
-function sqlite3_column_table_name(pStmt : psqlite3_stmt; N : Integer) : PChar;
-  cdecl; external sqlite3_lib;
+function sqlite3_column_table_name(pStmt : psqlite3_stmt; N : Integer) :
+  PAnsiChar; cdecl; external sqlite3_lib;
 function sqlite3_column_table_name16(pStmt : psqlite3_stmt; N : Integer) :
   Pointer; cdecl; external sqlite3_lib;
-function sqlite3_column_origin_name(pStmt : psqlite3_stmt; N : Integer) : PChar;
-  cdecl; external sqlite3_lib;
+function sqlite3_column_origin_name(pStmt : psqlite3_stmt; N : Integer) :
+  PAnsiChar; cdecl; external sqlite3_lib;
 function sqlite3_column_origin_name16(pStmt : psqlite3_stmt; N : Integer) : 
   Pointer; cdecl; external sqlite3_lib;
 
@@ -5441,8 +5448,8 @@ function sqlite3_column_origin_name16(pStmt : psqlite3_stmt; N : Integer) :
   of the declared type. SQLite is strongly typed, but the typing is dynamic not 
   static. Type is associated with individual values, not with the containers 
   used to hold those values. }
-function sqlite3_column_decltype(pStmt : psqlite3_stmt; N : Integer) : PChar;
-  cdecl; external sqlite3_lib;
+function sqlite3_column_decltype(pStmt : psqlite3_stmt; N : Integer) :
+  PAnsiChar; cdecl; external sqlite3_lib;
 function sqlite3_column_decltype16(pStmt : psqlite3_stmt; N : Integer) : 
   Pointer; cdecl; external sqlite3_lib;
 
@@ -5785,7 +5792,7 @@ function sqlite3_reset(pStmt : psqlite3_stmt) : Integer; cdecl;
   An application-defined function is permitted to call other SQLite interfaces. 
   However, such calls must not close the database connection nor finalize or 
   reset the prepared statement in which the function is running. }
-function sqlite3_create_function(db : psqlite3; const zFunctionName : PChar; 
+function sqlite3_create_function(db : psqlite3; const zFunctionName : PAnsiChar;
   nArg : Integer; eTextRep : Integer; pApp : Pointer; xFunc : xFunc_callback;
   xStep : xStep_callback; xFinal : xFinal_callback) : Integer; cdecl;
   external sqlite3_lib;
@@ -5793,12 +5800,12 @@ function sqlite3_create_function16(db : sqlite3; const zFunctionName : Pointer;
   nArg : Integer; eTextRep : Integer; pApp : Pointer; xFunc : xFunc_callback;
   xStep : xStep_callback; xFinal : xFinal_callback) : Integer; cdecl;
   external sqlite3_lib;
-function sqlite3_create_function_v2(db : psqlite3; const zFunctionName : PChar;
-  nArg : Integer; eTextRep : Integer; pApp : Pointer; xFunc : xFunc_callback;
-  xStep : xStep_callback; xFinal : xFinal_callback; xDestroy : 
+function sqlite3_create_function_v2(db : psqlite3; const zFunctionName :
+  PAnsiChar; nArg : Integer; eTextRep : Integer; pApp : Pointer; xFunc :
+  xFunc_callback; xStep : xStep_callback; xFinal : xFinal_callback; xDestroy :
   xDestroy_callback) : Integer; cdecl; external sqlite3_lib;
 function sqlite3_create_window_function(db : psqlite3; const zFunctionName :
-  PChar; nArg : Integer; eTextRep : Integer; pApp : Pointer; xStep :
+  PAnsiChar; nArg : Integer; eTextRep : Integer; pApp : Pointer; xStep :
   xStep_callback; xFinal : xFinal_callback; xValue : xValue_callback; xInverse :
   xInverse_callback; xDestroy : xDestroy_callback) : Integer; cdecl;
   external sqlite3_lib;
@@ -5913,8 +5920,8 @@ function sqlite3_value_int(pVal : psqlite3_value) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_value_int64(pVal : psqlite3_value) : sqlite3_int64; cdecl;
   external sqlite3_lib;
-function sqlite3_value_pointer(pVal : psqlite3_value; const zPType : PChar) :
-  Pointer; cdecl; external sqlite3_lib;
+function sqlite3_value_pointer(pVal : psqlite3_value; const zPType : PAnsiChar)
+  : Pointer; cdecl; external sqlite3_lib;
 function sqlite3_value_text(pVal : psqlite3_value) : PByte; cdecl;
   external sqlite3_lib;
 function sqlite3_value_text16(pVal : psqlite3_value) : Pointer; cdecl;
@@ -6196,7 +6203,7 @@ procedure sqlite3_result_blob64(pCtx : psqlite3_context; const z : Pointer;
   n : sqlite3_uint64; xDel : xDel_callback); cdecl; external sqlite3_lib;
 procedure sqlite3_result_double(pCtx : psqlite3_context; rVal : Double); cdecl;
   external sqlite3_lib;
-procedure sqlite3_result_error(pCtx : psqlite3_context; const z : PChar; n :
+procedure sqlite3_result_error(pCtx : psqlite3_context; const z : PAnsiChar; n :
   Integer); cdecl; external sqlite3_lib;
 procedure sqlite3_result_error16(pCtx : psqlite3_context; const z : Pointer;
   n : Integer); cdecl; external sqlite3_lib;
@@ -6212,9 +6219,9 @@ procedure sqlite3_result_int64(pCtx : psqlite3_context; iVal : sqlite3_int64);
   cdecl; external sqlite3_lib;
 procedure sqlite3_result_null(pCtx : psqlite3_context); cdecl; 
   external sqlite3_lib;
-procedure sqlite3_result_text(pCtx : psqlite3_context; const z : PChar; n :
+procedure sqlite3_result_text(pCtx : psqlite3_context; const z : PAnsiChar; n :
   Integer; xDel : xDel_callback); cdecl; external sqlite3_lib;
-procedure sqlite3_result_text64(pCtx : psqlite3_context; const z : PChar;
+procedure sqlite3_result_text64(pCtx : psqlite3_context; const z : PAnsiChar;
   n : sqlite3_uint64; xDel : xDel_callback; enc : Byte); cdecl;
   external sqlite3_lib;
 procedure sqlite3_result_text16(pCtx : psqlite3_context; const z : Pointer;
@@ -6226,7 +6233,7 @@ procedure sqlite3_result_text16be(pCtx : psqlite3_context; const z : Pointer;
 procedure sqlite3_result_value(pCtx : psqlite3_context; pValue : 
   psqlite3_value); cdecl; external sqlite3_lib;
 procedure sqlite3_result_pointer(pCtx : psqlite3_context;  pPtr : Pointer;
-  const zPType : PChar; xDestructor : xDestructor_callback); cdecl;
+  const zPType : PAnsiChar; xDestructor : xDestructor_callback); cdecl;
   external sqlite3_lib;
 procedure sqlite3_result_zeroblob(pCtx : psqlite3_context; n : Integer); cdecl;
   external sqlite3_lib;
@@ -6306,10 +6313,10 @@ procedure sqlite3_result_subtype(pCtx : psqlite3_context; eSubtype : Cardinal);
   it for them. This is different from every other SQLite interface. The 
   inconsistency is unfortunate but cannot be changed without breaking backwards 
   compatibility. }
-function sqlite3_create_collation(db : psqlite3; const zName : PChar; eTextRep :
-  Integer; pArg : Pointer; xCompare : xCompare_callback) : Integer; cdecl;
-  external sqlite3_lib;
-function sqlite3_create_collation_v2(db : psqlite3; const zName : PChar;
+function sqlite3_create_collation(db : psqlite3; const zName : PAnsiChar;
+  eTextRep : Integer; pArg : Pointer; xCompare : xCompare_callback) : Integer;
+  cdecl; external sqlite3_lib;
+function sqlite3_create_collation_v2(db : psqlite3; const zName : PAnsiChar;
   eTextRep : Integer; pArg : Pointer; xCompare : xCompare_callback; xDestroy :
   xDestroy_callback) : Integer; cdecl; external sqlite3_lib;
 function sqlite3_create_collation16(db : psqlite3; const zName : Pointer;
@@ -6344,7 +6351,7 @@ function sqlite3_collation_needed16(db : psqlite3; pColNeededArg : Pointer;
 
 { Specify the activation key for a CEROD database. Unless activated, none of the 
   CEROD routines will work. }
-procedure sqlite3_activate_cerod(const zPassPhrase : PChar); cdecl;
+procedure sqlite3_activate_cerod(const zPassPhrase : PAnsiChar); cdecl;
   external sqlite3_lib;
 
 { The sqlite3_sleep() function causes the current thread to suspend execution 
@@ -6377,8 +6384,8 @@ function sqlite3_sleep(ms : Integer) : Integer; cdecl; external sqlite3_lib;
   the string parameter must be UTF-8 or UTF-16, respectively. }
 function sqlite3_win32_set_directory(type_ : LongWord; zValue : Pointer) :
   Integer; cdecl; external sqlite3_lib;
-function sqlite3_win32_set_directory8(type_ : LongWord; const zValue : PChar) :
-  Integer; cdecl; external sqlite3_lib;
+function sqlite3_win32_set_directory8(type_ : LongWord; const zValue :
+  PAnsiChar) : Integer; cdecl; external sqlite3_lib;
 function sqlite3_win32_set_directory16(type_ : LongWord; const zValue : Pointer)
   : Integer; cdecl; external sqlite3_lib;
 
@@ -6430,14 +6437,14 @@ function sqlite3_db_handle(pStmt : psqlite3_stmt) : psqlite3; cdecl;
     sqlite3_filename_database()
     sqlite3_filename_journal()
     sqlite3_filename_wal() }
-function sqlite3_db_filename(db : psqlite3; const zDbName : PChar) : PChar;
-  external sqlite3_lib;
+function sqlite3_db_filename(db : psqlite3; const zDbName : PAnsiChar) :
+  PAnsiChar; external sqlite3_lib;
 
 { The sqlite3_db_readonly(D,N) interface returns 1 if the database N of 
   connection D is read-only, 0 if it is read/write, or -1 if N is not the name 
   of a database on connection D. }
-function sqlite3_db_readonly(db : psqlite3; const zDbName : PChar) : Integer;
-  cdecl; external sqlite3_lib;
+function sqlite3_db_readonly(db : psqlite3; const zDbName : PAnsiChar) :
+  Integer; cdecl; external sqlite3_lib;
 
 { This interface returns a pointer to the next prepared statement after pStmt 
   associated with the database connection pDb. If pStmt is NULL then this 
@@ -6679,10 +6686,10 @@ function sqlite3_hard_heap_limit64(N : sqlite3_int64) : sqlite3_int64; cdecl;
   This function causes all database schemas to be read from disk and parsed, if 
   that has not already been done, and returns an error if any errors are 
   encountered while loading the schema. }
-function sqlite3_table_column_metadata(db : psqlite3; const zDbName : PChar;
-  const zTableName : PChar; const zColumnName : PChar; pzDataType : PPChar;
-  pzCollSeq : PPChar; pNotNull : PInteger; pPrimaryKey : PInteger; pAutoinc :
-  PInteger) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_table_column_metadata(db : psqlite3; const zDbName : PAnsiChar;
+  const zTableName : PAnsiChar; const zColumnName : PAnsiChar; pzDataType :
+  PPChar; pzCollSeq : PPChar; pNotNull : PInteger; pPrimaryKey : PInteger;
+  pAutoinc : PInteger) : Integer; cdecl; external sqlite3_lib;
 
 { This interface loads an SQLite extension library from the named file.
 
@@ -6714,8 +6721,8 @@ function sqlite3_table_column_metadata(db : psqlite3; const zDbName : PChar;
   avoided. This will keep the SQL function load_extension() disabled and prevent 
   SQL injections from giving attackers access to extension loading 
   capabilities. }
-function sqlite3_load_extension(db : psqlite3; const zFile : PChar; 
-  const zProc : PChar; pzErrMsg : PPChar) : Integer; cdecl; 
+function sqlite3_load_extension(db : psqlite3; const zFile : PAnsiChar;
+  const zProc : PAnsiChar; pzErrMsg : PPChar) : Integer; cdecl;
   external sqlite3_lib;
 
 { So as not to open security holes in older applications that are unprepared to 
@@ -6795,12 +6802,12 @@ procedure sqlite3_reset_auto_extension; cdecl; external sqlite3_lib;
   If the third parameter (the pointer to the sqlite3_module object) is NULL then 
   no new module is create and any existing modules with the same name are 
   dropped. }
-function sqlite3_create_module(db : psqlite3; const zName : PChar; const p :
+function sqlite3_create_module(db : psqlite3; const zName : PAnsiChar; const p :
   psqlite3_module; pClientData : Pointer) : Integer; cdecl; 
   external sqlite3_lib;
-function sqlite3_create_module_v2(db : psqlite3; const zName : PChar; const p :
-  psqlite3_module; pClientData : Pointer; xDestroy : xDestroy_callback) : 
-  Integer; cdecl; external sqlite3_lib;
+function sqlite3_create_module_v2(db : psqlite3; const zName : PAnsiChar;
+  const p : psqlite3_module; pClientData : Pointer; xDestroy :
+  xDestroy_callback) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_drop_modules(D,L) interface removes all virtual table modules from 
   database connection D except those named on list L. The L parameter must be 
@@ -6813,7 +6820,7 @@ function sqlite3_drop_modules(db : psqlite3; const azKeep : PPChar) : Integer;
  { The xCreate and xConnect methods of a virtual table module call this 
   interface to declare the format (the names and datatypes of the columns) of 
   the virtual tables they implement. }
-function sqlite3_declare_vtab(db : psqlite3; const zSQL : PChar) : Integer;
+function sqlite3_declare_vtab(db : psqlite3; const zSQL : PAnsiChar) : Integer;
   cdecl; external sqlite3_lib;
 
 { Virtual tables can provide alternative implementations of functions using the 
@@ -6826,7 +6833,7 @@ function sqlite3_declare_vtab(db : psqlite3; const zSQL : PChar) : Integer;
   always causes an exception to be thrown. So the new function is not good for 
   anything by itself. Its only purpose is to be a placeholder function that can 
   be overloaded by a virtual table. }
-function sqlite3_overload_function(db : psqlite3; const zFuncName : PChar; 
+function sqlite3_overload_function(db : psqlite3; const zFuncName : PAnsiChar;
   nArg : Integer) : Integer; cdecl; external sqlite3_lib;
 
 { This interfaces opens a handle to the BLOB located in row iRow, column 
@@ -6891,9 +6898,9 @@ function sqlite3_overload_function(db : psqlite3; const zFuncName : PChar;
 
   To avoid a resource leak, every open BLOB handle should eventually be released 
   by a call to sqlite3_blob_close(). }
-function sqlite3_blob_open(db : psqlite3; const zDb : PChar; const zTable :
-  PChar; const zColumn : PChar; iRow : sqlite3_int64; flags : Integer; ppBlob :
-    ppsqlite3_blob) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_blob_open(db : psqlite3; const zDb : PAnsiChar; const zTable :
+  PAnsiChar; const zColumn : PAnsiChar; iRow : sqlite3_int64; flags : Integer;
+  ppBlob : ppsqlite3_blob) : Integer; cdecl; external sqlite3_lib;
 
 { This function is used to move an existing BLOB handle so that it points to a 
   different row of the same database table. The new row is identified by the 
@@ -7023,7 +7030,7 @@ function sqlite3_blob_write(pBlob : psqlite3_blob; const z : Pointer; n :
   Unregister a VFS with the sqlite3_vfs_unregister() interface. If the default 
   VFS is unregistered, another VFS is chosen as the default. The choice for the 
   new VFS is arbitrary. }
-function sqlite3_vfs_find(const zVfsName : PChar) : psqlite3_vfs; cdecl;
+function sqlite3_vfs_find(const zVfsName : PAnsiChar) : psqlite3_vfs; cdecl;
   external sqlite3_lib;
 function sqlite3_vfs_register(pVfs : psqlite3_vfs; makeDflt : Integer) : 
   Integer; cdecl; external sqlite3_lib;
@@ -7192,7 +7199,7 @@ function sqlite3_db_mutex(db : psqlite3) : psqlite3_mutex; cdecl;
   xFileControl method might also return SQLITE_ERROR. There is no way to 
   distinguish between an incorrect zDbName and an SQLITE_ERROR return from the 
   underlying xFileControl method. }
-function sqlite3_file_control(db : psqlite3; const zDbName : PChar; op :
+function sqlite3_file_control(db : psqlite3; const zDbName : PAnsiChar; op :
   Integer; pArg : Pointer) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_test_control() interface is used to read out internal state of 
@@ -7253,8 +7260,8 @@ function sqlite3_test_control(op : Integer) : Integer; cdecl; varargs;
 function sqlite3_keyword_count : Integer; cdecl; external sqlite3_lib;
 function sqlite3_keyword_name(i : Integer; const pzName : PPChar; pnName :
   PInteger) : Integer; cdecl; external sqlite3_lib;
-function sqlite3_keyword_check(const zName : PChar; nName : Integer) : Integer;
-  cdecl; external sqlite3_lib;
+function sqlite3_keyword_check(const zName : PAnsiChar; nName : Integer) :
+  Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_str_new(D) interface allocates and initializes a new sqlite3_str 
   object. To avoid memory leaks, the object returned by sqlite3_str_new() must 
@@ -7283,7 +7290,7 @@ function sqlite3_str_new(db : psqlite3) : psqlite3_str; cdecl;
   encountered during construction of the string. The sqlite3_str_finish(X) 
   interface will also return a NULL pointer if the string in sqlite3_str object
   X is zero bytes long. }
-function sqlite3_str_finish(p : psqlite3_str) :  PChar; cdecl;
+function sqlite3_str_finish(p : psqlite3_str) :  PAnsiChar; cdecl;
   external sqlite3_lib;
 
 { These interfaces add content to an sqlite3_str object previously obtained from 
@@ -7311,13 +7318,13 @@ function sqlite3_str_finish(p : psqlite3_str) :  PChar; cdecl;
   These methods do not return a result code. If an error occurs, that fact is 
   recorded in the sqlite3_str object and can be recovered by a subsequent call 
   to sqlite3_str_errcode(X). }
-procedure sqlite3_str_appendf(p : psqlite3_str; const zFormat : PChar); cdecl;
-  varargs; external sqlite3_lib;
-procedure sqlite3_str_vappendf(p : psqlite3_str; const zFormat : PChar; 
+procedure sqlite3_str_appendf(p : psqlite3_str; const zFormat : PAnsiChar);
+  cdecl; varargs; external sqlite3_lib;
+procedure sqlite3_str_vappendf(p : psqlite3_str; const zFormat : PAnsiChar;
   va_list : array of const); cdecl; external sqlite3_lib;
-procedure sqlite3_str_append(p : psqlite3_str; const zIn : PChar; N : Integer);
-  cdecl; external sqlite3_lib;
-procedure sqlite3_str_appendall(p : psqlite3_str; const zIn : PChar); cdecl;
+procedure sqlite3_str_append(p : psqlite3_str; const zIn : PAnsiChar; N :
+  Integer); cdecl; external sqlite3_lib;
+procedure sqlite3_str_appendall(p : psqlite3_str; const zIn : PAnsiChar); cdecl;
   external sqlite3_lib;
 procedure sqlite3_str_appendchar(p : psqlite3_str; N : Integer; C : char);
   cdecl; external sqlite3_lib;
@@ -7348,7 +7355,7 @@ function sqlite3_str_errcode(p : psqlite3_str) : Integer; cdecl;
   external sqlite3_lib;
 function sqlite3_str_length(p : psqlite3_str) : Integer; cdecl;
   external sqlite3_lib;
-function sqlite3_str_value(p : psqlite3_str) : PChar; cdecl;
+function sqlite3_str_value(p : psqlite3_str) : PAnsiChar; cdecl;
   external sqlite3_lib;
 
 { These interfaces are used to retrieve runtime status information about the 
@@ -7450,8 +7457,8 @@ function sqlite3_stmt_status(pStmt : psqlite3_stmt; op : Integer; resetFlg :
   sqlite3_backup_init() returns a pointer to an sqlite3_backup object. The 
   sqlite3_backup object may be used with the sqlite3_backup_step() and 
   sqlite3_backup_finish() functions to perform the specified backup operation. }
-function sqlite3_backup_init(pDest : psqlite3; const zDestName : PChar; 
-  pSource : psqlite3; const zSourceName : PChar) : psqlite3_backup; cdecl;
+function sqlite3_backup_init(pDest : psqlite3; const zDestName : PAnsiChar;
+  pSource : psqlite3; const zSourceName : PAnsiChar) : psqlite3_backup; cdecl;
   external sqlite3_lib;
 
 { Function sqlite3_backup_step(B,N) will copy up to N pages between the source 
@@ -7680,9 +7687,9 @@ function sqlite3_unlock_notify(pBlocked : psqlite3; xNotify : xNotify_callback;
   extensions to compare the contents of two buffers containing UTF-8 strings in 
   a case-independent fashion, using the same definition of "case independence" 
   that SQLite uses internally when comparing identifiers. }
-function sqlite3_stricmp(const zLeft : PChar; const zRight : PChar) : Integer;
-  cdecl; external sqlite3_lib;
-function sqlite3_strnicmp(const zLeft : Pchar; const zRight : PChar; N : 
+function sqlite3_stricmp(const zLeft : PAnsiChar; const zRight : PAnsiChar) :
+  Integer; cdecl; external sqlite3_lib;
+function sqlite3_strnicmp(const zLeft : PAnsiChar; const zRight : PAnsiChar; N :
   Integer) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_strglob(P,X) interface returns zero if and only if string X 
@@ -7693,8 +7700,8 @@ function sqlite3_strnicmp(const zLeft : Pchar; const zRight : PChar; N :
 
   Note that this routine returns zero on a match and non-zero if the strings do 
   not match, the same as sqlite3_stricmp() and sqlite3_strnicmp(). }
-function sqlite3_strglob(const zGlob : PChar; const zStr : PChar) : Integer;
-  cdecl; external sqlite3_lib;
+function sqlite3_strglob(const zGlob : PAnsiChar; const zStr : PAnsiChar) :
+  Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_strlike(P,X,E) interface returns zero if and only if string X 
   matches the LIKE pattern P with escape character E. The definition of LIKE 
@@ -7710,7 +7717,7 @@ function sqlite3_strglob(const zGlob : PChar; const zStr : PChar) : Integer;
 
   Note that this routine returns zero on a match and non-zero if the strings do 
   not match, the same as sqlite3_stricmp() and sqlite3_strnicmp(). }
-function sqlite3_strlike(const zGlob : PChar; const zStr : PChar; cEsc : 
+function sqlite3_strlike(const zGlob : PAnsiChar; const zStr : PAnsiChar; cEsc :
   Cardinal) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_log() interface writes a message into the error log established by 
@@ -7729,7 +7736,7 @@ function sqlite3_strlike(const zGlob : PChar; const zStr : PChar; cEsc :
   will not use dynamically allocated memory. The log message is stored in a 
   fixed-length buffer on the stack. If the log message is longer than a few 
   hundred characters, it will be truncated to the length of the buffer. }
-procedure sqlite3_log(iErrCode : Integer; const zFormat : PChar); cdecl; 
+procedure sqlite3_log(iErrCode : Integer; const zFormat : PAnsiChar); cdecl;
   varargs; external sqlite3_lib;
 
 { The sqlite3_wal_hook() function is used to register a callback that is invoked 
@@ -7798,7 +7805,7 @@ function sqlite3_wal_autocheckpoint(db : psqlite3; N : Integer) : Integer;
   convenience for applications that need to manually start a callback but which 
   do not need the full power (and corresponding complication) of 
   sqlite3_wal_checkpoint_v2(). }
-function sqlite3_wal_checkpoint(db : psqlite3; const zDb : PChar) : Integer;
+function sqlite3_wal_checkpoint(db : psqlite3; const zDb : PAnsiChar) : Integer;
   cdecl; external sqlite3_lib;
 
 { The sqlite3_wal_checkpoint_v2(D,X,M,L,C) interface runs a checkpoint operation 
@@ -7853,7 +7860,7 @@ function sqlite3_wal_checkpoint(db : psqlite3; const zDb : PChar) : Integer;
 
   The PRAGMA wal_checkpoint command can be used to invoke this interface from 
   SQL. }
-function sqlite3_wal_checkpoint_v2(db : psqlite3; const zDb : PChar; eMode :
+function sqlite3_wal_checkpoint_v2(db : psqlite3; const zDb : PAnsiChar; eMode :
   Integer; pnLog : PInteger; pnCkpt : Integer) : Integer; cdecl;
   external sqlite3_lib;
 
@@ -7905,7 +7912,7 @@ function sqlite3_vtab_nochange(pContext : psqlite3_context) : Integer; cdecl;
   passed to xBestIndex. This function returns a pointer to a buffer containing 
   the name of the collation sequence for the corresponding constraint. }
 function sqlite3_vtab_collation(pIdxInfo : psqlite3_index_info; iCons : Integer)
-  : PChar; cdecl; external sqlite3_lib;
+  : PAnsiChar; cdecl; external sqlite3_lib;
 
 { This interface returns information about the predicted and measured 
   performance for pStmt. Advanced applications can use this interface to compare 
@@ -8087,8 +8094,8 @@ function sqlite3_system_errno(db : psqlite3) : Integer; cdecl;
 
   The sqlite3_snapshot_get() interface is only available when the 
   SQLITE_ENABLE_SNAPSHOT compile-time option is used. }
-function sqlite3_snapshot_get(db : psqlite3; const zSchema : PChar; ppSnapshot :
-  ppsqlite3_snapshot) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_snapshot_get(db : psqlite3; const zSchema : PAnsiChar;
+  ppSnapshot : ppsqlite3_snapshot) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_snapshot_open(D,S,P) interface either starts a new read 
   transaction or upgrades an existing one for schema S of database connection D 
@@ -8126,8 +8133,8 @@ function sqlite3_snapshot_get(db : psqlite3; const zSchema : PChar; ppSnapshot :
 
   The sqlite3_snapshot_open() interface is only available when the 
   SQLITE_ENABLE_SNAPSHOT compile-time option is used. }
-function sqlite3_snapshot_open(db : psqlite3; const zSchema : Pchar; pSnapshot :
-  psqlite3_snapshot) : Integer; cdecl; external sqlite3_lib;
+function sqlite3_snapshot_open(db : psqlite3; const zSchema : PAnsiChar;
+  pSnapshot : psqlite3_snapshot) : Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_snapshot_free(P) interface destroys sqlite3_snapshot P. The 
   application must eventually free every sqlite3_snapshot object using this 
@@ -8177,8 +8184,8 @@ function sqlite3_snapshot_cmp(p1 : psqlite3_snapshot; p2 : psqlite3_snapshot) :
 
   This interface is only available if SQLite is compiled with the 
   SQLITE_ENABLE_SNAPSHOT option. }
-function sqlite3_snapshot_recover(db : psqlite3; const zDb : PChar) : Integer;
-  cdecl; external sqlite3_lib;
+function sqlite3_snapshot_recover(db : psqlite3; const zDb : PAnsiChar) :
+  Integer; cdecl; external sqlite3_lib;
 
 { The sqlite3_serialize(D,S,P,F) interface returns a pointer to memory that is a 
   serialization of the S database on database connection D. If P is not a NULL 
@@ -8209,7 +8216,7 @@ function sqlite3_snapshot_recover(db : psqlite3; const zDb : PChar) : Integer;
 
   This interface is only available if SQLite is compiled with the 
   SQLITE_ENABLE_DESERIALIZE option. }
-function sqlite3_serialize(db : psqlite3; const zSchema : PChar; piSize :
+function sqlite3_serialize(db : psqlite3; const zSchema : PAnsiChar; piSize :
   psqlite3_int64; mFlags : Cardinal) : PByte; cdecl; external sqlite3_lib;
 
 { The sqlite3_deserialize(D,S,P,N,M,F) interface causes the database connection 
@@ -8235,7 +8242,7 @@ function sqlite3_serialize(db : psqlite3; const zSchema : PChar; piSize :
 
   This interface is only available if SQLite is compiled with the 
   SQLITE_ENABLE_DESERIALIZE option. }
-function sqlite3_deserialize(db : psqlite3; const zSchema : PChar; pData :
+function sqlite3_deserialize(db : psqlite3; const zSchema : PAnsiChar; pData :
   PByte; szDb : sqlite3_int64; szBuf : sqlite3_int64; mFlags : Cardinal) :
   Integer; cdecl; external sqlite3_lib;
 
@@ -8243,7 +8250,7 @@ function sqlite3_deserialize(db : psqlite3; const zSchema : PChar; pData :
   geometry query as follows:
 
   SELECT ... FROM <rtree> WHERE <rtree col> MATCH $zGeom(... params ...) }
-function sqlite3_rtree_geometry_callback(db : psqlite3; const zGeom : PChar;
+function sqlite3_rtree_geometry_callback(db : psqlite3; const zGeom : PAnsiChar;
   xGeom : xGeom_callback; pContext : Pointer) : Integer; cdecl; 
   external sqlite3_lib;
 
@@ -8273,7 +8280,7 @@ function sqlite3_rtree_geometry_callback(db : psqlite3; const zGeom : PChar;
   zDb, where zDb is either "main", or "temp", or the name of an attached 
   database. It is not an error if database zDb is not attached to the database 
   when the session object is created. }
-function sqlite3session_create(db : psqlite3; const zDb : PChar; ppSession :
+function sqlite3session_create(db : psqlite3; const zDb : PAnsiChar; ppSession :
   ppsqlite3_session) : Integer; cdecl; external sqlite3_lib;
 
 { Delete a session object previously allocated using sqlite3session_create(). 
@@ -8347,8 +8354,8 @@ function sqlite3session_indirect(pSession : psqlite3_session; bIndirect :
 
   SQLITE_OK is returned if the call completes without error. Or, if an error 
   occurs, an SQLite error code (e.g. SQLITE_NOMEM) is returned. }
-function sqlite3session_attach(pSession : psqlite3_session; const zTab : PChar)
-  : Integer; cdecl; external sqlite3_lib;
+function sqlite3session_attach(pSession : psqlite3_session; const zTab :
+  PAnsiChar) : Integer; cdecl; external sqlite3_lib;
 
 { The second argument (xFilter) is the "filter callback". For changes to rows in 
   tables that are not attached to the Session object, the filter is called to 
@@ -8498,8 +8505,9 @@ function sqlite3session_changeset(pSession : psqlite3_session; pnChangeset :
   error code. In this case, if argument pzErrMsg is not NULL, *pzErrMsg may be 
   set to point to a buffer containing an English language error message. It is 
   the responsibility of the caller to free this buffer using sqlite3_free(). }
-function sqlite3session_diff(pSession : psqlite3_session; const zFromDb : PChar;
-  const zTbl : PChar; pzErrMag : PPChar) : Integer; cdecl; external sqlite3_lib;
+function sqlite3session_diff(pSession : psqlite3_session; const zFromDb :
+  PAnsiChar; const zTbl : PAnsiChar; pzErrMag : PPChar) : Integer; cdecl;
+  external sqlite3_lib;
 
 { The differences between a patchset and a changeset are that:
 
@@ -8610,7 +8618,7 @@ function sqlite3changeset_next(pIter : psqlite3_changeset_iter) : Integer;
   error code is returned. The values of the output variables may not be trusted 
   in this case. }
 function sqlite3changeset_op(pIter : psqlite3_changeset_iter; const pzTab : 
-  PChar; pnCol : PInteger; pOp : PInteger; pbIdirect : PInteger) : Integer;
+  PAnsiChar; pnCol : PInteger; pOp : PInteger; pbIdirect : PInteger) : Integer;
   cdecl; external sqlite3_lib;
 
 { For each modified table, a changeset includes the following:
@@ -9123,7 +9131,6 @@ function sqlite3rebaser_rebase_strm(pRebaser : psqlite3_rebaser; xInput :
   otherwise. }
 function sqlite3session_config(op : Integer; pArg : Pointer) : Integer; cdecl;
   external sqlite3_lib;
-
 
 implementation
 
