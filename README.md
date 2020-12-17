@@ -22,7 +22,7 @@ It is object pascal bindings and wrapper around [SQLite library](https://www.sql
 * [Free Pascal Compiler](http://freepascal.org)
 * [Lazarus IDE](http://www.lazarus.freepascal.org/) (optional)
 
-Library is tested with latest stable FreePascal Compiler (currently 3.2.0) and Lazarus IDE (currently 2.0.10).
+Library is tested with latest stable FreePascal Compiler (currently 3.2.0) and Lazarus IDE (currently 2.0.10) on Ubuntu Linux 5.8.0-33-generic x86_64 and Embarcadero (R) Delphi 10.3 on Windows 7 Service Pack 1 (Version 6.1, Build 7601, 64-bit Edition).
 
 
 
