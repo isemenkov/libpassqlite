@@ -104,8 +104,8 @@ begin
   FHandle := AHandle;
   FErrorStack := AErrorsStack;
 
-  FErrorStack^.Push(sqlite3_open_v2(PAnsiChar(Utf8Encode(AFilename)), FHandle,
-    PrepareFlags(AFlags), nil));
+  FErrorStack^.Push(sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}
+    (AFilename)), FHandle, PrepareFlags(AFlags), nil));
 end;
 
 destructor TSQLite3DatabaseConnection.Destroy;

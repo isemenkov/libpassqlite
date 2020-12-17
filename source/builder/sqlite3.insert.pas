@@ -105,7 +105,7 @@ type
     FTableName : String;
     FValuesList : TSQLite3Structures.TValuesList;
     FColumnsList : TSQLite3Structures.TValuesList;
-    FMultipleValuesList : TMultipleValuesList;
+    FMultipleValuesList : {TMultipleValuesList}TSQLite3Structures.TValuesList;
   end;
 
 implementation
@@ -128,7 +128,8 @@ begin
   FTableName := ATableName;
   FValuesList := TSQLite3Structures.TValuesList.Create;
   FColumnsList := TSQLite3Structures.TValuesList.Create;
-  FMultipleValuesList := TMultipleValuesList.Create;
+  FMultipleValuesList := {TMultipleValuesList.Create}
+    TSQLite3Structures.TValuesList.Create;
 end;
 
 destructor TSQLite3Insert.Destroy;
@@ -274,7 +275,7 @@ end;
 
 function TSQLite3Insert.Row : TSQLite3Insert;
 begin
-  FMultipleValuesList.Append(TSQLite3Structures.TValuesList.Create);
+  //FMultipleValuesList.Append(TSQLite3Structures.TValuesList.Create);
   Result := Self;
 end;
 
@@ -282,7 +283,7 @@ function TSQLite3Insert.Value (AValue : Integer) : TSQLite3Insert;
 var
   item : TSQLite3Structures.TValueItem;
 begin
-  if FMultipleValuesList.LastEntry.HasValue then
+  //if FMultipleValuesList.LastEntry.HasValue then
   begin
     item.Column_Name := '';
     item.Value_Type := SQLITE_INTEGER;
@@ -293,7 +294,8 @@ begin
     item.Value_BlobBuffer := nil;
     item.Value_BlobLength := 0;
 
-    FMultipleValuesList.LastEntry.Value.Append(item);
+    FMultipleValuesList.Append(item);
+    //FMultipleValuesList.LastEntry.Value.Append(item);
   end;
 
   Result := Self;
@@ -303,7 +305,7 @@ function TSQLite3Insert.Value (AValue : Double) : TSQLite3Insert;
 var
   item : TSQLite3Structures.TValueItem;
 begin
-  if FMultipleValuesList.LastEntry.HasValue then
+  //if FMultipleValuesList.LastEntry.HasValue then
   begin
     item.Column_Name := '';
     item.Value_Type := SQLITE_FLOAT;
@@ -314,7 +316,8 @@ begin
     item.Value_BlobBuffer := nil;
     item.Value_BlobLength := 0;
 
-    FMultipleValuesList.LastEntry.Value.Append(item);
+    FMultipleValuesList.Append(item);
+    //FMultipleValuesList.LastEntry.Value.Append(item);
   end;
 
   Result := Self;
@@ -324,7 +327,7 @@ function TSQLite3Insert.Value (AValue : String) : TSQLite3Insert;
 var
   item : TSQLite3Structures.TValueItem;
 begin
-  if FMultipleValuesList.LastEntry.HasValue then
+  //if FMultipleValuesList.LastEntry.HasValue then
   begin
     item.Column_Name := '';
     item.Value_Type := SQLITE_TEXT;
@@ -335,7 +338,8 @@ begin
     item.Value_BlobBuffer := nil;
     item.Value_BlobLength := 0;
 
-    FMultipleValuesList.LastEntry.Value.Append(item);
+    FMultipleValuesList.Append(item);
+    //FMultipleValuesList.LastEntry.Value.Append(item);
   end;
 
   Result := Self;
@@ -345,7 +349,7 @@ function TSQLite3Insert.Value (AValue : TStream) : TSQLite3Insert;
 var
   item : TSQLite3Structures.TValueItem;
 begin
-  if FMultipleValuesList.LastEntry.HasValue then
+  //if FMultipleValuesList.LastEntry.HasValue then
   begin
     item.Column_Name := '';
     item.Value_Type := SQLITE_BLOB;
@@ -356,7 +360,8 @@ begin
     item.Value_BlobBuffer := nil;
     item.Value_BlobLength := AValue.Size;
 
-    FMultipleValuesList.LastEntry.Value.Append(item);
+    FMultipleValuesList.Append(item);
+    //FMultipleValuesList.LastEntry.Value.Append(item);
   end;
 
   Result := Self;
@@ -366,7 +371,7 @@ function TSQLite3Insert.Value (AValue : TMemoryBuffer) : TSQLite3Insert;
 var
   item : TSQLite3Structures.TValueItem;
 begin
-  if FMultipleValuesList.LastEntry.HasValue then
+  //if FMultipleValuesList.LastEntry.HasValue then
   begin
     item.Column_Name := '';
     item.Value_Type := SQLITE_BLOB;
@@ -377,7 +382,8 @@ begin
     item.Value_BlobBuffer := @AValue;
     item.Value_BlobLength := AValue.GetBufferDataSize;
 
-    FMultipleValuesList.LastEntry.Value.Append(item);
+    FMultipleValuesList.Append(item);
+    //FMultipleValuesList.LastEntry.Value.Append(item);
   end;
 
   Result := Self;
@@ -387,7 +393,7 @@ function TSQLite3Insert.ValueNull : TSQLite3Insert;
 var
   item : TSQLite3Structures.TValueItem;
 begin
-  if FMultipleValuesList.LastEntry.HasValue then
+  //if FMultipleValuesList.LastEntry.HasValue then
   begin
     item.Column_Name := '';
     item.Value_Type := SQLITE_NULL;
@@ -397,7 +403,8 @@ begin
     item.Value_BlobStream := nil;
     item.Value_BlobBuffer := nil;
 
-    FMultipleValuesList.LastEntry.Value.Append(item);
+    FMultipleValuesList.Append(item);
+    //FMultipleValuesList.LastEntry.Value.Append(item);
   end;
 
   Result := Self;
@@ -491,9 +498,10 @@ function TSQLite3Insert.PrepareMultipleQuery : String;
 var
   SQL : String;
   column_item : TSQLite3Structures.TValueItem;
-  value_row : TSQLite3Structures.TValuesList;
-  column_iterator : TSQLite3Structures.TValuesList.TIterator;
-  value_item : TSQLite3Structures.TValueItem;
+  value_item : TSQLite3Structures.TValuesList.TIterator;
+  //value_row : TSQLite3Structures.TValuesList;
+  //column_iterator : TSQLite3Structures.TValuesList.TIterator;
+  //value_item : TSQLite3Structures.TValueItem;
   i, j : Integer;
 begin
   if (not FColumnsList.FirstEntry.HasValue) or
@@ -525,6 +533,35 @@ begin
 
   { For each row in list. }
   i := 0;
+  value_item := FMultipleValuesList.FirstEntry;
+  while value_item.HasValue do
+  begin
+    if i > 0 then
+        SQL := SQL + ',';
+
+    j := 0;
+    SQL := SQL + '(';
+    
+    for column_item in FColumnsList do
+    begin
+      if (column_item.Value_Type <> value_item.Value.Value_Type) and
+        (value_item.Value.Value_Type <> SQLITE_NULL) then
+        raise Exception.Create('Mistmach column type.');
+
+      if j > 0 then
+          SQL := SQL + ', ';
+
+      SQL := SQL + '?';
+
+      Inc(j);
+      value_item := value_item.Next;
+    end;
+    SQL := SQL + ') ';
+    Inc(i);
+  end;
+
+  {
+  i := 0;
   for value_row in FMultipleValuesList do
   begin
     column_iterator := FColumnsList.FirstEntry;
@@ -534,7 +571,7 @@ begin
     j := 0;
     SQL := SQL + '(';
 
-    { For each value item in row. }
+    
     for value_item in value_row do
     begin
       if (column_iterator.Value.Value_Type <> value_item.Value_Type) and
@@ -551,6 +588,7 @@ begin
     SQL := SQL + ') ';
     Inc(i);
   end;
+  }
 
   SQL := SQL + ';';
   Result := SQL;  
@@ -559,7 +597,7 @@ end;
 function TSQLite3Insert.BindMultipleQueryData (AQuery : TSQLite3Query; AIndex : 
   Integer) : Integer;
 var
-  value_row : TSQLite3Structures.TValuesList;
+  //value_row : TSQLite3Structures.TValuesList;
   value_item : TSQLite3Structures.TValueItem;
   i : Integer;
 begin
@@ -569,9 +607,9 @@ begin
   i := AIndex;
 
   { For each row in list. }
-  for value_row in FMultipleValuesList do
-  begin
-    for value_item in value_row do
+  //for value_row in FMultipleValuesList do
+  //begin
+    for value_item in {value_row}FMultipleValuesList do
     begin
       case value_item.Value_Type of
         SQLITE_INTEGER : 
@@ -597,7 +635,7 @@ begin
       end;
       Inc(i);
     end;
-  end;
+  //end;
 
   Result := i;
 end;

@@ -34,7 +34,8 @@ unit sqlite3.query;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result;
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result
+  {$IFNDEF FPC}, System.AnsiStrings{$ENDIF};
 
 type
   { Single SQL query. }
@@ -101,8 +102,8 @@ begin
   FErrorStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^,
-    PAnsiChar(Utf8Encode(AQuery)), Length(PChar(AQuery)), PrepareFlags(AFlags),
-    @FStatementHandle, nil));
+    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(AQuery)), Length(PChar(AQuery)),
+    PrepareFlags(AFlags), @FStatementHandle, nil));
 end;
 
 destructor TSQLite3Query.Destroy;
@@ -150,7 +151,8 @@ end;
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
   FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex,
-    PAnsiChar(AnsiString(AValue)), Length(AValue), nil));
+    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
+    {$ENDIF}AValue{$IFNDEF FPC})))){$ENDIF}, Length(AValue), nil));
   Result := Self;
 end;
 

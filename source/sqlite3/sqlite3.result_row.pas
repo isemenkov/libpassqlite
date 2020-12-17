@@ -159,13 +159,14 @@ end;
 
 function TSQLite3ResultRow.GetStringValue (AColumnIndex : Integer) : String;
 begin
-  Result := String(sqlite3_column_text(FStatementHandle, AColumnIndex));
+  Result := String(PAnsiChar(sqlite3_column_text(FStatementHandle,
+    AColumnIndex)));
 end;
 
 function TSQLite3ResultRow.GetStringValue (AColumnName : String) : String;
 begin
-  Result := String(sqlite3_column_text(FStatementHandle,
-    GetColumnIndex(AColumnName)));
+  Result := String(PAnsiChar(sqlite3_column_text(FStatementHandle,
+    GetColumnIndex(AColumnName))));
 end;
 
 function TSQLite3ResultRow.IsNull (AColumnIndex : Integer) : Boolean;

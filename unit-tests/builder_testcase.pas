@@ -26,6 +26,7 @@ type
     procedure Test_SQLite3Builder_InsertData;
     procedure Tets_SQLite3Builder_InsertData2;
     procedure Test_SQLite3Builder_InsertMultipleData;
+    procedure Test_SQLite3Builder_InsertMultipleData2;
     procedure Test_SQLite3Builder_CheckTableSchema;
     procedure Test_SQLite3Builder_SelectLimitOffset;
     procedure Test_SQLite3Builder_SelectWhere;
@@ -343,6 +344,115 @@ begin
   end;
 
   AssertTrue('Database selected rows count is not correct', counter = 3);
+
+  FreeAndNil(builder);
+
+  AssertTrue('Database file not exists', FileExists('test.db'));
+
+  DeleteFile('test.db');
+end;
+
+procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_InsertMultipleData2;
+var
+  schema : TSQLite3Schema;
+  builder : TSQLite3Builder;
+  inserted_rows : Integer;
+  row : TSQLite3ResultRow;
+  counter : Integer;
+begin
+  schema := TSQLite3Schema.Create;
+  schema.Id.Integer('val_1').Float('val_2').Text('val_3');
+
+  AssertTrue('Database file already exists', not FileExists('test.db'));
+
+  builder := TSQLite3Builder.Create('test.db',
+    [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
+  builder.Table('test_table').New(schema);
+
+  AssertTrue('Table ''test_table'' schema is not correct',
+    builder.Table('test_table').CheckSchema(schema));
+
+  inserted_rows := 0;
+  inserted_rows := builder.Table('test_table').Insert
+    .Column('val_1', SQLITE_INTEGER)
+    .Column('val_2', SQLITE_FLOAT)
+    .Column('val_3', SQLITE_TEXT)
+    .Row
+      .Value(12)
+      .Value(3.14)
+      .Value('apple')
+    .Row
+      .Value(54)
+      .Value(6.54)
+      .Value('mango')
+    .Row
+      .Value(-874)
+      .Value(532.00)
+      .Value('potato')
+    .Row
+      .Value(23)
+      .Value(1.0045)
+      .Value('orange')
+    .Row
+      .Value(-854)
+      .Value(234.21)
+      .Value('cherry')
+    .Get;
+
+  AssertTrue('Database inserted rows count is not correct', inserted_rows = 5);
+
+  counter := 0;
+  for row in builder.Table('test_table').Select.All.Get do
+  begin
+    case counter of
+      0 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = 12);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 3.14, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct',
+          row.GetStringValue('val_3') = 'apple');
+      end;
+      1 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = 54);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 6.54, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct',
+          row.GetStringValue('val_3') = 'mango');
+      end;
+      2 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = -874);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 532.00, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct',
+          row.GetStringValue('val_3') = 'potato');
+      end;
+      3 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = 23);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 1.0045, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct',
+          row.GetStringValue('val_3') = 'orange');
+      end;
+      4 : begin
+        AssertTrue('Selected row ''val_1'' column value is not correct',
+          row.GetIntegerValue('val_1') = -854);
+        AssertEquals('Selected row ''val_2'' column value is not correct',
+          row.GetDoubleValue('val_2'), 234.21, 0.01);
+        AssertTrue('Selected row ''val_3'' column value is not correct',
+          row.GetStringValue('val_3') = 'cherry');
+      end;
+      5 : begin
+        Fail('Impossible row.');
+      end;
+    end;
+    Inc(counter);
+  end;
+
+  AssertTrue('Database selected rows count is not correct', counter = 5);
 
   FreeAndNil(builder);
 
