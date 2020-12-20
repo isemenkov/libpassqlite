@@ -38,7 +38,12 @@ uses
 {$ENDIF}
 
 const
-  {$IFDEF WIN32 OR IFDEF WIN64}
+  {$IFNDEF FPC}
+    {$IFDEF WIN32 OR IFDEF WIN64}
+      sqlite3_lib = 'sqlite3.dll';
+    {$ENDIF}
+  {$ENDIF}
+  {$IFDEF WINDOWS}
     sqlite3_lib = 'sqlite3.dll';
   {$ENDIF}
   {$IFDEF UNIX}
