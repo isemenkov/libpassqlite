@@ -70,8 +70,6 @@ type
     property Handle : psqlite3 read FHandle;
   end;
 
-  // sqlite3_extended_result_codes
-
 implementation
 
 { TSQLite3Database }
