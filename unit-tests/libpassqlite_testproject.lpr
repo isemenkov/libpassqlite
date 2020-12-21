@@ -3,7 +3,8 @@ program libpassqlite_testproject;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, database_testcase, builder_testcase;
+  Interfaces, Forms, GuiTestRunner, database_testcase, builder_testcase,
+  rawbindings_testcase;
 
 {$R *.res}
 

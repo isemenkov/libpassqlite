@@ -33,6 +33,7 @@ uses
   sqlite3.delete in '..\source\builder\sqlite3.delete.pas',
   sqlite3.builder in '..\source\sqlite3.builder.pas',
 
+  rawbindings_testcase in '..\unit-tests\rawbindings_testcase.pas',
   database_testcase in '..\unit-tests\database_testcase.pas',
   builder_testcase in '..\unit-tests\builder_testcase.pas';
 
