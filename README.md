@@ -368,7 +368,7 @@ end;
 
 
 
-### Object wrapper
+### Query builder
 
 [sqlite3.builder.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/sqlite3.builder.pas) file contains the SQLite query builder.
 
@@ -815,7 +815,7 @@ begin
     row.GetIntegerValue('val_1');
     row.GetStringValue('str');
     row.GetIntegerValue('val_2');
-    
+
   end;
 
   FreeAndNil(builder);
