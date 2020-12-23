@@ -150,10 +150,10 @@ end;
 
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
-  FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex,
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}AValue){$IFNDEF FPC}))){$ENDIF},
-    Length(AValue), nil));
+  sqlite3_bind_text(FStatementHandle, AIndex,
+    {$IFNDEF FPC}System.AnsiStrings.{$ENDIF}StrNew(PAnsiChar(Utf8Encode(AValue))),
+    Length(Utf8Encode(AValue)), nil);
+
   Result := Self;
 end;
 
