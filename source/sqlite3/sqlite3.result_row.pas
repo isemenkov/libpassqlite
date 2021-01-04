@@ -2,7 +2,7 @@
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2020 - 2021                                Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -35,7 +35,7 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, container.arraylist,
-  utils.functor;
+  utils.functor, utils.api.cstring;
 
 type
   { Fundamental database column datatypes. }
@@ -159,14 +159,14 @@ end;
 
 function TSQLite3ResultRow.GetStringValue (AColumnIndex : Integer) : String;
 begin
-  Result := String(Utf8ToString(PAnsiChar(sqlite3_column_text(FStatementHandle,
-    AColumnIndex))));
+  Result := API.CString.Create(PAnsiChar(sqlite3_column_text(FStatementHandle,
+    AColumnIndex))).ToString;
 end;
 
 function TSQLite3ResultRow.GetStringValue (AColumnName : String) : String;
 begin
-  Result := String(Utf8ToString(PAnsiChar(sqlite3_column_text(FStatementHandle,
-     GetColumnIndex(AColumnName)))));
+  Result := API.CString.Create(PAnsiChar(sqlite3_column_text(FStatementHandle,
+     GetColumnIndex(AColumnName)))).ToString;
 end;
 
 function TSQLite3ResultRow.IsNull (AColumnIndex : Integer) : Boolean;

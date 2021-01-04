@@ -2,7 +2,7 @@
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2020 - 2021                                Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -34,7 +34,7 @@ unit sqlite3.connection;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack;
+  SysUtils, libpassqlite, sqlite3.errors_stack, utils.api.cstring;
 
 type
   { SQLite3 database connection. }
@@ -60,15 +60,16 @@ type
         { The database will be opened as an in-memory database. }
         SQLITE_OPEN_MEMORY,
 
-        { The new database connection will use the "multi-thread" threading mode. 
-          This means that separate threads are allowed to use SQLite at the same 
-          time, as long as each thread is using a different database connection. }
+        { The new database connection will use the "multi-thread" threading 
+          mode. This means that separate threads are allowed to use SQLite at 
+          the same time, as long as each thread is using a different database 
+          connection. }
         SQLITE_OPEN_NOMUTEX,
 
-        { The new database connection will use the "serialized" threading mode. This 
-          means the multiple threads can safely attempt to use the same database 
-          connection at the same time. (Mutexes will block any actual concurrency, 
-          but in this mode there is no harm in trying.) }
+        { The new database connection will use the "serialized" threading mode. 
+          This means the multiple threads can safely attempt to use the same 
+          database connection at the same time. (Mutexes will block any actual 
+          concurrency, but in this mode there is no harm in trying.) }
         SQLITE_OPEN_FULLMUTEX,
 
         { The database is opened shared cache enabled. }
@@ -104,8 +105,8 @@ begin
   FHandle := AHandle;
   FErrorStack := AErrorsStack;
 
-  FErrorStack^.Push(sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}
-    (AFilename)), FHandle, PrepareFlags(AFlags), nil));
+  FErrorStack^.Push(sqlite3_open_v2(API.CString.Create(AFilename).ToPAnsiChar,
+    FHandle, PrepareFlags(AFlags), nil));
 end;
 
 destructor TSQLite3DatabaseConnection.Destroy;

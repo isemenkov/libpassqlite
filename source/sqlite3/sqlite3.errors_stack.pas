@@ -196,7 +196,8 @@ begin
     SQLITE_CONSTRAINT_NOTNULL : Push('SQLITE_CONSTRAINT_NOTNULL :' +
       'A NOT NULL constraint failed.')
   else
-    Push(IntToStr(Integer(AError)) + ': Undefined SQLite3 database error code.');
+    Push(IntToStr(Integer(AError)) + 
+      ': Undefined SQLite3 database error code.');
   end;  
 end;
 

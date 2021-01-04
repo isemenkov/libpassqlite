@@ -2,7 +2,7 @@
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2020 - 2021                                Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -34,8 +34,8 @@ unit sqlite3.query;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result
-  {$IFNDEF FPC}, System.AnsiStrings{$ENDIF};
+  SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result, 
+  utils.api.cstring;
 
 type
   { Single SQL query. }
@@ -102,7 +102,7 @@ begin
   FErrorStack := AErrorsStack;
   FDBHandle := ADBHandle;
   FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(AQuery)), Length(PChar(AQuery)),
+    API.CString.Create(AQuery).ToUniquePAnsiChar, Length(AQuery),
     PrepareFlags(AFlags), @FStatementHandle, nil));
 end;
 
@@ -150,9 +150,8 @@ end;
 
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
-  sqlite3_bind_text(FStatementHandle, AIndex,
-    {$IFNDEF FPC}System.AnsiStrings.{$ENDIF}StrNew(PAnsiChar(Utf8Encode(AValue))),
-    Length(Utf8Encode(AValue)), nil);
+  sqlite3_bind_text(FStatementHandle, AIndex, 
+    API.CString.Create(AValue).ToUniquePAnsiChar, Length(AValue), nil);
 
   Result := Self;
 end;
