@@ -194,7 +194,31 @@ begin
     SQLITE_IOERR_DIR_FSYNC : Push('SQLITE_IOERR_DIR_FSYNC: An I/O error in ' +
       'the VFS layer while trying to invoke fsync() on a directory.');
     SQLITE_CONSTRAINT_NOTNULL : Push('SQLITE_CONSTRAINT_NOTNULL :' +
-      'A NOT NULL constraint failed.')
+      'A NOT NULL constraint failed.');
+    SQLITE_READONLY_DIRECTORY : Push('SQLITE_READONLY_DIRECTORY: the database '+
+      'is read-only because process does not have permission to create a '+
+      'journal file in the same directory as the database.');
+    SQLITE_IOERR_TRUNCATE : Push('SQLITE_IOERR_TRUNCATE : An I/O error in the '+
+      'VFS layer while trying to truncate a file to a smaller size.');
+    SQLITE_CONSTRAINT_PRIMARYKEY : Push('SQLITE_CONSTRAINT_PRIMARYKEY : ' +
+      'A PRIMARY KEY constraint failed.');
+    SQLITE_IOERR_FSTAT : Push('SQLITE_IOERR_FSTAT : An I/O error in the VFS '+
+      'layer while trying to invoke fstat() (or the equivalent) on a file in '+
+      'order to determine information such as the file size or access '+
+      'permissions.');
+    SQLITE_CONSTRAINT_TRIGGER : Push('SQLITE_CONSTRAINT_TRIGGER : A RAISE '+
+      'function within a trigger fired, causing the SQL statement to abort.');
+    SQLITE_IOERR_UNLOCK : Push('SQLITE_IOERR_UNLOCK : An I/O error within '+
+      'xUnlock method on the sqlite3_io_methods object.');
+    SQLITE_CONSTRAINT_UNIQUE : Push('SQLITE_CONSTRAINT_UNIQUE : A UNIQUE '+
+      'constraint failed.');
+    SQLITE_IOERR_RDLOCK : Push('SQLITE_IOERR_RDLOCK : An I/O error within '+
+      'xLock method on the sqlite3_io_methods object while trying to obtain a '+
+      'read lock.');
+    SQLITE_CONSTRAINT_VTAB : Push('SQLITE_CONSTRAINT_VTAB : '+
+      'application-defined error code.');
+    SQLITE_IOERR_DELETE : Push('SQLITE_IOERR_DELETE : An I/O error within '+
+      'xDelete method on the sqlite3_vfs object.')
   else
     Push(IntToStr(Integer(AError)) + 
       ': Undefined SQLite3 database error code.');
