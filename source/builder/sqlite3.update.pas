@@ -50,17 +50,17 @@ type
     destructor Destroy; override;
 
     { Add update field to list. }
-    function Update (AColumnName : String) : TSQLite3Update; overload;
-    function Update (AColumnName : String; AValue : String) : TSQLite3Update;
+    function Value (AColumnName : String; AValue : String) : TSQLite3Update;
       overload;
-    function Update (AColumnName : String; AValue : Integer) : TSQLite3Update;
+    function Value (AColumnName : String; AValue : Integer) : TSQLite3Update;
       overload;
-    function Update (AColumnName : String; AValue : Double) : TSQLite3Update;
+    function Value (AColumnName : String; AValue : Double) : TSQLite3Update;
       overload;
-    function Update (AColumnName : String; AValue : TStream) : TSQLite3Update;
+    function Value (AColumnName : String; AValue : TStream) : TSQLite3Update;
       overload;
-    function Update (AColumnName : String; AValue : TMemoryBuffer) : 
+    function Value (AColumnName : String; AValue : TMemoryBuffer) : 
       TSQLite3Update; overload;
+    function ValueNull (AColumnName : String) : TSQLite3Update; overload;
     
     { Add where clause. }
     function Where (AColumnName : String; AComparison : 
@@ -111,6 +111,12 @@ type
     { Get result. }
     function Get : Integer;
   private
+    function PrepareQuery : String;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
+    function BindQueryData (AQuery : TSQLite3Query; AIndex : Integer) :
+      Integer;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
+  private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
@@ -139,7 +145,7 @@ begin
   inherited Destroy;
 end;
 
-function TSQLite3Update.Update (AColumnName : String) : TSQLite3Update;
+function TSQLite3Update.ValueNull (AColumnName : String) : TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
 begin
@@ -157,7 +163,7 @@ begin
   Result := Self;
 end;
 
-function TSQLite3Update.Update (AColumnName : String; AValue : String) : 
+function TSQLite3Update.Value (AColumnName : String; AValue : String) : 
   TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
@@ -176,7 +182,7 @@ begin
   Result := Self;
 end;
 
-function TSQLite3Update.Update (AColumnName : String; AValue : Integer) : 
+function TSQLite3Update.Value (AColumnName : String; AValue : Integer) : 
   TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
@@ -195,7 +201,7 @@ begin
   Result := Self;
 end;
 
-function TSQLite3Update.Update (AColumnName : String; AValue : Double) : 
+function TSQLite3Update.Value (AColumnName : String; AValue : Double) : 
   TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
@@ -214,7 +220,7 @@ begin
   Result := Self;
 end;
 
-function TSQLite3Update.Update (AColumnName : String; AValue : TStream) : 
+function TSQLite3Update.Value (AColumnName : String; AValue : TStream) : 
   TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
@@ -233,7 +239,7 @@ begin
   Result := Self;
 end;
 
-function TSQLite3Update.Update (AColumnName : String; AValue : TMemoryBuffer) : 
+function TSQLite3Update.Value (AColumnName : String; AValue : TMemoryBuffer) : 
   TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
@@ -432,15 +438,14 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Update.Get : Integer;
+function TSQLite3Update.PrepareQuery : String;
 var
   SQL : String;
   update_item : TSQLite3Structures.TUpdateItem;
   i : Integer;
-  Query : TSQLite3Query;
 begin
   if not FUpdatesFieldsList.FirstEntry.HasValue then
-    Exit(0);
+    Exit('');
 
   i := 0;
   SQL := 'UPDATE ' + FTableName + ' SET ';
@@ -458,23 +463,43 @@ begin
 
   SQL := SQL + FWhereFragment.GetQuery + ';';
 
-  i := 1;
-  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
-    [SQLITE_PREPARE_NORMALIZE]);
+  Result := SQL;
+end;
 
+function TSQLite3Update.BindQueryData (AQuery : TSQLite3Query; AIndex : 
+  Integer) : Integer;
+var
+  update_item : TSQLite3Structures.TUpdateItem;
+  i : Integer;
+begin
+  if not FUpdatesFieldsList.FirstEntry.HasValue then
+    Exit(AIndex);
+
+  i := AIndex;
   for update_item in FUpdatesFieldsList do
   begin
     case update_item.Value.Value_Type of
-      SQLITE_INTEGER : Query.Bind(i, update_item.Value.Value_Integer);
-      SQLITE_FLOAT : Query.Bind(i, update_item.Value.Value_Float);
-      SQLITE_TEXT : Query.Bind(i, update_item.Value.Value_Text);
-      SQLITE_BLOB : Query.BindBlobZero(i, update_item.Value.Value_BlobLength);
-      SQLITE_NULL : Query.Bind(i);
+      SQLITE_INTEGER : AQuery.Bind(i, update_item.Value.Value_Integer);
+      SQLITE_FLOAT : AQuery.Bind(i, update_item.Value.Value_Float);
+      SQLITE_TEXT : AQuery.Bind(i, update_item.Value.Value_Text);
+      SQLITE_BLOB : AQuery.BindBlobZero(i, update_item.Value.Value_BlobLength);
+      SQLITE_NULL : AQuery.Bind(i);
     end;
     Inc(i);
   end;
   
-  FWhereFragment.BindQueryData(Query, i);
+  i := FWhereFragment.BindQueryData(AQuery, i);
+  Result := i;
+end;
+
+function TSQLite3Update.Get : Integer;
+var
+  Query : TSQLite3Query;
+begin
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, PrepareQuery,
+    [SQLITE_PREPARE_NORMALIZE]);
+
+  BindQueryData(Query, 1);
 
   { Run SQL query. }
   Query.Run;

@@ -2,7 +2,7 @@
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2020 - 2021                                Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -51,17 +51,9 @@ type
         Option_Unique : Boolean;
       end;
 
-      { ColumnItem compare functor. }
-      TColumnItemCompareFunctor = class
-        ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<TColumnItem, Integer>)
-      public
-        function Call (AValue1, AValue2 : TColumnItem) : Integer; override;
-      end;
-
       { Columns list. }  
-      TColumnsList = class
-        ({$IFDEF FPC}specialize{$ENDIF} TList<TColumnItem,
-        TColumnItemCompareFunctor>);
+      TColumnsList = {$IFDEF FPC}type specialize{$ENDIF} TList<TColumnItem,
+        {$IFDEF FPC}specialize{$ENDIF} TUnsortableFunctor<TColumnItem>>;
   public
     constructor Create;
     destructor Destroy; override;
@@ -100,19 +92,6 @@ type
   end;
 
 implementation
-
-{ TSQLite3Schema.TColumnItemCompareFunctor }
-
-function TSQLite3Schema.TColumnItemCompareFunctor.Call (AValue1, AValue2 :
-  TColumnItem) : {$IFNDEF FPC}System.{$ENDIF}Integer;
-begin
-  if AValue1.Column_Name < AValue2.Column_Name then
-    Result := -1
-  else if AValue2.Column_Name < AValue1.Column_Name then
-    Result := 1
-  else
-    Result := 0;
-end;
 
 { TSQLite3Schema }
 

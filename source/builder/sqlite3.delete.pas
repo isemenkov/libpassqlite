@@ -97,6 +97,11 @@ type
     { Get result. }
     function Get : Integer;
   private
+    function PrepareQuery : String;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
+    function BindQuery (AQuery : TSQLite3Query; AIndex : Integer) : Integer;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
+  private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
@@ -302,18 +307,28 @@ begin
   Result := Self;  
 end;
 
-function TSQLite3Delete.Get : Integer;
+function TSQLite3Delete.PrepareQuery : String;
 var
   SQL : String;
-  Query : TSQLite3Query;
 begin
   SQL := 'DELETE FROM ' + FTableName;
   SQL := SQL + FWhereFragment.GetQuery + ';';
+  Result := SQL;
+end;
 
-  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
+function TSQLite3Delete.BindQuery (AQuery : TSQLite3Query; AIndex : Integer) :
+  Integer;
+begin
+  Result := FWhereFragment.BindQueryData(AQuery, AIndex);
+end;
+
+function TSQLite3Delete.Get : Integer;
+var
+  Query : TSQLite3Query;
+begin
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, PrepareQuery,
     [SQLITE_PREPARE_NORMALIZE]);
-
-  FWhereFragment.BindQueryData(Query, 1);
+  BindQuery(Query, 1);
   
   { Run SQL query. }
   Query.Run;

@@ -34,8 +34,8 @@ unit sqlite3.result_row;
 interface
 
 uses
-  SysUtils, libpassqlite, sqlite3.errors_stack, container.arraylist,
-  utils.functor, utils.api.cstring;
+  SysUtils, libpassqlite, sqlite3.errors_stack, container.sortedarray,
+  utils.pair, utils.functor, utils.api.cstring;
 
 type
   { Fundamental database column datatypes. }
@@ -82,9 +82,10 @@ type
     function IsNull (AColumnName : String) : Boolean; overload;
   private
     type
-      TColumnsList = class
-        ({$IFDEF FPC}specialize{$ENDIF} TArrayList<String,
-        TCompareFunctorString>);
+      TColumnData = {$IFDEF FPC}type specialize{$ENDIF} TPair<String, Integer>;
+      TColumnsList = {$IFDEF FPC}type specialize{$ENDIF} 
+        TSortedArray<TColumnData,
+        {$IFDEF FPC}specialize{$ENDIF}TPairKeyCompareFunctorString<Integer>>;
 
     function GetColumnIndex (AColumnName : String) : Integer;
   private
@@ -187,11 +188,12 @@ begin
   if FColumnsList.Length = 0 then
   begin
     for i := 0 to ColumnCount - 1 do
-      FColumnsList.Append(ColumnName(i));
+      FColumnsList.Append(TColumnData.Create(ColumnName(i), i));
   end;
 
   { Get column name from cache. }
-  Result := FColumnsList.IndexOf(AColumnName);
+  Result := FColumnsList.Value[FColumnsList.IndexOf(
+    TColumnData.Create(AColumnName, 0))].Second;
 end;
 
 end.

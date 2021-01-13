@@ -84,7 +84,7 @@ A testing framework consists of the following ingredients:
 
 ```pascal
 uses
-  libpassqlite;
+  libpassqlite, utils.api.cstring;
 
 var
   Handle : psqlite3;
@@ -93,13 +93,13 @@ var
 
 begin
   { Create new database file or open exists. }
-  sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}('database.db')), 
+  sqlite3_open_v2(API.CString.Create('database.db').ToPAnsiChar), 
     @Handle, SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE, nil);
   
   Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
 
   { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), 
+  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
     Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
 
   { Run SQL query. }
@@ -117,7 +117,7 @@ end.
 
 ```pascal
 uses
-  libpassqlite {$IFNDEF FPC}, System.AnsiStrings{$ENDIF};
+  libpassqlite, utils.api.cstring;
 
 var
   Handle : psqlite3;
@@ -126,13 +126,13 @@ var
 
 begin
   { Create new database file or open exists. }
-  sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}('database.db')), 
+  sqlite3_open_v2(API.CString.Create('database.db').ToPAnsiChar), 
     @Handle, SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE, nil);
   
   Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
 
   { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), 
+  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
     Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
   
   { Run SQL query. }
@@ -141,15 +141,14 @@ begin
   Query := 'INSERT INTO test_table (txt) VALUES (?);';
 
   { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), 
+  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
     Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
 
   StrData := 'Test string';
 
   { Bind SQL query data. }
   sqlite3_bind_text(StatementHandle, 1, 
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}StrData{$IFDEF FPC}){$ELSE})))){$ENDIF},
+    API.CString.Create(StrData).ToUniquePAnsiChar,
     Length(StrData), nil);
 
   { Run SQL query. }
@@ -167,7 +166,7 @@ end.
 
 ```pascal
 uses
-  libpassqlite {$IFNDEF FPC}, System.AnsiStrings{$ENDIF};
+  libpassqlite, utils.api.cstring;
 
 var
   Handle : psqlite3;
@@ -177,14 +176,14 @@ var
 
 begin
   { Create new database file or open exists. }
-  sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}('database.db')), 
+  sqlite3_open_v2(API.CString.Create('database.db').ToPAnsiChar), 
     @Handle, SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE, nil);
   
   Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, int INTEGER, ' +
     'txt TEXT NOT NULL);';
 
   { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), 
+  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
     Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
   
   { Run SQL query. }
@@ -193,7 +192,7 @@ begin
   Query := 'INSERT INTO test_table (int, txt) VALUES (?, ?), (?, ?);';
 
   { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), 
+  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
     Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
 
   { Bind SQL query data. }
@@ -202,8 +201,7 @@ begin
 
   StrData := 'Test string';
   sqlite3_bind_text(StatementHandle, 2, 
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}StrData{$IFDEF FPC}){$ELSE})))){$ENDIF},
+    API.CString.Create(StrData).ToUniquePAnsiChar,
     Length(StrData), nil);
 
   IntData := 654321;
@@ -211,8 +209,7 @@ begin
 
   StrData := 'Some string value';
   sqlite3_bind_text(StatementHandle, 4, 
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}StrData{$IFDEF FPC}){$ELSE})))){$ENDIF},
+    API.CString.Create(StrData).ToUniquePAnsiChar,
     Length(StrData), nil);
 
   { Run SQL query. }
@@ -221,7 +218,7 @@ begin
   Query := 'SELECT * FROM test_table;';
 
   { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), 
+  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar, 
     Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil)
 
   { Run SQL query. }
@@ -230,7 +227,7 @@ begin
   { Get values from first row. }
   sqlite3_column_int(StatementHandle, 0); { Function return 1. }
   sqlite3_column_int(StatementHandle, 1); { Function return 123456. }
-  String(PAnsiChar(sqlite3_column_text(StatementHandle, 2))); { Function return 'Test string'. }
+  API.CString.Create(sqlite3_column_text(StatementHandle, 2)).ToString; { Function return 'Test string'. }
 
   { Get next result row. }
   sqlite3_step(StatementHandle); { Function return SQLITE_ROW }
@@ -238,7 +235,7 @@ begin
   { Get values from second row. }
   sqlite3_column_int(StatementHandle, 0); { Function return 2. }
   sqlite3_column_int(StatementHandle, 1); { Function return 654321. }
-  String(PAnsiChar(sqlite3_column_text(StatementHandle, 2))); { Function return 'Some string value'. }
+  API.CString.Create(sqlite3_column_text(StatementHandle, 2)).ToString; { Function return 'Some string value'. }
 
   { Get next result row. }
   sqlite3_step(StatementHandle); { Function return SQLITE_DONE }

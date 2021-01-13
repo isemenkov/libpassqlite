@@ -2,7 +2,7 @@
 (*                                libPasSQLite                                *)
 (*               object pascal wrapper around SQLite library                  *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2020 - 2021                                Ivan Semenkov     *)
 (* https://github.com/isemenkov/libpassqlite                ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -41,17 +41,9 @@ type
   TSQLite3Select = class
   public
     type
-      TSelectFieldItem = TSQLite3Structures.TSelectFieldItem;
-      TSelectFieldsList = TSQLite3Structures.TSelectFieldsList;
       TWhereComparisonOperator = TSQLite3Structures.TWhereComparisonOperator;
       TJoinType = TSQLite3Structures.TJoinType;
-      TJoinItem = TSQLite3Structures.TJoinItem;
-      TJoinsList = TSQLite3Structures.TJoinsList;
-      TOrderByItem = TSQLite3Structures.TOrderByItem;
       TOrderByType = TSQLite3Structures.TOrderByType;
-      TOrderByList = TSQLite3Structures.TOrderByList;
-      TLimitItem = TSQLite3Structures.TLimitItem;
-      TGroupByList = TSQLite3Structures.TGroupByList;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; ADBHandle :
       ppsqlite3; ATableName : String);
@@ -134,20 +126,27 @@ type
     { Get result. }
     function Get : TSQLite3Result;
   private
+    function PrepareQuery : String;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
     function PrepareJoinQuery : String;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
     function PrepareOrderByQuery : String;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
     function PrepareGroupByQuery : String;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
+    function BindQuery (AQuery : TSQLite3Query; AIndex : Integer) : Integer;
+      {$IFNDEF DEBUG}inline;{$ENDIF}
   private
     FErrorsStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FTableName : String;
     FDistinct : Boolean;
-    FSelectFieldsList : TSelectFieldsList;
+    FSelectFieldsList : TSQLite3Structures.TSelectFieldsList;
     FWhereFragment : TSQLite3Where;
-    FJoinsList : TJoinsList;
-    FOrderByList : TOrderByList;
-    FLimit : TLimitItem;
-    FGroupByList : TGroupByList;
+    FJoinsList : TSQLite3Structures.TJoinsList;
+    FOrderByList : TSQLite3Structures.TOrderByList;
+    FLimit : TSQLite3Structures.TLimitItem;
+    FGroupByList : TSQLite3Structures.TGroupByList;
   end;
 
 implementation
@@ -161,13 +160,13 @@ begin
   FDBHandle := ADBHandle;
   FTableName := ATableName;
   FDistinct := False;
-  FSelectFieldsList := TSelectFieldsList.Create;
+  FSelectFieldsList := TSQLite3Structures.TSelectFieldsList.Create;
   FWhereFragment := TSQLite3Where.Create;
-  FJoinsList := TJoinsList.Create;
-  FOrderByList := TOrderByList.Create;
+  FJoinsList := TSQLite3Structures.TJoinsList.Create;
+  FOrderByList := TSQLite3Structures.TOrderByList.Create;
   FLimit.Limit_Item := False;
   FLimit.Offset_Item := False;
-  FGroupByList := TGroupByList.Create;
+  FGroupByList := TSQLite3Structures.TGroupByList.Create;
 end;
 
 destructor TSQLite3Select.Destroy;
@@ -182,7 +181,7 @@ end;
 
 function TSQLite3Select.All : TSQLite3Select;
 var
-  item : TSelectFieldItem;
+  item : TSQLite3Structures.TSelectFieldItem;
 begin
   item.Column_Name := '*';
   item.Column_AliasName := '';
@@ -192,7 +191,7 @@ end;
 
 function TSQLite3Select.Field (AColumnName : String) : TSQLite3Select;
 var
-  item : TSelectFieldItem;
+  item : TSQLite3Structures.TSelectFieldItem;
 begin
   item.Column_Name := AColumnName;
   item.Column_AliasName := '';
@@ -203,7 +202,7 @@ end;
 function TSQLite3Select.Field (AColumnName, AColumnAlias : String) : 
   TSQLite3Select;
 var
-  item : TSelectFieldItem;
+  item : TSQLite3Structures.TSelectFieldItem;
 begin
   item.Column_Name := AColumnName;
   item.Column_AliasName := AColumnAlias;
@@ -409,7 +408,7 @@ end;
 function TSQLite3Select.Join (ATableName : String; AJoinType : TJoinType;
   AColumnName : String; ACurrentTableColumn : String) : TSQLite3Select;
 var
-  item : TJoinItem;
+  item : TSQLite3Structures.TJoinItem;
 begin
   item.Table_Name := ATableName;
   item.Column_Name := AColumnName;
@@ -435,7 +434,7 @@ end;
 function TSQLite3Select.OrderBy (AColumnName : String; AOrderBy : TOrderByType)
  : TSQLite3Select;
 var
-  item : TOrderByItem;
+  item : TSQLite3Structures.TOrderByItem;
 begin
   item.Column_Name := AColumnName;
   item.Order_Type := AOrderBy;
@@ -471,7 +470,7 @@ end;
 function TSQLite3Select.PrepareJoinQuery : String;
 var
   SQL : String;
-  join_item : TJoinItem;
+  join_item : TSQLite3Structures.TJoinItem;
 begin
   if not FJoinsList.FirstEntry.HasValue then
     Exit('');
@@ -500,7 +499,7 @@ end;
 function TSQLite3Select.PrepareOrderByQuery : String;
 var
   SQL : String;
-  order_item : TOrderByItem;
+  order_item : TSQLite3Structures.TOrderByItem;
   i : Integer;
 begin
   if not FOrderByList.FirstEntry.HasValue then
@@ -551,15 +550,14 @@ begin
   Result := SQL;
 end;
 
-function TSQLite3Select.Get : TSQLite3Result;
+function TSQLite3Select.PrepareQuery : String;
 var
   SQL : String;
-  select_elem : TSelectFieldItem;
+  select_elem : TSQLite3Structures.TSelectFieldItem;
   i : Integer;
-  Query : TSQLite3Query;
 begin
   if not FSelectFieldsList.FirstEntry.HasValue then
-    Exit(nil);
+    Exit('');
 
   i := 0;
   SQL := 'SELECT ';
@@ -601,22 +599,45 @@ begin
 
   { Close SQL query. }
   SQL := SQL + ';';
+  Result := SQL;
+end;
 
-  { Bind query data. }
-  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, SQL,
-    [SQLITE_PREPARE_NORMALIZE]);
-  i := FWhereFragment.BindQueryData (Query, 1);
+function TSQLite3Select.BindQuery (AQuery : TSQLite3Query; AIndex : Integer) :
+  Integer;
+var
+  i : Integer;
+begin
+  if not FSelectFieldsList.FirstEntry.HasValue then
+    Exit(AIndex);
+
+  i := FWhereFragment.BindQueryData(AQuery, AIndex);
   
   if FLimit.Limit_Item then
   begin
-    Query.Bind(i, FLimit.Limit_Value);
+    AQuery.Bind(i, FLimit.Limit_Value);
     Inc(i);
   end;
 
   if FLimit.Offset_Item then
   begin
-    Query.Bind(i, FLimit.Offset_Value);
+    AQuery.Bind(i, FLimit.Offset_Value);
+    Inc(i);
   end;
+
+  Result := i;
+end;
+
+function TSQLite3Select.Get : TSQLite3Result;
+var
+  Query : TSQLite3Query;
+begin
+  if not FSelectFieldsList.FirstEntry.HasValue then
+    Exit(nil);
+
+  { Bind query data. }
+  Query := TSQLite3Query.Create(FErrorsStack, FDBHandle, PrepareQuery,
+    [SQLITE_PREPARE_NORMALIZE]);
+  BindQuery(Query, 1);
 
   { Run SQL query. }
   Result := Query.Run;  
