@@ -12,6 +12,9 @@ uses
   testregistry{$ELSE}, TestFramework{$ENDIF};
 
 type
+  PByteArray = ^TByteArray;
+  TByteArray = array of Byte;
+
   { TSQLite3BuilderTestCase }
   TSQLite3BuilderTestCase = class(TTestCase)
   public
@@ -918,6 +921,10 @@ var
   builder : TSQLite3Builder;
   inserted_rows : Integer;
   buffer : TMemoryBuffer;
+  ptr : TByteArray;
+  row : TSQLite3ResultRow;
+  counter, i : Integer;
+  blob : TSQLite3ResultRow.TBlobBuffer;
 begin
   schema := TSQLite3Schema.Create;
   schema.Id('id').Blob('data');
@@ -933,7 +940,13 @@ begin
   FreeAndNil(schema);
 
   buffer := TMemoryBuffer.Create;
-  buffer.SetBufferDataSize(200);
+  buffer.GetAppendBuffer(200);
+  buffer.SetBufferAllocSize(200);
+
+  ptr := TByteArray(buffer.GetBufferData);
+  ptr[2] := $FF;
+  ptr[99] := $AB;
+  ptr[197] := $FF;
 
   inserted_rows := 0;
   inserted_rows := builder.Table('test_table').Insert
@@ -944,6 +957,37 @@ begin
 
   AssertTrue('Database inserted rows count is not correct', inserted_rows = 1);
 
+  counter := 0;
+  for row in builder.Table('test_table').Select.All.Get do
+  begin
+    case counter of
+      0 : begin
+        blob := row.GetBlobValue('data');
+
+        for i := 0 to 199 do
+        begin
+          if (i = 2) or (i = 197) then
+          begin
+            AssertTrue('Buffer byte value is not correct',
+              blob.GetBufferByte(i) = $FF);
+          end else if i = 99 then
+          begin
+            AssertTrue('Buffer byte value is not correct',
+              blob.GetBufferByte(i) = $AB);
+          end else
+          begin
+            AssertTrue('Buffer byte value is not correct',
+              blob.GetBufferByte(i) = $00);
+          end
+        end;
+
+        Inc(counter);
+      end;
+      1 : begin
+        Fail('Impossible row.');
+      end;
+    end;
+  end;
   FreeAndNil(builder);
 
   AssertTrue('Database file not exists', FileExists('test.db'));

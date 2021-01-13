@@ -95,9 +95,7 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := AValue;
-  val.Comparison_Value.Value_BlobStream := nil;
   val.Comparison_Value.Value_BlobBuffer := nil;
-  val.Comparison_Value.Value_BlobLength := 0;
 
   FWhereFieldsList.Append(val);
 end;
@@ -116,9 +114,7 @@ begin
   val.Comparison_Value.Value_Integer := AValue;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_BlobStream := nil;
   val.Comparison_Value.Value_BlobBuffer := nil;
-  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -137,9 +133,7 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := AValue;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_BlobStream := nil;
   val.Comparison_Value.Value_BlobBuffer := nil;
-  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -157,9 +151,7 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_BlobStream := nil;
   val.Comparison_Value.Value_BlobBuffer := nil;
-  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;
@@ -177,9 +169,7 @@ begin
   val.Comparison_Value.Value_Integer := 0;
   val.Comparison_Value.Value_Float := 0;
   val.Comparison_Value.Value_Text := '';
-  val.Comparison_Value.Value_BlobStream := nil;
   val.Comparison_Value.Value_BlobBuffer := nil;
-  val.Comparison_Value.Value_BlobLength := 0;
   
   FWhereFieldsList.Append(val);
 end;

@@ -155,9 +155,7 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := '';
-  item.Value.Value_BlobStream := nil;
   item.Value.Value_BlobBuffer := nil;
-  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -174,9 +172,7 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := AValue;
-  item.Value.Value_BlobStream := nil;
   item.Value.Value_BlobBuffer := nil;
-  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -193,9 +189,7 @@ begin
   item.Value.Value_Integer := AValue;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := '';
-  item.Value.Value_BlobStream := nil;
   item.Value.Value_BlobBuffer := nil;
-  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -212,9 +206,7 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := AValue;
   item.Value.Value_Text := '';
-  item.Value.Value_BlobStream := nil;
   item.Value.Value_BlobBuffer := nil;
-  item.Value.Value_BlobLength := 0;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -224,16 +216,18 @@ function TSQLite3Update.Value (AColumnName : String; AValue : TStream) :
   TSQLite3Update;
 var
   item : TSQLite3Structures.TUpdateItem;
+  ptr : Pointer;
 begin
+  item.Value.Value_BlobBuffer := TMemoryBuffer.Create;
+  ptr := item.Value.Value_BlobBuffer.GetAppendBuffer(AValue.Size);
+  AValue.Read(ptr, AValue.Size);
+
   item.Column_Name := AColumnName;
   item.Value.Column_Name := '';
   item.Value.Value_Type := SQLITE_BLOB;
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := '';
-  item.Value.Value_BlobStream := @AValue;
-  item.Value.Value_BlobBuffer := nil;
-  item.Value.Value_BlobLength := AValue.Size;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -250,9 +244,7 @@ begin
   item.Value.Value_Integer := 0;
   item.Value.Value_Float := 0;
   item.Value.Value_Text := '';
-  item.Value.Value_BlobStream := nil;
-  item.Value.Value_BlobBuffer := @AValue;
-  item.Value.Value_BlobLength := AValue.GetBufferDataSize;
+  item.Value.Value_BlobBuffer := AValue;
 
   FUpdatesFieldsList.Append(item);
   Result := Self;
@@ -482,7 +474,9 @@ begin
       SQLITE_INTEGER : AQuery.Bind(i, update_item.Value.Value_Integer);
       SQLITE_FLOAT : AQuery.Bind(i, update_item.Value.Value_Float);
       SQLITE_TEXT : AQuery.Bind(i, update_item.Value.Value_Text);
-      SQLITE_BLOB : AQuery.BindBlobZero(i, update_item.Value.Value_BlobLength);
+      SQLITE_BLOB : AQuery.BindBlob(i,
+        update_item.Value.Value_BlobBuffer.GetBufferData,
+        update_item.Value.Value_BlobBuffer.GetBufferDataSize);
       SQLITE_NULL : AQuery.Bind(i);
     end;
     Inc(i);

@@ -47,8 +47,36 @@ type
     SQLITE_TEXT                          = Longint(libpassqlite.SQLITE3_TEXT)
   {%H-});
 
+  TByteArray = array of Byte;
+
   { SQLite3 database query result collection row. }
   TSQLite3ResultRow = class
+  public
+    type
+      { Blob data wrapper. }
+      TBlobBuffer = class
+      public
+        { Returns the length of the valid data in the buffer. }
+        function GetBufferDataSize : Int64;
+
+        { Return a pointer to the data in the buffer. }
+        function GetBufferData : Pointer;
+
+        { Return concrete data byte. }
+        function GetBufferByte (AOffset : Int64) : Byte;
+
+        { Return buffer bytes range. }
+        function GetBufferBytesRange (AOffset : Int64; ASize : Int64) : 
+          TByteArray;
+
+        { Returns true if the buffer contains no data. }
+        function IsEmpty : Boolean;
+      protected
+        constructor Create(const APtr : Pointer; ASize : Int64);
+      protected
+        FPtr : Pointer;
+        FSize : Int64;
+      end;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AStatementHandle :
       psqlite3_stmt);
@@ -69,6 +97,7 @@ type
     function GetIntegerValue (AColumnIndex : Integer) : Integer; overload;
     function GetInt64Value (AColumnIndex : Integer) : Int64; overload;
     function GetStringValue (AColumnIndex : Integer) : String; overload;
+    function GetBlobValue (AColumnIndex : Integer) : TBlobBuffer; overload;
 
     { Return information about a single column of the current result row of a 
       query by column name. }
@@ -76,6 +105,7 @@ type
     function GetIntegerValue (AColumnName : String) : Integer; overload;
     function GetInt64Value (AColumnName : String) : Int64; overload;
     function GetStringValue (AColumnName : String) : String; overload;
+    function GetBlobValue (AColumnName : String) : TBlobBuffer; overload;
 
     { Check if column values is null. }
     function IsNull (AColumnIndex : Integer) : Boolean; overload;
@@ -95,6 +125,48 @@ type
   end;
 
 implementation
+
+{ TSQLite3ResultRow.TBlobBuffer }
+
+constructor TSQLite3ResultRow.TBlobBuffer.Create (const APtr : Pointer; ASize : 
+  Int64);
+begin
+  FPtr := APtr;
+  FSize := ASize;
+end;
+
+function TSQLite3ResultRow.TBlobBuffer.GetBufferDataSize : Int64;
+begin
+  Result := FSize;
+end;
+
+function TSQLite3ResultRow.TBlobBuffer.GetBufferData : Pointer;
+begin
+  Result := FPtr;
+end;
+
+function TSQLite3ResultRow.TBlobBuffer.IsEmpty : Boolean;
+begin
+  Result := FSize = 0;
+end;
+
+function TSQLite3ResultRow.TBlobBuffer.GetBufferByte (AOffset : Int64) : Byte;
+begin
+  if AOffset > FSize then
+    Exit($0);
+
+  Result := TByteArray(FPtr)[AOffset];
+end;
+
+function TSQLite3ResultRow.TBlobBuffer.GetBufferBytesRange (AOffset : Int64; 
+  ASize : Int64) : TByteArray;
+begin
+  if (AOffset >= FSize) or (AOffset + ASize > FSize) then
+    Exit(nil);
+
+  SetLength(Result, ASize);
+  Move(FPtr, Result, ASize);
+end;
 
 { TSQLite3ResultRow }
 
@@ -168,6 +240,19 @@ function TSQLite3ResultRow.GetStringValue (AColumnName : String) : String;
 begin
   Result := API.CString.Create(PAnsiChar(sqlite3_column_text(FStatementHandle,
      GetColumnIndex(AColumnName)))).ToString;
+end;
+
+function TSQLite3ResultRow.GetBlobValue (AColumnIndex : Integer) : TBlobBuffer;
+begin
+  Result := TBlobBuffer.Create(sqlite3_column_blob(FStatementHandle, 
+    AColumnIndex), sqlite3_column_bytes(FStatementHandle, AColumnIndex));
+end;
+
+function TSQLite3ResultRow.GetBlobValue (AColumnName : String) : TBlobBuffer;
+begin
+  Result := TBlobBuffer.Create(sqlite3_column_blob(FStatementHandle,
+    GetColumnIndex(AColumnName)), sqlite3_column_bytes(FStatementHandle,
+    GetColumnIndex(AColumnName)));
 end;
 
 function TSQLite3ResultRow.IsNull (AColumnIndex : Integer) : Boolean;

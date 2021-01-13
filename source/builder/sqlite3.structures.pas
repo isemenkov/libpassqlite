@@ -34,7 +34,8 @@ unit sqlite3.structures;
 interface
 
 uses
-  SysUtils, container.list, utils.functor, sqlite3.result_row;
+  SysUtils, container.list, container.memorybuffer, utils.functor, 
+  sqlite3.result_row;
 
 type
   TSQLite3Structures = class
@@ -48,10 +49,12 @@ type
         Value_Integer : Integer;
         Value_Float : Double;
         Value_Text : String;
-        Value_BlobStream : Pointer;
-        Value_BlobBuffer : Pointer;
-        Value_BlobLength : Int64;
+        Value_BlobBuffer : TMemoryBuffer;
       end;
+
+      TMemoryBuffersList = class
+        ({$IFDEF FPC}specialize{$ENDIF} TList<TMemoryBuffer,
+        {$IFDEF FPC}specialize{$ENDIF} TUnsortableFunctor<TMemoryBuffer>>);
 
       { Values list. }
       PValuesList = ^TValuesList;

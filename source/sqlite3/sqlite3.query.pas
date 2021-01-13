@@ -77,6 +77,8 @@ type
     function Bind(AIndex : Integer; AValue : Integer) : TSQLite3Query; overload;
     function Bind(AIndex : Integer; AValue : Int64)   : TSQLite3Query; overload;
     function Bind(AIndex : Integer; AValue : String)  : TSQLite3Query; overload;
+    function BindBlob(AIndex : Integer; AValue : Pointer; ASize : Int64) :
+      TSQLite3Query;
     function BindBlobZero(AIndex : Integer; ASize : Int64) : TSQLite3Query;
       
     { Reset all bindings on a prepared query. }
@@ -150,9 +152,16 @@ end;
 
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
-  sqlite3_bind_text(FStatementHandle, AIndex, 
-    API.CString.Create(AValue).ToUniquePAnsiChar, Length(AValue), nil);
+  FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex, 
+    API.CString.Create(AValue).ToUniquePAnsiChar, Length(AValue), nil));
+  Result := Self;
+end;
 
+function TSQLite3Query.BindBlob(AIndex : Integer; AValue : Pointer; ASize :
+  Int64) : TSQLite3Query;
+begin
+  FErrorStack^.Push(sqlite3_bind_blob64(FStatementHandle, AIndex, AValue, ASize, 
+    nil));
   Result := Self;
 end;
 
