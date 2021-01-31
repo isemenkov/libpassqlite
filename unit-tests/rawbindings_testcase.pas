@@ -8,7 +8,7 @@ interface
 
 uses
   Classes, SysUtils, libpassqlite {$IFDEF FPC}, fpcunit, testregistry{$ELSE},
-  TestFramework, System.AnsiStrings{$ENDIF};
+  TestFramework{$ENDIF}, utils.api.cstring;
 
 type
   { TSQLite3RawBindingsTestCase }
@@ -45,8 +45,8 @@ begin
     'Database file already exists', not FileExists('database.db'));
 
   AssertTrue('#TSQLite3RawBindingsTestCase -> ' +
-    'Create database error', sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode
-    {$ENDIF}('database.db')), @Handle, SQLITE_OPEN_CREATE or
+    'Create database error', sqlite3_open_v2(API.CString.Create('database.db')
+    .ToPAnsiChar, @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
   AssertTrue('#TSQLite3RawBindingsTestCase -> ' +
@@ -76,7 +76,7 @@ begin
 
   AssertTrue('#Test_TSQLite3RawBindings_Query -> ' +
     'Query prepare error', sqlite3_prepare_v3(Handle,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), Length(Query), 
+    API.CString.Create(Query).ToPAnsiChar, Length(Query), 
     SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_Query -> ' +
@@ -105,15 +105,15 @@ begin
     'Database file already exists', not FileExists('database.db'));
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
-    'Create database error', sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode
-    {$ENDIF}('database.db')), @Handle, SQLITE_OPEN_CREATE or
+    'Create database error', sqlite3_open_v2(API.CString.Create('database.db')
+    .ToPAnsiChar, @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
   Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
     'Query prepare error', sqlite3_prepare_v3(Handle,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), Length(Query), 
+    API.CString.Create(Query).ToPAnsiChar, Length(Query), 
     SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
@@ -123,15 +123,14 @@ begin
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
     'Query prepare error', sqlite3_prepare_v3(Handle,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), Length(Query), 
+    API.CString.Create(Query).ToPAnsiChar, Length(Query), 
     SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil) = SQLITE_OK);
 
   StrData := 'Test string';
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
     'Query text binding error', sqlite3_bind_text(StatementHandle, 1, 
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}StrData{$IFDEF FPC}){$ELSE})))){$ENDIF},
-    Length(StrData), nil) = SQLITE_OK);
+    API.CString.Create(StrData).ToUniquePAnsiChar, Length(StrData), 
+    nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
     'Query run error', sqlite3_step(StatementHandle) = SQLITE_DONE);
@@ -163,8 +162,8 @@ begin
     'Database file already exists', not FileExists('database.db'));
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
-    'Create database error', sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode
-    {$ENDIF}('database.db')), @Handle, SQLITE_OPEN_CREATE or
+    'Create database error', sqlite3_open_v2(API.CString.Create('database.db')
+    .ToPAnsiChar, @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
   Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, int INTEGER, ' +
@@ -172,7 +171,7 @@ begin
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query prepare error', sqlite3_prepare_v3(Handle,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), Length(Query), 
+    API.CString.Create(Query).ToPAnsiChar, Length(Query), 
     SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
@@ -182,7 +181,7 @@ begin
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query prepare error', sqlite3_prepare_v3(Handle,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), Length(Query), 
+    API.CString.Create(Query).ToPAnsiChar, Length(Query), 
     SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil) = SQLITE_OK);
 
   IntData := 123456;
@@ -193,9 +192,8 @@ begin
   StrData := 'Test string';
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query text binding error', sqlite3_bind_text(StatementHandle, 2, 
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}StrData{$IFDEF FPC}){$ELSE})))){$ENDIF},
-    Length(StrData), nil) = SQLITE_OK);
+    API.CString.Create(StrData).ToUniquePAnsiChar, Length(StrData), 
+    nil) = SQLITE_OK);
 
   IntData := 654321;
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
@@ -205,9 +203,8 @@ begin
   StrData := 'Some string value';
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query text binding error', sqlite3_bind_text(StatementHandle, 4, 
-    {$IFNDEF FPC}System.AnsiStrings.StrNew(PAnsiChar(PAnsiString(Utf8Encode(
-    {$ENDIF}{$IFDEF FPC}PChar({$ENDIF}StrData{$IFDEF FPC}){$ELSE})))){$ENDIF},
-    Length(StrData), nil) = SQLITE_OK);
+    API.CString.Create(StrData).ToUniquePAnsiChar, Length(StrData), 
+    nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query run error', sqlite3_step(StatementHandle) = SQLITE_DONE);
@@ -219,7 +216,7 @@ begin
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query prepare error', sqlite3_prepare_v3(Handle,
-    PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(Query)), Length(Query), 
+    API.CString.Create(Query).ToPAnsiChar, Length(Query), 
     SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
@@ -232,8 +229,9 @@ begin
     'First row id value not correct', sqlite3_column_int(StatementHandle, 1)
     = 123456);
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
-    'First row id value not correct', String(PAnsiChar(sqlite3_column_text(
-    StatementHandle, 2))) = 'Test string');
+    'First row id value not correct',
+    API.CString.Create(PAnsiChar(sqlite3_column_text(StatementHandle, 2)))
+    .ToString = 'Test string');
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query run error', sqlite3_step(StatementHandle) = SQLITE_ROW);
@@ -245,8 +243,9 @@ begin
     'Second row id value not correct', sqlite3_column_int(StatementHandle, 1)
     = 654321);
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
-    'Second row id value not correct', String(PAnsiChar(sqlite3_column_text(
-    StatementHandle, 2))) = 'Some string value');
+    'Second row id value not correct',
+    API.CString.Create(PAnsiChar(sqlite3_column_text(StatementHandle, 2)))
+    .ToString = 'Some string value');
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query run error', sqlite3_step(StatementHandle) = SQLITE_DONE);

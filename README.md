@@ -11,10 +11,6 @@ It is delphi and object pascal bindings and wrapper around [SQLite library](http
 * [Usage](#usage)
 * [Testing](#testing)
 * [Raw bindings](#raw-bindings)
-  * [Usage example](#usage-example)
-    * [Create new table](#create-new-table)
-    * [Insert data](#insert-data)
-    * [Select data](#select-data)
 * [Object wrapper](#object-wrapper)
   * [Usage example](#usage-example-1)
     * [Create new table](#create-new-table-1)
@@ -59,7 +55,7 @@ Get the sources and add the *source* directory to the project search path. For F
 
 ### Usage
 
-Clone the repository `git clone https://github.com/isemenkov/libpascurl`.
+Clone the repository `git clone https://github.com/isemenkov/libpassqlite`.
 
 Add the unit you want to use to the `uses` clause.
 
@@ -77,176 +73,7 @@ A testing framework consists of the following ingredients:
 
 [libpassqlite.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/libpassqlite.pas) file contains the SQLite translated headers to use this library in pascal programs. You can find C API documentation at [SQLite website](https://www.sqlite.org/docs.html).
 
-#### Usage example
-
-
-##### Create new table
-
-```pascal
-uses
-  libpassqlite, utils.api.cstring;
-
-var
-  Handle : psqlite3;
-  StatementHandle : psqlite3_stmt;
-  Query : String;
-
-begin
-  { Create new database file or open exists. }
-  sqlite3_open_v2(API.CString.Create('database.db').ToPAnsiChar), 
-    @Handle, SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE, nil);
-  
-  Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
-
-  { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
-    Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
-
-  { Run SQL query. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_DONE }
-
-  { Free SQL query inner database resources. }
-  sqlite3_finalize(StatementHandle);
-
-  { Close database. }
-  sqlite3_close_v2(Handle);
-end.
-```
-
-##### Insert data
-
-```pascal
-uses
-  libpassqlite, utils.api.cstring;
-
-var
-  Handle : psqlite3;
-  StatementHandle : psqlite3_stmt;
-  Query, StrData : String;
-
-begin
-  { Create new database file or open exists. }
-  sqlite3_open_v2(API.CString.Create('database.db').ToPAnsiChar), 
-    @Handle, SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE, nil);
-  
-  Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
-
-  { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
-    Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
-  
-  { Run SQL query. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_DONE }
-
-  Query := 'INSERT INTO test_table (txt) VALUES (?);';
-
-  { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
-    Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
-
-  StrData := 'Test string';
-
-  { Bind SQL query data. }
-  sqlite3_bind_text(StatementHandle, 1, 
-    API.CString.Create(StrData).ToUniquePAnsiChar,
-    Length(StrData), nil);
-
-  { Run SQL query. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_DONE }
-
-  { Free SQL query inner database resources. }
-  sqlite3_finalize(StatementHandle);
-
-  { Close database. }
-  sqlite3_close_v2(Handle);
-end.
-```
-
-##### Select data
-
-```pascal
-uses
-  libpassqlite, utils.api.cstring;
-
-var
-  Handle : psqlite3;
-  StatementHandle : psqlite3_stmt;
-  Query, StrData : String;
-  IntData : Integer;
-
-begin
-  { Create new database file or open exists. }
-  sqlite3_open_v2(API.CString.Create('database.db').ToPAnsiChar), 
-    @Handle, SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE, nil);
-  
-  Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, int INTEGER, ' +
-    'txt TEXT NOT NULL);';
-
-  { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
-    Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
-  
-  { Run SQL query. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_DONE }
-
-  Query := 'INSERT INTO test_table (int, txt) VALUES (?, ?), (?, ?);';
-
-  { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar), 
-    Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil);
-
-  { Bind SQL query data. }
-  IntData := 123456;
-  sqlite3_bind_int(StatementHandle, 1, IntData);
-
-  StrData := 'Test string';
-  sqlite3_bind_text(StatementHandle, 2, 
-    API.CString.Create(StrData).ToUniquePAnsiChar,
-    Length(StrData), nil);
-
-  IntData := 654321;
-  sqlite3_bind_int(StatementHandle, 3, IntData);
-
-  StrData := 'Some string value';
-  sqlite3_bind_text(StatementHandle, 4, 
-    API.CString.Create(StrData).ToUniquePAnsiChar,
-    Length(StrData), nil);
-
-  { Run SQL query. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_DONE }
-
-  Query := 'SELECT * FROM test_table;';
-
-  { Prepare SQL query. }
-  sqlite3_prepare_v3(Handle, API.CString.Create(Query).ToPAnsiChar, 
-    Length(Query), SQLITE_PREPARE_NORMALIZE, @StatementHandle, nil)
-
-  { Run SQL query. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_ROW }
-
-  { Get values from first row. }
-  sqlite3_column_int(StatementHandle, 0); { Function return 1. }
-  sqlite3_column_int(StatementHandle, 1); { Function return 123456. }
-  API.CString.Create(sqlite3_column_text(StatementHandle, 2)).ToString; { Function return 'Test string'. }
-
-  { Get next result row. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_ROW }
-
-  { Get values from second row. }
-  sqlite3_column_int(StatementHandle, 0); { Function return 2. }
-  sqlite3_column_int(StatementHandle, 1); { Function return 654321. }
-  API.CString.Create(sqlite3_column_text(StatementHandle, 2)).ToString; { Function return 'Some string value'. }
-
-  { Get next result row. }
-  sqlite3_step(StatementHandle); { Function return SQLITE_DONE }
-
-  { Free SQL query inner database resources. }
-  sqlite3_finalize(StatementHandle);
-
-  { Close database. }
-  sqlite3_close_v2(Handle);
-end.
-```
+*More details read on* [wiki page](https://github.com/isemenkov/libpassqlite/wiki/Raw-bindings).
 
 
 
