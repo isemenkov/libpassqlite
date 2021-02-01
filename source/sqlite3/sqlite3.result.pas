@@ -75,7 +75,7 @@ type
       end;
   public
     constructor Create (AErrorsStack : PSQL3LiteErrorsStack; AStatementHandle : 
-        psqlite3_stmt; AResCode : Integer);
+      psqlite3_stmt; AResCode : Integer);
     destructor Destroy; override;
 
     { Retrive the first row in a result row collection. }

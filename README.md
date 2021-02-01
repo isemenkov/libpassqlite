@@ -12,10 +12,6 @@ It is delphi and object pascal bindings and wrapper around [SQLite library](http
 * [Testing](#testing)
 * [Raw bindings](#raw-bindings)
 * [Object wrapper](#object-wrapper)
-  * [Usage example](#usage-example-1)
-    * [Create new table](#create-new-table-1)
-    * [Insert data](#insert-data-1)
-    * [Select data](#select-data-1)
 * [Query builder](#query-builder)
   * [Usage example](#usage-example-2)
     * [Table schema](#table-schema)
@@ -81,114 +77,7 @@ A testing framework consists of the following ingredients:
 
 [sqlite3.database.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/sqlite3.database.pas) file contains the SQLite object wrapper.
 
-#### Usage example
-
-##### Create new table
-
-```pascal
-uses
-  sqlite3.database, sqlite3.query;
-
-var
-  database : TSQLite3Database;
-  SQL : String;
-  Query : TSQLite3Query;
-
-begin
-  database := TSQLite3Database.Create('database.db', 
-    [TSQLite3Database.TConnectFlag.SQLITE_OPEN_CREATE]);
-
-  SQL := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
-  
-  database.Query(SQL, [TSQLite3Query.TPrepareFlag.SQLITE_PREPARE_NORMALIZE])
-    .Run;
-
-  FreeAndNil(database);
-end;
-
-```
-
-##### Insert data
-
-```pascal
-uses
-  sqlite3.database, sqlite3.query;
-
-var
-  database : TSQLite3Database;
-  SQL : String;
-  Query : TSQLite3Query;
-
-begin
-  database := TSQLite3Database.Create('database.db', 
-    [TSQLite3Database.TConnectFlag.SQLITE_OPEN_CREATE]);
-
-  SQL := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
-  
-  database.Query(SQL, [TSQLite3Query.TPrepareFlag.SQLITE_PREPARE_NORMALIZE])
-    .Run;
-
-  SQL := 'INSERT INTO test_table (txt) VALUES (?);';
-
-  Query := database.Query(SQL, 
-    [TSQLite3Query.TPrepareFlag.SQLITE_PREPARE_NORMALIZE])
-    .Bind(1, 'text value');
-  Query.Run;
-
-  FreeAndNil(database);
-end;
-
-```
-
-##### Select data
-
-```pascal
-uses
-  sqlite3.database, sqlite3.query;
-
-var
-  database : TSQLite3Database;
-  SQL : String;
-  Query : TSQLite3Query;
-  Res : TSQLite3Result;
-  Row : TSQLite3ResultRow;
-
-begin
-  database := TSQLite3Database.Create('database.db', 
-    [TSQLite3Database.TConnectFlag.SQLITE_OPEN_CREATE]);
-
-  SQL := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, int INTEGER, ' +
-    'txt TEXT NOT NULL);';
-  
-  database.Query(SQL, [TSQLite3Query.TPrepareFlag.SQLITE_PREPARE_NORMALIZE])
-    .Run;
-
-  SQL := 'INSERT INTO test_table (int, txt) VALUES (?, ?), (?, ?);';
-
-  Query := database.Query(SQL, 
-    [TSQLite3Query.TPrepareFlag.SQLITE_PREPARE_NORMALIZE])
-    .Bind(1, 123456)
-    .Bind(2, 'Test string')
-    .Bind(3, 654321)
-    .Bind(4, 'Some string value');
-  Query.Run;
-
-  SQL := 'SELECT * FROM test_table';
-  Query := database.Query(SQL, 
-    [TSQLite3Query.TPrepareFlag.SQLITE_PREPARE_NORMALIZE]);
-  Res := Query.Run;
-
-  for Row in Res do
-  begin
-    Row.GetIntegerValue('id'); 
-    Row.GetIntegerValue('int'); 
-    Row.GetStringValue('txt');
-  end;
-
-  FreeAndNil(database);
-end;
-
-```
+*More details read on* [wiki page](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Database).
 
 
 
