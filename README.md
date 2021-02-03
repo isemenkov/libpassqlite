@@ -13,7 +13,7 @@ It is delphi and object pascal bindings and wrapper around [SQLite library](http
 * [Raw bindings](#raw-bindings)
 * [Object wrapper](#object-wrapper)
 * [Query builder](#query-builder)
- 
+
 
 
 ### Requirements
@@ -58,6 +58,9 @@ A testing framework consists of the following ingredients:
 
 [libpassqlite.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/libpassqlite.pas) file contains the SQLite translated headers to use this library in pascal programs. You can find C API documentation at [SQLite website](https://www.sqlite.org/docs.html).
 
+* [Create database](https://github.com/isemenkov/libpassqlite/wiki/Raw-bindings#create-database)
+* [Run query](https://github.com/isemenkov/libpassqlite/wiki/Raw-bindings#run-query)
+
 *More details read on* [wiki page](https://github.com/isemenkov/libpassqlite/wiki/Raw-bindings).
 
 
@@ -66,6 +69,9 @@ A testing framework consists of the following ingredients:
 
 [sqlite3.database.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/sqlite3.database.pas) file contains the SQLite object wrapper.
 
+* [Create database](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Database#create-database)
+* [Run query](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Database#run-query)
+
 *More details read on* [wiki page](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Database).
 
 
@@ -73,5 +79,12 @@ A testing framework consists of the following ingredients:
 ### Query builder
 
 [sqlite3.builder.pas](https://github.com/isemenkov/libpassqlite/blob/master/source/sqlite3.builder.pas) file contains the SQLite query builder.
+
+* [Create database](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder#create-database)
+* [Raw query](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder#raw-query)
+* [Table](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder#table)
+  * [Schema](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Schema)
+  * [Select](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Select)
+* [Transaction](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder#transaction)
 
 *More details read on* [wiki page](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder).
