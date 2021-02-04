@@ -47,7 +47,7 @@ type
     procedure Push (AErrorCode : Integer); overload;
 
     function GetEnumerator : {$IFNDEF FPC}TListErrorsStack<String>.{$ENDIF}
-      TErrorsEnumerator;
+      TIterator;
   end;
 
 implementation
@@ -55,7 +55,7 @@ implementation
 { TSQLite3ErrorsStack }
 
 function TSQL3LiteErrorsStack.GetEnumerator :
-  TSQL3LiteErrorsStack.TErrorsEnumerator;
+  TSQL3LiteErrorsStack.TIterator;
 begin
   Result := inherited GetEnumerator;
 end;

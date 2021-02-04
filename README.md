@@ -85,6 +85,9 @@ A testing framework consists of the following ingredients:
 * [Table](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder#table)
   * [Schema](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Schema)
   * [Select](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Select)
+  * [Insert](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Insert)
+  * [Update](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Update)
+  * [Delete](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Delete)
 * [Transaction](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder#transaction)
 
 *More details read on* [wiki page](https://github.com/isemenkov/libpassqlite/wiki/TSQLite3Builder).
