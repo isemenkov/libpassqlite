@@ -89,7 +89,7 @@ type
     function ColumnName (AIndex : Integer) : String;
 
     { Returns the datatype for the initial data type of the result column. }
-    function GetColumnType (AIndex : Integer) : TDataType;
+    function ColumnType (AIndex : Integer) : TDataType;
 
     { Return information about a single column of the current result row of a 
       query. }
@@ -194,7 +194,7 @@ begin
   Result := String(sqlite3_column_name(FStatementHandle, AIndex));
 end;
 
-function TSQLite3ResultRow.GetColumnType (AIndex : Integer) : TDataType;
+function TSQLite3ResultRow.ColumnType (AIndex : Integer) : TDataType;
 begin
   Result := TDataType(sqlite3_column_type(FStatementHandle, AIndex));
 end;
@@ -257,12 +257,12 @@ end;
 
 function TSQLite3ResultRow.IsNull (AColumnIndex : Integer) : Boolean;
 begin
-  Result := (GetColumnType(AColumnIndex) = SQLITE_NULL);
+  Result := (ColumnType(AColumnIndex) = SQLITE_NULL);
 end;
 
 function TSQLite3ResultRow.IsNull (AColumnName : String) : Boolean;
 begin
-  Result := (GetColumnType(GetColumnIndex(AColumnName)) = SQLITE_NULL);
+  Result := (ColumnType(GetColumnIndex(AColumnName)) = SQLITE_NULL);
 end;
 
 function TSQLite3ResultRow.GetColumnIndex (AColumnName : String) : Integer;
