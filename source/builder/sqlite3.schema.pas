@@ -82,6 +82,9 @@ type
     { Add unique modifier to the last adding element. }
     function Unique : TSQLite3Schema;
 
+    { Add primary key modifier to last adding element. }
+    function PrimaryKey : TSQLite3Schema;
+
     { Clear columns list. }
     procedure Clear;
   private
@@ -227,6 +230,20 @@ begin
   begin
     Column := FColumns.LastEntry.Value;
     Column.Option_Unique := True;
+    FColumns.LastEntry.Value := Column;   
+  end; 
+
+  Result := Self;
+end;
+
+function TSQLite3Schema.PrimaryKey : TSQLite3Schema;
+var
+  Column : TColumnItem;
+begin
+  if FColumns.LastEntry.HasValue then
+  begin
+    Column := FColumns.LastEntry.Value;
+    Column.Option_PrimaryKey := True;
     FColumns.LastEntry.Value := Column;   
   end; 
 
