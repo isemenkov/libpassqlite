@@ -40,9 +40,9 @@ var
   database : TSQLite3Database;
 begin
   AssertTrue('#Test_SQLite3Database_CreateNewEmpty -> ' +
-    'Database file already exists', not FileExists('test.db'));
+    'Database file already exists', not FileExists('test1.db'));
 
-  database := TSQLite3Database.Create('test.db',
+  database := TSQLite3Database.Create('test1.db',
     [TSQLite3Database.TConnectFlag.SQLITE_OPEN_CREATE]);
 
   AssertTrue('#Test_SQLite3Database_CreateNewEmpty -> ' +
@@ -51,9 +51,9 @@ begin
   FreeAndNil(database);
 
   AssertTrue('#Test_SQLite3Database_CreateNewEmpty -> ' +
-    'Database file not exists', FileExists('test.db'));
+    'Database file not exists', FileExists('test1.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test1.db');
 end;
 
 procedure TSQLite3DatabaseTestCase.Test_SQLite3Database_Query;
@@ -66,9 +66,9 @@ var
   i : Integer;
 begin
   AssertTrue('#Test_SQLite3Database_Query -> ' +
-    'Database file already exists', not FileExists('test.db'));
+    'Database file already exists', not FileExists('test2.db'));
 
-  database := TSQLite3Database.Create('test.db',
+  database := TSQLite3Database.Create('test2.db',
     [TSQLite3Database.TConnectFlag.SQLITE_OPEN_CREATE]);
   
   SQL := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
@@ -115,9 +115,9 @@ begin
   FreeAndNil(database);
 
   AssertTrue('#Test_SQLite3Database_Query -> ' +
-    'Database file not exists', FileExists('test.db'));
+    'Database file not exists', FileExists('test2.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test2.db');
 end;
 
 initialization

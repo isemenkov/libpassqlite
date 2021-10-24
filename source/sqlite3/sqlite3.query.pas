@@ -35,7 +35,7 @@ interface
 
 uses
   SysUtils, libpassqlite, sqlite3.errors_stack, sqlite3.result, 
-  utils.api.cstring;
+  utils.api.cstring, container.list, utils.functor;
 
 type
   { Single SQL query. }
@@ -87,9 +87,18 @@ type
     { Run the SQL. }
     function Run : TSQLite3Result;
   private
+    type
+      TBindStringsList = class(
+        {$IFDEF FPC}specialize{$ENDIF} TList<API.PAnsiStringWrapper, 
+        {$IFDEF FPC}specialize{$ENDIF} 
+        TUnsortableFunctor<API.PAnsiStringWrapper> >
+      );
+  private
     FErrorStack : PSQL3LiteErrorsStack;
     FDBHandle : ppsqlite3;
     FStatementHandle : psqlite3_stmt;
+    FQuery : API.PAnsiStringWrapper;
+    FBindStrings : TBindStringsList;
 
     function PrepareFlags (AFlags : TPrepareFlags) : Integer;
   end;
@@ -102,15 +111,18 @@ constructor TSQLite3Query.Create (AErrorsStack : PSQL3LiteErrorsStack;
   ADBHandle : ppsqlite3; AQuery : String; AFlags : TPrepareFlags);
 begin
   FErrorStack := AErrorsStack;
+  FBindStrings := TBindStringsList.Create;
   FDBHandle := ADBHandle;
-  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^,
-    API.CString.Create(AQuery).ToUniquePAnsiChar, Length(AQuery),
+  FQuery := API.CString.Create(AQuery).ToUniquePAnsiChar;
+  FErrorStack^.Push(sqlite3_prepare_v3(FDBHandle^, FQuery.Value, FQuery.Length,
     PrepareFlags(AFlags), @FStatementHandle, nil));
 end;
 
 destructor TSQLite3Query.Destroy;
 begin
   FErrorStack^.Push(sqlite3_finalize(FStatementHandle));
+  FreeAndNil(FQuery);
+  FreeAndNil(FBindStrings);
   inherited Destroy;
 end;
 
@@ -152,8 +164,10 @@ end;
 
 function TSQLite3Query.Bind(AIndex : Integer; AValue : String) : TSQLite3Query;
 begin
+  FBindStrings.Append(API.CString.Create(AValue).ToUniquePAnsiChar);
   FErrorStack^.Push(sqlite3_bind_text(FStatementHandle, AIndex, 
-    API.CString.Create(AValue).ToUniquePAnsiChar, Length(AValue), nil));
+    FBindStrings.LastEntry.Value.Value, FBindStrings.LastEntry.Value.Length, 
+    nil));
   Result := Self;
 end;
 

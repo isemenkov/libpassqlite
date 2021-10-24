@@ -90,6 +90,7 @@ type
   private
     FErrorStack : PSQL3LiteErrorsStack;
     FHandle : ppsqlite3;
+    FFilename : API.PAnsiStringWrapper;
 
     function PrepareFlags (AFlags : TConnectFlags) : Integer;
   end;
@@ -104,14 +105,16 @@ constructor TSQLite3DatabaseConnection.Create (AErrorsStack :
 begin
   FHandle := AHandle;
   FErrorStack := AErrorsStack;
+  FFilename := API.CString.Create(AFilename).ToUniquePAnsiChar;
 
-  FErrorStack^.Push(sqlite3_open_v2(API.CString.Create(AFilename).ToPAnsiChar,
+  FErrorStack^.Push(sqlite3_open_v2(FFilename.Value,
     FHandle, PrepareFlags(AFlags), nil));
 end;
 
 destructor TSQLite3DatabaseConnection.Destroy;
 begin
   FErrorStack^.Push(sqlite3_close_v2(FHandle^));
+  FreeAndNil(FFilename);
   inherited Destroy;
 end;
 

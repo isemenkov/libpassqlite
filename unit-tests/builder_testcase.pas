@@ -59,18 +59,18 @@ procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_CreateNewEmpty;
 var
   builder : TSQLite3Builder;
 begin
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test3.db'));
  
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test3.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
 
   AssertTrue('Database connection has errors', builder.Errors.Count = 0);
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test3.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test3.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_CreateNewSchema;
@@ -81,9 +81,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id('id').Text('txt').NotNull;
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test4.db'));
  
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test4.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);   
 
@@ -95,9 +95,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test4.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test4.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_InsertData;
@@ -111,9 +111,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('int1').Integer('int2').Integer('int3').Text('txt');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test5.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test5.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -158,9 +158,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test5.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test5.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Tets_SQLite3Builder_InsertData2;
@@ -174,9 +174,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('int1').Integer('int2').Integer('int3').Text('txt');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test6.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test6.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -265,9 +265,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test6.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test6.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_InsertMultipleData;
@@ -281,9 +281,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('val_1').Float('val_2').Text('val_3');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test7.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test7.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -350,9 +350,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test7.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test7.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_InsertMultipleData2;
@@ -366,9 +366,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('val_1').Float('val_2').Text('val_3');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test8.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test8.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -459,9 +459,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test8.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test8.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_CheckTableSchema;
@@ -475,9 +475,9 @@ begin
   schema2 := TSQLite3Schema.Create;
   schema2.Id.Integer('int_val').Float('f_val').Text('text_val').NotNull;
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test9.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test9.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -488,9 +488,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test9.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test9.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_SelectLimitOffset;
@@ -503,9 +503,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('some_value').Text('text_data');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test10.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test10.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -552,9 +552,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test10.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test10.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_SelectWhere;
@@ -568,9 +568,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('val_1').Float('val_2').Text('val_3');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test11.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test11.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -660,9 +660,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test11.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test11.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_SelectOrderBy;
@@ -676,9 +676,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('val_1').Float('val_2').Text('val_3');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test12.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test12.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -759,9 +759,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test12.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test12.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_Join;
@@ -772,12 +772,12 @@ var
   row : TSQLite3ResultRow;
   counter : Integer;
 begin
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test13.db'));
 
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('val_1').Text('str').Integer('key_id');
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test13.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('table1').New(schema);
 
@@ -910,9 +910,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test13.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test13.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_Blob;
@@ -929,9 +929,9 @@ begin
   schema := TSQLite3Schema.Create;
   schema.Id('id').Blob('data');
 
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test14.db'));
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test14.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('test_table').New(schema);
 
@@ -990,9 +990,9 @@ begin
   end;
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test14.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test14.db');
 end;
 
 procedure TSQLite3BuilderTestCase.Test_SQLite3Builder_Transaction;
@@ -1003,12 +1003,12 @@ var
   row : TSQLite3ResultRow;
   counter : Integer;
 begin
-  AssertTrue('Database file already exists', not FileExists('test.db'));
+  AssertTrue('Database file already exists', not FileExists('test15.db'));
 
   schema := TSQLite3Schema.Create;
   schema.Id.Integer('val_1').Text('str').Integer('key_id');
 
-  builder := TSQLite3Builder.Create('test.db',
+  builder := TSQLite3Builder.Create('test15.db',
     [TSQLite3Builder.TConnectFlag.SQLITE_OPEN_CREATE]);
   builder.Table('table1').New(schema);
 
@@ -1111,9 +1111,9 @@ begin
 
   FreeAndNil(builder);
 
-  AssertTrue('Database file not exists', FileExists('test.db'));
+  AssertTrue('Database file not exists', FileExists('test15.db'));
 
-  DeleteFile('test.db');
+  DeleteFile('test15.db');
 end;
 
 initialization

@@ -42,10 +42,10 @@ var
   Handle : psqlite3;
 begin
   AssertTrue('#TSQLite3RawBindingsTestCase -> ' +
-    'Database file already exists', not FileExists('database.db'));
+    'Database file already exists', not FileExists('database1.db'));
 
   AssertTrue('#TSQLite3RawBindingsTestCase -> ' +
-    'Create database error', sqlite3_open_v2(API.CString.Create('database.db')
+    'Create database error', sqlite3_open_v2(API.CString.Create('database1.db')
     .ToPAnsiChar, @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
@@ -53,9 +53,9 @@ begin
     'Close database error', sqlite3_close_v2(Handle) = SQLITE_OK);
 
   AssertTrue('#TSQLite3RawBindingsTestCase -> ' +
-    'Database file not exists', FileExists('database.db'));
+    'Database file not exists', FileExists('database1.db'));
 
-  DeleteFile('database.db');
+  DeleteFile('database1.db');
 end;
 
 procedure TSQLite3RawBindingsTestCase.Test_TSQLite3RawBindings_CreateTableQuery;
@@ -65,11 +65,11 @@ var
   Query : String; 
 begin
   AssertTrue('#Test_TSQLite3RawBindings_Query -> ' +
-    'Database file already exists', not FileExists('database.db'));
+    'Database file already exists', not FileExists('database2.db'));
 
   AssertTrue('#Test_TSQLite3RawBindings_Query -> ' +
     'Create database error', sqlite3_open_v2(PAnsiChar({$IFNDEF FPC}Utf8Encode
-    {$ENDIF}('database.db')), @Handle, SQLITE_OPEN_CREATE or
+    {$ENDIF}('database2.db')), @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
   Query := 'CREATE TABLE test_table (id INTEGER PRIMARY KEY, txt TEXT NOT NULL);';
@@ -90,9 +90,9 @@ begin
     'Close database error', sqlite3_close_v2(Handle) = SQLITE_OK);
 
   AssertTrue('#Test_SQLite3Database_CreateNewEmpty -> ' +
-    'Database file not exists', FileExists('database.db'));
+    'Database file not exists', FileExists('database2.db'));
 
-  DeleteFile('database.db');
+  DeleteFile('database2.db');
 end;
 
 procedure TSQLite3RawBindingsTestCase.Test_TSQLite3RawBindings_InsertDataQuery;
@@ -102,10 +102,10 @@ var
   Query, StrData : String;
 begin
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
-    'Database file already exists', not FileExists('database.db'));
+    'Database file already exists', not FileExists('database3.db'));
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
-    'Create database error', sqlite3_open_v2(API.CString.Create('database.db')
+    'Create database error', sqlite3_open_v2(API.CString.Create('database3.db')
     .ToPAnsiChar, @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
@@ -129,7 +129,7 @@ begin
   StrData := 'Test string';
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
     'Query text binding error', sqlite3_bind_text(StatementHandle, 1, 
-    API.CString.Create(StrData).ToUniquePAnsiChar, Length(StrData), 
+    API.CString.Create(StrData).ToUniquePAnsiChar.Value, Length(StrData),
     nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
@@ -146,9 +146,9 @@ begin
     'Close database error', sqlite3_close_v2(Handle) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_InsertDataQuery -> ' +
-    'Database file not exists', FileExists('database.db'));
+    'Database file not exists', FileExists('database3.db'));
 
-  DeleteFile('database.db');
+  DeleteFile('database3.db');
 end;
 
 procedure TSQLite3RawBindingsTestCase.Test_TSQLite3RawBindings_SelectDataQuery;
@@ -159,10 +159,10 @@ var
   IntData : Integer;
 begin
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
-    'Database file already exists', not FileExists('database.db'));
+    'Database file already exists', not FileExists('database4.db'));
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
-    'Create database error', sqlite3_open_v2(API.CString.Create('database.db')
+    'Create database error', sqlite3_open_v2(API.CString.Create('database4.db')
     .ToPAnsiChar, @Handle, SQLITE_OPEN_CREATE or
     SQLITE_OPEN_READWRITE, nil) = SQLITE_OK);
   
@@ -192,7 +192,7 @@ begin
   StrData := 'Test string';
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query text binding error', sqlite3_bind_text(StatementHandle, 2, 
-    API.CString.Create(StrData).ToUniquePAnsiChar, Length(StrData), 
+    API.CString.Create(StrData).ToUniquePAnsiChar.Value, Length(StrData),
     nil) = SQLITE_OK);
 
   IntData := 654321;
@@ -203,7 +203,7 @@ begin
   StrData := 'Some string value';
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
     'Query text binding error', sqlite3_bind_text(StatementHandle, 4, 
-    API.CString.Create(StrData).ToUniquePAnsiChar, Length(StrData), 
+    API.CString.Create(StrData).ToUniquePAnsiChar.Value, Length(StrData),
     nil) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
@@ -258,9 +258,9 @@ begin
     'Close database error', sqlite3_close_v2(Handle) = SQLITE_OK);
 
   AssertTrue('#Test_TSQLite3RawBindings_SelectDataQuery -> ' +
-    'Database file not exists', FileExists('database.db'));
+    'Database file not exists', FileExists('database4.db'));
 
-  DeleteFile('database.db');
+  DeleteFile('database4.db');
 end;
 
 initialization
